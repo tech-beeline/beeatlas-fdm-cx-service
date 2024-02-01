@@ -1,0 +1,105 @@
+package ru.beeline.cxbackend.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.domain.cj.CJ;
+import ru.beeline.cxbackend.domain.cj.CJStep;
+import ru.beeline.cxbackend.dto.CjStepDto;
+import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.CJRepository;
+import ru.beeline.cxbackend.repository.CJStepRepository;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class CJStepService {
+
+    @Autowired
+    private CJStepRepository cjStepRepository;
+
+    @Autowired
+    private CJRepository cjRepository;
+
+    @Autowired
+    private BIInCJStepRepository biInCJStepRepository;
+
+    public List<CJStep> getStepByCJId(Long id) {
+        return cjStepRepository.findAllByCjId(id).stream()
+                .sorted(Comparator.comparing(CJStep::getOrder)).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Object addStep(Long id, CjStepDto cjStepDto) {
+        CJStep cjStep = CJStep.builder()
+                .name(cjStepDto.getName())
+                .order(cjStepDto.getOrder())
+                .cjId(id)
+                .build();
+
+        List<CJStep> existSteps = cjStepRepository.findAllByCjId(id);
+
+        if (!existSteps.isEmpty()) {
+            Optional<CJ> currentCJ = cjRepository.findById(existSteps.get(0).getCjId());
+            if (currentCJ.isPresent() && !currentCJ.get().isBDraft()) {
+                throw new RuntimeException("CJ находится в статусе Опубликован. Добавление шага");
+            }
+
+            existSteps = existSteps.stream()
+                    .filter(step -> step.getOrder() >= cjStepDto.getOrder())
+                    .peek(step -> step.setOrder(step.getOrder() + 1))
+                    .collect(Collectors.toList());
+        }
+        cjStepRepository.saveAllAndFlush(existSteps);
+        return cjStepRepository.saveAndFlush(cjStep);
+    }
+
+    public CJStep getStepById(Long id) {
+        Optional<CJStep> cjStep = cjStepRepository.findById(id);
+        return cjStep.orElse(null);
+    }
+
+    @Transactional
+    public CJStep updateStep(CJStep cjStep, CjStepDto cjStepDto) {
+        Optional<CJ> currentCJ = cjRepository.findById(cjStep.getCjId());
+        if (currentCJ.isPresent() && !currentCJ.get().isBDraft()) {
+            throw new RuntimeException("CJ находится в статусе Опубликован. Изменение невозможно");
+        }
+        if (cjStepDto.getName() != null) {
+            cjStep.setName(cjStepDto.getName());
+        }
+        if (cjStepDto.getOrder() != null) {
+            if (!Objects.equals(cjStep.getOrder(), cjStepDto.getOrder())) {
+                CJStep stepForSwap = cjStepRepository.findByCjIdAndOrder(cjStep.getCjId(), cjStepDto.getOrder());
+                if (Objects.nonNull(stepForSwap)) {
+                    stepForSwap.setOrder(cjStep.getOrder());
+                    cjStepRepository.save(stepForSwap);
+                }
+            }
+            cjStep.setOrder(cjStepDto.getOrder());
+        }
+        return cjStepRepository.save(cjStep);
+    }
+
+    @Transactional
+    public void deleteStep(CJStep cjStep) {
+        Optional<CJ> currentCJ = cjRepository.findById(cjStep.getCjId());
+        if (currentCJ.isPresent() && !currentCJ.get().isBDraft()) {
+            throw new RuntimeException("CJ находится в статусе Опубликован. Удаление невозможно");
+        }
+        biInCJStepRepository.deleteAllByCjStepId(cjStep.getId());
+        cjStepRepository.delete(cjStep);
+        List<CJStep> existSteps = cjStepRepository.findAllByCjId(cjStep.getCjId());
+        if (!existSteps.isEmpty()) {
+            existSteps = existSteps.stream()
+                    .filter(step -> step.getOrder() > cjStep.getOrder())
+                    .peek(step -> step.setOrder(step.getOrder() - 1))
+                    .collect(Collectors.toList());
+        }
+        cjStepRepository.saveAllAndFlush(existSteps);
+    }
+}

@@ -1,0 +1,23 @@
+package ru.beeline.cxbackend.domain.bi;
+
+import lombok.*;
+
+import javax.persistence.*;
+
+@Builder
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name = "linkenum")
+public class LinkEnum {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "link_enum_id_generator")
+    @SequenceGenerator(name = "link_enum_id_generator", sequenceName = "link_enum_id_seq", allocationSize = 1)
+    private Long id;
+
+    private String type;
+}

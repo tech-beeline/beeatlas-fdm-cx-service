@@ -1,0 +1,8 @@
+env:
+  JAVACMD: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8090"
+  SPRING_PROFILES_ACTIVE: test
+  SPRING_DATASOURCE_URL: "vault:eafdmmart/data/test/fdm#url"
+  SPRING_DATASOURCE_USERNAME: "vault:eafdmmart/data/test/fdm#username"
+  SPRING_DATASOURCE_PASSWORD: "vault:eafdmmart/data/test/fdm#password"
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/test/fdm#driver"
+  JWKS: "vault:eafdmmart/data/test/fdm#jwks"

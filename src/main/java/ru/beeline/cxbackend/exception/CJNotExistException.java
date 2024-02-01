@@ -1,0 +1,7 @@
+package ru.beeline.cxbackend.exception;
+
+public class CJNotExistException extends Exception {
+    public CJNotExistException(String message) {
+        super(message);
+    }
+}
