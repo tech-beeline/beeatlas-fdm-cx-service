@@ -3,9 +3,12 @@ package ru.beeline.cxbackend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
+import ru.beeline.cxbackend.exception.StepNotExistException;
+import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.repository.BIInCJStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
@@ -15,6 +18,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @Service
 public class CJStepService {
@@ -29,6 +36,7 @@ public class CJStepService {
     private BIInCJStepRepository biInCJStepRepository;
 
     public List<CJStep> getStepByCJId(Long id) {
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(id).get());
         return cjStepRepository.findAllByCjId(id).stream()
                 .sorted(Comparator.comparing(CJStep::getOrder)).collect(Collectors.toList());
     }
@@ -58,9 +66,15 @@ public class CJStepService {
         return cjStepRepository.saveAndFlush(cjStep);
     }
 
-    public CJStep getStepById(Long id) {
-        Optional<CJStep> cjStep = cjStepRepository.findById(id);
-        return cjStep.orElse(null);
+    public CJStep getStepById(Long id) throws StepNotExistException {
+        CJStep cjStep = cjStepRepository.findById(id)
+                .orElseThrow(() -> new StepNotExistException("Step with id " + id + " does not exist"));
+
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(cjStep.getCjId()).get());
+
+        return cjStep;
+
+
     }
 
     @Transactional

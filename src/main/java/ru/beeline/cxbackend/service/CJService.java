@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.Product;
-import ru.beeline.cxbackend.domain.UserProfile;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -17,9 +16,9 @@ import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.StepDto;
 import ru.beeline.cxbackend.exception.CJNotExistException;
+import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
-import ru.beeline.cxbackend.utils.jwt.JwtUtils;
 
 import java.sql.Date;
 import java.util.Comparator;
@@ -28,7 +27,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.utils.jwt.JwtUtils.encodeJWT;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @Service
 public class CJService {
@@ -56,19 +58,16 @@ public class CJService {
     @Autowired
     private BIMapper biMapper;
 
-    @Autowired
-    private UserProfileService userProfileService;
-
     public CJ findByName(String name) {
         return cjRepository.findByName(name);
     }
 
-    public CJ createCJ(CJDto cj, Product product, UserProfile userProfile) {
+    public CJ createCJ(CJDto cj, Product product, Long userId) {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
                 .lastUpdated(new Date(System.currentTimeMillis()))
-                .authorId(userProfile.getId())
+                .authorId(userId)
                 .idProductExt(product.getId())
                 .bDraft(true)
                 .build();
@@ -111,16 +110,15 @@ public class CJService {
         return cjParametersViewRepository.findByCjId(id);
     }
 
-    public CJ getById(Long id) {
-        return cjRepository.findById(id).orElseGet(null);
+    public CJ getById(Long id) throws CJNotExistException {
+        return cjRepository.findById(id)
+                .orElseThrow(() -> new CJNotExistException("CJ with id " + id + " does not exist"));
     }
 
-    public CJFullDto getFullDtoById(Long id, String bearerToken) throws CJNotExistException {
+    public CJFullDto getFullDtoById(Long id) throws CJNotExistException {
         CJ cj = getById(id);
-        if (cj == null) throw new CJNotExistException("CJ with id " + id + " is not exist");
-        else userProfileService.validateAccessProduct(bearerToken, cj.getIdProductExt());
-        CJ result = cjRepository.findById(id).orElseGet(null);
-        CJFullDto cjFullDto = modelMapper.map(result, CJFullDto.class);
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
+        CJFullDto cjFullDto = modelMapper.map(cj, CJFullDto.class);
 
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjFullDto.getId());
         List<StepDto> stepDtos = cjStepList.stream().map(cjStep -> {
@@ -136,23 +134,17 @@ public class CJService {
         return cjFullDto;
     }
 
-    public List<CJ> getAll(String idProduct, String sample, String search, String token) {
-        String userLogin = Objects.requireNonNull(encodeJWT(token)).get(USER_LOGIN);
-        String email = JwtUtils.getEmail(token);
-        UserProfile user = userProfileService.findProfileByEmail(email);
-        Boolean designer = user.getUserRoles().stream().noneMatch(userRoles ->
-                        userRoles.getRole().getPermissions().stream().anyMatch(rolePermissions ->
-                                rolePermissions.getPermission().getAlias() == Permission.PermissionType.DESIGN_ARTIFACT));
+    public List<CJ> getAll(String idProduct, String sample, String search) {
         List<CJ> result;
         switch (sample) {
             case "PUBLIC":
                 result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
                 break;
             case "DRAFT":
-                result = getProducts(search, userLogin).stream().filter(CJ::isBDraft).collect(Collectors.toList());
+                result = getProducts(search).stream().filter(CJ::isBDraft).collect(Collectors.toList());
                 break;
             default:
-                result = getMyProductsDefault(search, userLogin);
+                result = getMyProductsDefault(search);
         }
         if (idProduct != null) {
             result = result.stream().filter(cj -> cj.getIdProductExt().equals(idProduct)).collect(Collectors.toList());
@@ -161,30 +153,23 @@ public class CJService {
         return result;
     }
 
-    private List<CJ> getProducts(String search, String userLogin) {
-        UserProfile user = userProfileService.findProfileByLogin(userLogin);
-        if (user.getUserRoles().stream().anyMatch(userRoles ->
-                userRoles.getRole().getPermissions().stream().anyMatch(rolePermissions ->
-                        rolePermissions.getPermission().getAlias() == Permission.PermissionType.DESIGN_ARTIFACT))) {
+    private List<CJ> getProducts(String search) {
+        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
-        List<String> userProducts = cjRepository.findProductIdsByUserLogin(userLogin);
-        return cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, userProducts);
+        return cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, getUserProducts());
     }
 
-    private List<CJ> getMyProductsDefault(String search, String userLogin) {
-        UserProfile user = userProfileService.findProfileByLogin(userLogin);
-        if (user.getUserRoles().stream().anyMatch(userRoles ->
-                userRoles.getRole().getPermissions().stream().anyMatch(rolePermissions ->
-                        rolePermissions.getPermission().getAlias() == Permission.PermissionType.DESIGN_ARTIFACT))) {
+    private List<CJ> getMyProductsDefault(String search) {
+        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
 
         List<CJ> userCJs;
         List<CJ> otherCJs;
-        List<String> userProducts = cjRepository.findProductIdsByUserLogin(userLogin);
-        userCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, userProducts);
-        otherCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(search, userProducts).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
+        userCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, getUserProducts());
+        otherCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(search, getUserProducts());
+        otherCJs = otherCJs.stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
         if (!otherCJs.isEmpty()) {
             userCJs.addAll(otherCJs);
         }

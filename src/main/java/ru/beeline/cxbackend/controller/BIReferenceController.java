@@ -24,25 +24,25 @@ public class BIReferenceController {
 
     @GetMapping("/feelings")
     @ApiOperation(value = "Получение значений справочника чувств", response = List.class)
-    public ResponseEntity<List<BIFeeling>> getBIFeelings(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BIFeeling>> getBIFeelings() {
         return ResponseEntity.ok(biReferenceService.getFeelings());
     }
 
     @GetMapping("/bi_status")
     @ApiOperation(value = "Получение значений справочника статусов", response = List.class)
-    public ResponseEntity<List<BIStatus>> getBIStatus(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BIStatus>> getBIStatus() {
         return ResponseEntity.ok(biReferenceService.getStatus());
     }
 
     @GetMapping("/channels")
     @ApiOperation(value = "Получение значений справочника каналов", response = List.class)
-    public ResponseEntity<List<BIChannel>> getBIChannels(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BIChannel>> getBIChannels() {
         return ResponseEntity.ok(biReferenceService.getChannels());
     }
 
     @GetMapping("/participants")
     @ApiOperation(value = "Получение значений справочника участников", response = List.class)
-    public ResponseEntity<List<BIParticipant>> getBIParticipants(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BIParticipant>> getBIParticipants() {
         return ResponseEntity.ok(biReferenceService.getParticipants());
     }
 

@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.Permission;
-import ru.beeline.cxbackend.domain.UserProfile;
 import ru.beeline.cxbackend.domain.bi.*;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -15,14 +13,19 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
+import ru.beeline.cxbackend.exception.BINotExistException;
 import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
-import ru.beeline.cxbackend.utils.jwt.JwtUtils;
 
 import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
+import static ru.beeline.cxbackend.utils.AccessToProduct.*;
 
 @Service
 public class BusinessInteractionService {
@@ -60,8 +63,6 @@ public class BusinessInteractionService {
     @Autowired
     private BIMapper biMapper;
 
-    @Autowired
-    private UserProfileService userProfileService;
 
     public List<BIDto> getBI(String idProduct) {
         List<BI> biList = businessInteractionRepository
@@ -69,7 +70,7 @@ public class BusinessInteractionService {
         return biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
     }
 
-    public List<BIDto> getBIByFilter(String text, String idProduct,BIStatus idStatus, Boolean isDraft) {
+    public List<BIDto> getBIByFilter(String text, String idProduct, BIStatus idStatus, Boolean isDraft) {
         Specification<BI> spec = Specification
                 .where(BiSpecification.hasProductId(idProduct))
                 .and(BiSpecification.hasNameContaining(text).or(BiSpecification.hasBINumberContaining(text)))
@@ -81,8 +82,10 @@ public class BusinessInteractionService {
 
     }
 
-    public BIDto getBIById(Long id) {
-        BI bi = businessInteractionRepository.findById(id).orElse(null);
+    public BIDto getBIById(Long id) throws BINotExistException {
+        BI bi = businessInteractionRepository.findById(id)
+                .orElseThrow(() -> new BINotExistException("BI with id " + id + " not found"));
+        validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
     }
 
@@ -96,10 +99,11 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public void editBIByStepId(Long idStep, BiByCjStepDto bi, String bearerToken) {
+    public void editBIByStepId(Long idStep, BiByCjStepDto bi) {
         Long cjId = cjStepRepository.findById(idStep).get().getCjId();
         String productId = cjRepository.findById(cjId).get().getIdProductExt();
-        userProfileService.validateAccessProduct(bearerToken, productId);
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(), productId);
 
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
@@ -169,8 +173,8 @@ public class BusinessInteractionService {
 
     //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
-    public BIDto createBI(BI bi, String bearerToken) {
-        userProfileService.validateAccessProduct(bearerToken, bi.getProductId());
+    public BIDto createBI(BI bi) {
+        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
 
         bi.setDtCreated(new Date((new java.util.Date()).getTime()));
         bi.setDtUpdated(new Date((new java.util.Date()).getTime()));
@@ -234,17 +238,14 @@ public class BusinessInteractionService {
 
     //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
-    public BIDto patchBI(Long id, BI bi, String bearerToken) {
-        String userEmail = JwtUtils.getEmail(bearerToken);
-        userProfileService.validateAccessProduct(bearerToken, bi.getProductId());
+    public BIDto patchBI(Long id, BI bi) {
+        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
 
-        Optional<BI> oldEntityOptional = businessInteractionRepository.findById(id);
-        if (!oldEntityOptional.isPresent()) {
-            throw new RuntimeException("BI не найдено");
-        }
-        validateUpdate(oldEntityOptional.get());
-        validateNewProduct(oldEntityOptional.get().getProductId(), userEmail);
-        BI oldEntity = oldEntityOptional.get();
+        BI oldEntity = businessInteractionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("BI не найдено"));
+
+        validateUpdate(oldEntity);
+        validateNewProduct(oldEntity.getProductId());
         if (bi.getFlowLink() != null) {
             biLinkRepository.deleteAllByIdBiAndType(oldEntity, new LinkEnum(1L, "Ссылка на флоу"));
             biLinkRepository.saveAll(bi.getFlowLink().stream().peek(doc -> {
@@ -287,13 +288,8 @@ public class BusinessInteractionService {
         return biMapper.biToBIDto(businessInteractionRepository.save(oldEntity));
     }
 
-    private void validateNewProduct(String idProduct, String email) {
-        UserProfile user = userProfileService.findProfileByEmail(email);
-        if (userProfileService.hasLinkProductIdWithProfileId(user.getId(), idProduct) == 0L &&
-                user.getUserRoles().stream().noneMatch(userRoles ->
-                        userRoles.getRole().getPermissions().stream().anyMatch(rolePermissions ->
-                                rolePermissions.getPermission().getAlias() == Permission.PermissionType.DESIGN_ARTIFACT)
-                )) {
+    private void validateNewProduct(String idProduct) {
+        if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
             throw new UnauthorizedException("FORBIDDEN");
         }
     }
@@ -309,13 +305,14 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public void deleteBIById(Long id, String bearerToken) {
-        Optional<BI> bi = businessInteractionRepository.findById(id);
-        validateUpdate(bi.get());
-        userProfileService.validateAccessProduct(bearerToken, bi.get().getProductId());
+    public void deleteBIById(Long id) {
+        BI bi = businessInteractionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("BI с id = " + id + " не найден"));
+        validateUpdate(bi);
+        validateAccessProduct(getUserProducts(), getUserPermissions(), bi.getProductId());
         biInCJStepRepository.deleteAllByBiId(id);
         biInCJStepRepository.flush();
-        biParticipantsRepository.deleteAllByBuisnessIteraction(bi.get());
+        biParticipantsRepository.deleteAllByBuisnessIteraction(bi);
         biParticipantsRepository.flush();
         businessInteractionRepository.deleteById(id);
     }
@@ -327,13 +324,14 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public void deleteBIByStepId(Long idStep, Long idBi, String bearerToken) {
-        Long cjId = cjStepRepository.findById(idStep).get().getCjId();
-        String productId = cjRepository.findById(cjId).get().getIdProductExt();
-        userProfileService.validateAccessProduct(bearerToken, productId);
+    public void deleteBIByStepId(Long idStep, Long idBi) {
+        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new RuntimeException("CJ шаг с id = " + idStep + " не найден")).getCjId();
+        String productId = cjRepository.findById(cjId).orElseThrow(() -> new RuntimeException("CJ с id = " + cjId + " не найден")).getIdProductExt();
+        validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
 
-        Optional<BI> bi = businessInteractionRepository.findById(idBi);
-        validateCj(bi.get());
+        Optional<BI> biOptional = businessInteractionRepository.findById(idBi);
+        BI bi = biOptional.orElseThrow(() -> new RuntimeException("BI с id = " + idBi + " не найден"));
+        validateCj(bi);
 
         BIInCJStep biInCjStep = biInCJStepRepository.findByCjStepIdAndBiId(idStep, idBi);
 
@@ -341,19 +339,17 @@ public class BusinessInteractionService {
         biRelationsRepository.flush();
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!existSteps.isEmpty()) {
-            existSteps = existSteps.stream()
+            existSteps.stream()
                     .filter(step -> step.getOrder() > biInCjStep.getOrder())
-                    .peek(step -> step.setOrder(step.getOrder() - 1))
-                    .collect(Collectors.toList());
+                    .forEach(step -> step.setOrder(step.getOrder() - 1));
         }
         biInCJStepRepository.saveAllAndFlush(existSteps);
         biInCJStepRepository.delete(biInCjStep);
-
     }
 
     private void validateUpdate(BI bi) {
-            validateBI(bi);
-            validateCj(bi);
+        validateBI(bi);
+        validateCj(bi);
     }
 
     private static void validateBI(BI bi) {
@@ -368,7 +364,7 @@ public class BusinessInteractionService {
         }
     }
 
-    public Optional<BIStatus> getStatusById(Long id){
+    public Optional<BIStatus> getStatusById(Long id) {
         return biStatusRepository.findById(id);
     }
 }

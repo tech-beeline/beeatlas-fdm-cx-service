@@ -23,33 +23,29 @@ public class BICJStepController {
 
     @GetMapping("/product/cj/step/{id}/bi")
     @ApiOperation(value = "Получение привяязанных BI по шагу CJ", response = List.class)
-    public ResponseEntity<List<BIDto>> getBIByCJStep(@RequestHeader("Authorization") String bearerToken,
-                                                     @PathVariable(value = "id") Long idStep) {
+    public ResponseEntity<List<BIDto>> getBIByCJStep(@PathVariable(value = "id") Long idStep) {
         return ResponseEntity.ok(businessInteractionService.getBIByStepId(idStep));
     }
 
     @PutMapping("/product/cj/step/{id}/bi")
     @ApiOperation(value = "Привязка BI к шагу CJ")
-    public ResponseEntity editBIByCJStep(@RequestHeader("Authorization") String bearerToken,
-                                         @PathVariable(value = "id") Long idStep,
+    public ResponseEntity editBIByCJStep(@PathVariable(value = "id") Long idStep,
                                          @RequestBody BiByCjStepDto bi) {
-        businessInteractionService.editBIByStepId(idStep, bi, bearerToken);
+        businessInteractionService.editBIByStepId(idStep, bi);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/product/cj/step/bi/{id}")
     @ApiOperation(value = "Получение коллекции CJ по используемому в них BI", response = List.class)
-    public ResponseEntity<List<CJ>> getCJsByBiId(@RequestHeader("Authorization") String bearerToken,
-                                                 @PathVariable(value = "id") Long id) {
+    public ResponseEntity<List<CJ>> getCJsByBiId(@PathVariable(value = "id") Long id) {
         return ResponseEntity.ok(businessInteractionService.getCJByBIID(id));
     }
 
     @DeleteMapping("/product/step/{id_step}/bi/{id}")
     @ApiOperation(value = "Удаление BI из шага CJ")
-    public ResponseEntity DeleteBIByCJStep(@RequestHeader("Authorization") String bearerToken,
-                                           @PathVariable(value = "id_step") Long idStep,
+    public ResponseEntity DeleteBIByCJStep(@PathVariable(value = "id_step") Long idStep,
                                            @PathVariable(value = "id") Long idBi) {
-        businessInteractionService.deleteBIByStepId(idStep, idBi, bearerToken);
+        businessInteractionService.deleteBIByStepId(idStep, idBi);
         return ResponseEntity.ok().build();
     }
 }

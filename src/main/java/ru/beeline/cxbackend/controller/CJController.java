@@ -10,20 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.Product;
-import ru.beeline.cxbackend.domain.UserProfile;
-import ru.beeline.cxbackend.domain.UserRoles;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.dto.PermissionDto;
 import ru.beeline.cxbackend.exception.CJNotExistException;
-import ru.beeline.cxbackend.service.*;
-import ru.beeline.cxbackend.utils.jwt.JwtUtils;
+import ru.beeline.cxbackend.exception.UnauthorizedException;
+import ru.beeline.cxbackend.service.CJService;
+import ru.beeline.cxbackend.service.ProductService;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import static ru.beeline.cxbackend.controller.RequestContext.*;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.Constant.*;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
@@ -37,268 +36,176 @@ public class CJController {
     private CJService cjService;
 
     @Autowired
-    private UserProfileService userProfileService;
-
-    @Autowired
-    private PermissionService permissionService;
-
-    @Autowired
-    private RoleService roleService;
-
-    @Autowired
     private ProductService productService;
 
 
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity createCJ(@RequestHeader("Authorization") String bearerToken, @PathVariable String productId, @RequestBody CJDto cj) {
+    public ResponseEntity createCJ(@PathVariable String productId, @RequestBody CJDto cj) {
         String errors = "";
 
-        String email = JwtUtils.getEmail(bearerToken);
-        if (email != null) {
-            UserProfile user = userProfileService.findProfileByEmail(email);
-            if (user == null) {
-                errors += "Создавать CJ могут только авторизованные пользователи";
-                logger.error("401 " + errors);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
-            } else {
-                userProfileService.validateAccessProduct(bearerToken, productId);
-                if (cjService.findByName(cj.getName()) != null) {
-                    errors += "Указанное имя CJ уже существует";
-                    logger.error("422 " + errors);
-                    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
-                }
-                Set<Permission> rPermissions = new HashSet<>();
-                for (UserRoles role : user.getUserRoles()) {
-                    List<Permission> rolePermissions = roleService.getPermissions(role.getId());
-                    if (!rolePermissions.isEmpty()) rPermissions.addAll(rolePermissions);
-                }
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(),
+                productId);
+        if (cjService.findByName(cj.getName()) != null) {
+            errors += "Указанное имя CJ уже существует";
+            logger.error("422 " + errors);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
+        }
 
-                List<Permission.PermissionType> permissions = permissionService
-                        .getUserPermissions(rPermissions)
-                        .stream().map(PermissionDto::getAlias).collect(Collectors.toList());
-                if (permissions.contains(Permission.PermissionType.CREATE_ARTIFACT)) {
-                    if (cj.getName().trim().isEmpty()) {
-                        errors += "Поле name не может быть пустым.\n";
-                    }
-                    if (cj.getUserPortrait().trim().isEmpty()) {
-                        errors += "Поле user_portrait не может быть пустым.\n";
-                    }
+        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+            if (cj.getName().trim().isEmpty()) {
+                errors += "Поле name не может быть пустым.\n";
+            }
+            if (cj.getUserPortrait().trim().isEmpty()) {
+                errors += "Поле user_portrait не может быть пустым.\n";
+            }
 
-                    if (errors.isEmpty()) {
-                        Product product = productService.findProductById(productId);
-                        if (product != null) {
-                            CJ newCJ = cjService.createCJ(cj, product, user);
-                            logger.info("New cj created: " + newCJ);
-                            return ResponseEntity.ok(newCJ);
-                        } else {
-                            errors += "Продукт с id = " + productId + " не найден";
-                            logger.error("404 " + errors);
-                            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errors);
-                        }
-                    } else {
-                        logger.error("409 " + errors);
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(errors);
-                    }
+            if (errors.isEmpty()) {
+                Product product = productService.findProductById(productId);
+                if (product != null) {
+                    CJ newCJ = cjService.createCJ(cj, product, (Long) getHeaders().get(USER_ID_HEADER));
+                    logger.info("New cj created: " + newCJ);
+                    return ResponseEntity.ok(newCJ);
                 } else {
-                    errors += "Недостаточно прав для создания CJ";
-                    logger.error("403 " + errors);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
+                    errors += "Продукт с id = " + productId + " не найден";
+                    logger.error("404 " + errors);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errors);
                 }
+            } else {
+                logger.error("409 " + errors);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(errors);
             }
         } else {
-            errors += "Создавать CJ могут только авторизованные пользователи";
-            logger.error("401 " + errors);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
+            errors += "Недостаточно прав для создания CJ";
+            logger.error("403 " + errors);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
         }
 
     }
 
+
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity editCJById(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) throws CJNotExistException {
         String errors = "";
-
-        String email = JwtUtils.getEmail(bearerToken);
-        if (email != null) {
-            UserProfile user = userProfileService.findProfileByEmail(email);
-            if (user == null) {
-                errors += "Редактировать CJ могут только авторизованные пользователи";
-                logger.error("401 " + errors);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
-            } else {
-                CJ currentCJ = cjService.getById(id);
-                if (currentCJ == null) {
-                    String message = "CJ с id = " + id + " не найден";
-                    logger.error("404 " + message);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-                }
-                userProfileService.validateAccessProduct(bearerToken, currentCJ.getIdProductExt());
-                Set<Permission> rPermissions = new HashSet<>();
-                for (UserRoles role : user.getUserRoles()) {
-                    List<Permission> rolePermissions = roleService.getPermissions(role.getId());
-                    if (!rolePermissions.isEmpty()) rPermissions.addAll(rolePermissions);
-                }
-                List<Permission.PermissionType> permissions = permissionService
-                        .getUserPermissions(rPermissions)
-                        .stream().map(PermissionDto::getAlias).collect(Collectors.toList());
-                if (permissions.contains(Permission.PermissionType.EDIT_ARTIFACT)) {
-                    CJ cjByName = cjService.findByName(cjDto.getName());
-                    if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
-                        errors += "Указанное имя CJ уже существует";
-                        logger.error("422 " + errors);
-                        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
-                    }
-
-                    if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                        return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
-                    } else {
-                        String message = "CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.";
-                        logger.error("409 " + message);
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
-                    }
-
-
-                } else {
-                    errors += "Недостаточно прав для редактирования CJ";
-                    logger.error("403 " + errors);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
-                }
+        CJ currentCJ = cjService.getById(id);
+        if (currentCJ == null) {
+            String message = "CJ с id = " + id + " не найден";
+            logger.error("404 " + message);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+        }
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(),
+                currentCJ.getIdProductExt());
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+            CJ cjByName = cjService.findByName(cjDto.getName());
+            if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
+                errors += "Указанное имя CJ уже существует";
+                logger.error("422 " + errors);
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
             }
 
+            if (currentCJ.isBDraft() || cjDto.getBDraft()) {
+                return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
+            } else {
+                String message = "CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.";
+                logger.error("409 " + message);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
+            }
+
+
         } else {
-            errors += "Редактировать CJ могут только авторизованные пользователи";
-            logger.error("401 " + errors);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
+            errors += "Недостаточно прав для редактирования CJ";
+            logger.error("403 " + errors);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
         }
+
     }
 
     @PatchMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity updateCJById(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id, @RequestBody CJDto cjDto) {
-
+    public ResponseEntity updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) throws CJNotExistException {
         String errors = "";
-
-        String email = JwtUtils.getEmail(bearerToken);
-        if (email != null) {
-            UserProfile user = userProfileService.findProfileByEmail(email);
-            if (user == null) {
-                errors += "Редактировать CJ могут только авторизованные пользователи";
-                logger.error("401 " + errors);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
-            } else {
-                CJ currentCJ = cjService.getById(id);
-                if (currentCJ == null) {
-                    String message = "CJ с id = " + id + " не найден";
-                    logger.error("404 " + message);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-                }
-                userProfileService.validateAccessProduct(bearerToken, currentCJ.getIdProductExt());
-                CJ cjByName = cjService.findByName(cjDto.getName());
-                if (cjDto.getName() != null && cjByName != null && !cjByName.getId().equals(id)) {
-                    errors += "Указанное имя CJ уже существует";
-                    logger.error("422 " + errors);
-                    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
-                }
-                Set<Permission> rPermissions = new HashSet<>();
-                for (UserRoles role : user.getUserRoles()) {
-                    List<Permission> rolePermissions = roleService.getPermissions(role.getId());
-                    if (!rolePermissions.isEmpty()) rPermissions.addAll(rolePermissions);
-                }
-
-                List<Permission.PermissionType> permissions = permissionService
-                        .getUserPermissions(rPermissions)
-                        .stream().map(PermissionDto::getAlias).collect(Collectors.toList());
-                if (permissions.contains(Permission.PermissionType.EDIT_ARTIFACT)) {
-                    if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                        return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
-                    } else {
-                        String message = "CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.";
-                        logger.error("409 " + message);
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
-                    }
-                } else {
-                    errors += "Недостаточно прав для редактирования CJ";
-                    logger.error("403 " + errors);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
-                }
-            }
-
-        } else {
-            errors += "Редактировать CJ могут только авторизованные пользователи";
-            logger.error("401 " + errors);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
+        CJ currentCJ = cjService.getById(id);
+        if (currentCJ == null) {
+            String message = "CJ с id = " + id + " не найден";
+            logger.error("404 " + message);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
         }
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(),
+                currentCJ.getIdProductExt());
+        CJ cjByName = cjService.findByName(cjDto.getName());
+        if (cjDto.getName() != null && cjByName != null && !cjByName.getId().equals(id)) {
+            errors += "Указанное имя CJ уже существует";
+            logger.error("422 " + errors);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
+        }
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+            if (currentCJ.isBDraft() || cjDto.getBDraft()) {
+                return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
+            } else {
+                String message = "CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.";
+                logger.error("409 " + message);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
+            }
+        } else {
+            errors += "Недостаточно прав для редактирования CJ";
+            logger.error("403 " + errors);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
+        }
+
     }
 
     @DeleteMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Удаление CJ")
-    public ResponseEntity deleteCJById(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id) {
+    public ResponseEntity deleteCJById(@PathVariable Long id) throws CJNotExistException {
         String errors = "";
+        CJ currentCJ = cjService.getById(id);
+        if (currentCJ == null) {
+            String message = "CJ с id = " + id + " не найден";
+            logger.error("404 " + message);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
 
-        String email = JwtUtils.getEmail(bearerToken);
-        if (email != null) {
-            UserProfile user = userProfileService.findProfileByEmail(email);
-            if (user == null) {
-                errors += "Удалять CJ могут только авторизованные пользователи";
-                logger.error("401 " + errors);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
+        }
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(),
+                currentCJ.getIdProductExt());
+        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
+            if (currentCJ.isBDraft()) {
+                cjService.deleteCJbyId(currentCJ);
+                return ResponseEntity.status(HttpStatus.OK).build();
             } else {
-                CJ currentCJ = cjService.getById(id);
-                if (currentCJ == null) {
-                    String message = "CJ с id = " + id + " не найден";
-                    logger.error("404 " + message);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-
-                }
-                userProfileService.validateAccessProduct(bearerToken, currentCJ.getIdProductExt());
-                Set<Permission> rPermissions = new HashSet<>();
-                for (UserRoles role : user.getUserRoles()) {
-                    List<Permission> rolePermissions = roleService.getPermissions(role.getId());
-                    if (!rolePermissions.isEmpty()) rPermissions.addAll(rolePermissions);
-                }
-
-                List<Permission.PermissionType> permissions = permissionService
-                        .getUserPermissions(rPermissions)
-                        .stream().map(PermissionDto::getAlias).collect(Collectors.toList());
-                if (permissions.contains(Permission.PermissionType.DELETE_ARTIFACT)) {
-                    if (currentCJ.isBDraft()) {
-                        cjService.deleteCJbyId(currentCJ);
-                        return ResponseEntity.status(HttpStatus.OK).build();
-                    } else {
-                        String message = "CJ с id = " + id + " находится в статусе Опубликован. Удаление невозможно.";
-                        logger.error("409 " + message);
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
-                    }
-                } else {
-                    errors += "Недостаточно прав для удаления CJ";
-                    logger.error("403 " + errors);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
-                }
+                String message = "CJ с id = " + id + " находится в статусе Опубликован. Удаление невозможно.";
+                logger.error("409 " + message);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
             }
         } else {
-            errors += "Удалять CJ могут только авторизованные пользователи";
-            logger.error("401 " + errors);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errors);
+            errors += "Недостаточно прав для удаления CJ";
+            logger.error("403 " + errors);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
         }
+
     }
 
     @GetMapping("/api/cx/v1/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id", response = List.class)
-    public CJFullDto getCJById(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id) throws CJNotExistException {
-        return cjService.getFullDtoById(id, bearerToken);
+    public CJFullDto getCJById(@PathVariable Long id) throws CJNotExistException {
+        return cjService.getFullDtoById(id);
     }
 
     @GetMapping("/api/cx/v1/product/cj")
     @ApiOperation(value = "Получение списка CJ", response = List.class)
-    public List<CJ> getCJ(@RequestHeader("Authorization") String bearerToken,
-                          @RequestParam(required = false) String id_product,
+    public List<CJ> getCJ(@RequestParam(required = false) String id_product,
                           @RequestParam(required = false, defaultValue = "ALL") String sample,
                           @RequestParam(required = false, defaultValue = "") String search) {
-        return cjService.getAll(id_product, sample, search, bearerToken);
+        return cjService.getAll(id_product, sample, search);
     }
+
+
 }
