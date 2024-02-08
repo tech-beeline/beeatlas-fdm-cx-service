@@ -14,7 +14,6 @@ import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.exception.CJNotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.ProductService;
 

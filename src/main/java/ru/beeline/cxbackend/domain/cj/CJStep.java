@@ -11,7 +11,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "cjsteps")
+@Table(name = "cj_steps")
 public class CJStep {
 
     @Id

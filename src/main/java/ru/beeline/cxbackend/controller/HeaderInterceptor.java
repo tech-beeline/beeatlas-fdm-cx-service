@@ -16,7 +16,7 @@ import static ru.beeline.cxbackend.utils.Constant.*;
 public class HeaderInterceptor implements HandlerInterceptor {
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
             Map<String, Object> headers = new HashMap<>();
             headers.put(USER_ID_HEADER, request.getHeader(USER_ID_HEADER));
