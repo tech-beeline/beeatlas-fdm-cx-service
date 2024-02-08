@@ -14,7 +14,6 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
 import ru.beeline.cxbackend.exception.CJNotExistException;
 import ru.beeline.cxbackend.exception.StepNotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.service.*;
 
 import java.util.List;
