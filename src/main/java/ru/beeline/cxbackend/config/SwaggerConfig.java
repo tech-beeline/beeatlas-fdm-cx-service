@@ -19,7 +19,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(getApiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("ru.beeline.techradar.controller"))
+                .apis(RequestHandlerSelectors.basePackage("ru.beeline.cxbackend.controller"))
                 .paths(PathSelectors.any())
                 .build();
     }
