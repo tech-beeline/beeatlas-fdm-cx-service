@@ -7,10 +7,7 @@ import ru.beeline.cxbackend.exception.UnauthorizedException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.utils.Constant.*;
@@ -23,6 +20,12 @@ public class HeaderInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
             Map<String, Object> headers = new HashMap<>();
+            Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames.hasMoreElements()) {
+                String headerName = headerNames.nextElement();
+                String headerValue = request.getHeader(headerName);
+                System.out.println(headerName + ": " + headerValue);
+            }
             logger.info(USER_ID_HEADER + request.getHeader(USER_ID_HEADER));
             headers.put(USER_ID_HEADER, request.getHeader(USER_ID_HEADER));
             logger.info(USER_PERMISSION_HEADER + toList(request.getHeader(USER_PERMISSION_HEADER)));
