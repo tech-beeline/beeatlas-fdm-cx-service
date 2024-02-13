@@ -11,7 +11,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "linkenum")
+@Table(name = "link_enum")
 public class LinkEnum {
 
     @Id

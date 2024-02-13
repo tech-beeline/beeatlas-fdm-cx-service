@@ -14,15 +14,15 @@ public interface BusinessInteractionRepository extends
         JpaRepository<BI, Long>,
         JpaSpecificationExecutor<BI> {
 
-    @Query(value = "SELECT COUNT(*) FROM cj " +
-            "JOIN cjsteps ON cj.id = cjsteps.id_cj " +
-            "JOIN biincjstep ON cjsteps.id = biincjstep.id_cj_step " +
-            "WHERE biincjstep.id_bi = :id AND cj.b_draft = false", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM cx.cj " +
+            "JOIN cx.cj_steps ON cj.id = cx.cj_steps.id_cj " +
+            "JOIN cx.bi_in_cj_step ON cx.cj_steps.id = cx.bi_in_cj_step.id_cj_step " +
+            "WHERE cx.bi_in_cj_step.id_bi = :id AND cx.cj.b_draft = false", nativeQuery = true)
     Long countByBiIdAndDraftFalse(@Param("id") Long id);
 
-    @Query(value = "SELECT DISTINCT * FROM buisnessiteraction " +
-            "JOIN biincjstep ON buisnessiteraction.id = biincjstep.id_bi " +
-            "WHERE biincjstep.id_bi in :ids and biincjstep.id_cj_step = :cjStepId " +
-            "ORDER BY biincjstep.order", nativeQuery = true)
+    @Query(value = "SELECT DISTINCT * FROM cx.business_iteraction " +
+            "JOIN cx.bi_in_cj_step ON cx.business_iteraction.id = cx.bi_in_cj_step.id_bi " +
+            "WHERE cx.bi_in_cj_step.id_bi in :ids and cx.bi_in_cj_step.id_cj_step = :cjStepId " +
+            "ORDER BY cx.bi_in_cj_step.order", nativeQuery = true)
     List<BI> findAllByIdIn(Long cjStepId, List<Long> ids);
 }

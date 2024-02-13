@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "bichannelsenum")
+@Table(name = "bi_channels_enum")
 public class BIChannelEnum {
 
     @Id

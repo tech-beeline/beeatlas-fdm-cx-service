@@ -22,9 +22,9 @@ public interface BIInCJStepRepository extends JpaRepository<BIInCJStep, Long> {
 
     BIInCJStep findByCjStepIdAndBiId(Long cjStepId, Long biId);
 
-    @Query(value = "SELECT COUNT(*) FROM cj " +
-            "JOIN cjsteps ON cj.id = cjsteps.id_cj " +
-            "WHERE cjsteps.id = :id AND cj.b_draft = false", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM cx.cj " +
+            "JOIN cx.cj_steps ON cx.cj.id = cx.cj_steps.id_cj " +
+            "WHERE cx.cj_steps.id = :id AND cx.cj.b_draft = false", nativeQuery = true)
     Long countByCjStepIdAndSJisDraftFalse(@Param("id") Long id);
 
 }

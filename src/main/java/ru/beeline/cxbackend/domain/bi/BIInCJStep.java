@@ -11,7 +11,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "biincjstep")
+@Table(name = "bi_in_cj_step")
 public class BIInCJStep {
 
     @Id

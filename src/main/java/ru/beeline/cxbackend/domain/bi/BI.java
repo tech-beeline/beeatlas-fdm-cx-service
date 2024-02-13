@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "buisnessiteraction")
+@Table(name = "business_iteraction")
 public class BI {
 
     @Id
@@ -81,7 +81,7 @@ public class BI {
 
     @ManyToMany
     @JoinTable(
-            name = "bichannel",
+            name = "bi_channel",
             joinColumns = @JoinColumn(name = "id_bi"),
             inverseJoinColumns = @JoinColumn(name = "id_channel")
     )

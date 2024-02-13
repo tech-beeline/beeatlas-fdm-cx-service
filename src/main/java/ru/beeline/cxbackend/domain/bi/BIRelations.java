@@ -13,7 +13,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "birelations")
+@Table(name = "bi_relations")
 public class BIRelations {
 
     @Id

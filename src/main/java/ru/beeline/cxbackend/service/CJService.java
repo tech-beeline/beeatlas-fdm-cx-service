@@ -5,7 +5,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.Product;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
@@ -16,7 +15,6 @@ import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.StepDto;
 import ru.beeline.cxbackend.exception.CJNotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -124,8 +122,10 @@ public class CJService {
         List<StepDto> stepDtos = cjStepList.stream().map(cjStep -> {
                     StepDto stepDto = modelMapper.map(cjStep, StepDto.class);
                     List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDto.getId());
-                    List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
-                    stepDto.setBi(biMapper.biToBIDto(biList.stream().distinct().collect(Collectors.toList())));
+                    if (!biInCJStepList.isEmpty()) {
+                        List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
+                        stepDto.setBi(biMapper.biToBIDto(biList.stream().distinct().collect(Collectors.toList())));
+                    }
                     return stepDto;
                 }).sorted(Comparator.comparing(StepDto::getOrder))
                 .collect(Collectors.toList());

@@ -12,7 +12,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "bilink")
+@Table(name = "bi_link")
 public class BILink {
 
     @Id
@@ -21,7 +21,7 @@ public class BILink {
     @JsonIgnore
     private Long id;
 
-    @Column(name = "\"URL\"")
+    @Column(name = "url")
     private String url;
 
     private String descr;

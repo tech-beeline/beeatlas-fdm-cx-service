@@ -11,7 +11,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "BIFeelingsEnum")
+@Table(name = "bi_feelings_enum")
 public class BIFeeling {
 
     @Id
