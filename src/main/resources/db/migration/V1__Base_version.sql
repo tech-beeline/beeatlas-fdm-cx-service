@@ -4,52 +4,6 @@
 /*  DBMS       : PostgreSQL 						*/
 /* ---------------------------------------------------- */
 
-/* Drop Tables */
-
-DROP TABLE IF EXISTS bi_channel CASCADE
-;
-
-DROP TABLE IF EXISTS bi_channels_enum CASCADE
-;
-
-DROP TABLE IF EXISTS bi_feelings_enum CASCADE
-;
-
-DROP TABLE IF EXISTS bi_in_cj_step CASCADE
-;
-
-DROP TABLE IF EXISTS bi_link CASCADE
-;
-
-DROP TABLE IF EXISTS bi_participant_enum CASCADE
-;
-
-DROP TABLE IF EXISTS bi_participants CASCADE
-;
-
-DROP TABLE IF EXISTS bi_relations CASCADE
-;
-
-DROP TABLE IF EXISTS bi_status CASCADE
-;
-
-DROP TABLE IF EXISTS business_iteraction CASCADE
-;
-
-DROP TABLE IF EXISTS cj CASCADE
-;
-
-DROP TABLE IF EXISTS cj_steps CASCADE
-;
-
-DROP TABLE IF EXISTS link_enum CASCADE
-;
-
-/* Drop Sequences */
-
-DROP SEQUENCE  IF EXISTS  bi_id_seq  CASCADE
-;
-
 /* Create Sequences */
 
 CREATE SEQUENCE bi_id_seq
