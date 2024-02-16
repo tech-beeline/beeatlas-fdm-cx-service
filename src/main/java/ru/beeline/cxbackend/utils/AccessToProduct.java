@@ -11,16 +11,16 @@ import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIF
 
 public class AccessToProduct {
 
-    public static void validateAccessProduct(List<String> permissions, List<String> product, String productId) {
+    public static void validateAccessProduct(List<String> permissions, List<Long> product, Long productId) {
         if (!product.contains(productId) && !permissions.contains(Permission.PermissionType.DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }
 
-    public static void validateAccessProduct(List<String> permissions, List<String> product, BI bi) {
+    public static void validateAccessProduct(List<String> permissions, List<Long> product, BI bi) {
         if (bi.isDraft() && !product.contains(bi.getProductId()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }
-    public static void validateAccessProduct(List<String> permissions, List<String> product, CJ cj) {
+    public static void validateAccessProduct(List<String> permissions, List<Long> product, CJ cj) {
         if (cj.isBDraft() && !product.contains(cj.getIdProductExt()) && !permissions.contains(Permission.PermissionType.DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }

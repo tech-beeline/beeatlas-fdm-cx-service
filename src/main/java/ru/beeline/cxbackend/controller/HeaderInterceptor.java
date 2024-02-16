@@ -21,6 +21,7 @@ public class HeaderInterceptor implements HandlerInterceptor {
         try {
             if(request.getRequestURI().contains("/actuator/prometheus")
                     || request.getRequestURI().contains("/swagger")
+                    || request.getRequestURI().contains("/error")
                     || request.getRequestURI().contains("/api-docs"))
             {
                 return true;
@@ -51,9 +52,10 @@ public class HeaderInterceptor implements HandlerInterceptor {
 
     private List<String> toList(String value) {
         return Arrays.stream(value.split(","))
-                .map(str -> str.substring(1))
-                .map(str -> str.replace("\"",""))
-                .map(str -> str.substring(0, str.length() - 1))
+                .map(str -> str.substring(0))
+                .map(str -> str.replaceAll("\"",""))
+                .map(str -> str.replaceAll("]",""))
+                .map(str -> str.replaceAll("\\[",""))
                 .map(String::trim)
                 .collect(Collectors.toList());
     }

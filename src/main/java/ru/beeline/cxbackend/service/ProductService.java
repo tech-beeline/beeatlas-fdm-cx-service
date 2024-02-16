@@ -7,7 +7,7 @@ import ru.beeline.cxbackend.domain.Product;
 public class ProductService {
 
 
-    public Product findProductById(String productId) {
+    public Product findProductById(Long productId) {
         return null;
     }
 }

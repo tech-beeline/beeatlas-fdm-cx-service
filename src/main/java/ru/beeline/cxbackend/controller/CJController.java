@@ -25,7 +25,7 @@ import static ru.beeline.cxbackend.utils.Constant.*;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping
+@RequestMapping(produces = "text/plain;charset=UTF-8")
 @Api(value = "CX API", tags = "CJ")
 public class CJController {
 
@@ -41,7 +41,7 @@ public class CJController {
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity createCJ(@PathVariable String productId, @RequestBody CJDto cj) {
+    public ResponseEntity createCJ(@PathVariable Long productId, @RequestBody CJDto cj) {
         String errors = "";
 
         validateAccessProduct(getUserPermissions(),

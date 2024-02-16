@@ -29,7 +29,7 @@ public class BIParticipants {
     @ManyToOne
     @JoinColumn(name = "id_type")
     @JsonIgnore
-    private BIParticipant participantEnum;
+    private BIParticipant   participantEnum;
 
     @ManyToOne
     @JoinColumn(name = "id_bi")

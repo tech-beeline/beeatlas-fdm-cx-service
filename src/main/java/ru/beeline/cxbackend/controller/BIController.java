@@ -16,7 +16,7 @@ import java.util.List;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping("/api/cx/v1/library/business-interactions")
+@RequestMapping(value = "/api/cx/v1/library/business-interactions", produces = "text/plain;charset=UTF-8")
 @Api(value = "CX API", tags = "BI Library")
 public class BIController {
 
@@ -25,14 +25,14 @@ public class BIController {
 
     @GetMapping
     @ApiOperation(value = "Получение BI по id продукта", response = List.class)
-    public ResponseEntity<List<BIDto>> getBI(@RequestParam(value = "id_product", required = false) String idProduct) {
+    public ResponseEntity<List<BIDto>> getBI(@RequestParam(value = "id_product", required = false) Long idProduct) {
         return ResponseEntity.ok(businessInteractionService.getBI(idProduct));
     }
 
     @GetMapping("/find")
     @ApiOperation(value = "Получение BI продукта по фильтру", response = List.class)
     public ResponseEntity<List<BIDto>> getBIByFilter(@RequestParam(required = false) String text,
-                                                     @RequestParam(value = "id_product", required = false) String idProduct,
+                                                     @RequestParam(value = "id_product", required = false) Long idProduct,
                                                      @RequestParam(value = "id_status", required = false) Long idStatus,
                                                      @RequestParam(value = "draft", required = false) Boolean isDraft) throws StatusNotFoundException {
         if (idStatus != null) {

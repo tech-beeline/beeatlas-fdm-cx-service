@@ -28,7 +28,7 @@ public class BIDto {
     private String touchPoints;
     private BIFeelingDto feelings;
     private String eaGuid;
-    private String productId;
+    private Long productId;
     private String ownerRole;
     private BIStatusDto status;
     private String clientScenario;

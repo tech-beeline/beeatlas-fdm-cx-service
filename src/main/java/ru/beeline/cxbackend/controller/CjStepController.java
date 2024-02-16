@@ -24,7 +24,7 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping
+@RequestMapping(produces = "text/plain;charset=UTF-8")
 @Api(value = "CX API", tags = "CJ Step")
 public class CjStepController {
 
@@ -104,7 +104,7 @@ public class CjStepController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
         }
 
-        String productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
+        Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
                 productId);
@@ -133,7 +133,7 @@ public class CjStepController {
             logger.error("404 " + message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
         }
-        String productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
+        Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), productId);
 

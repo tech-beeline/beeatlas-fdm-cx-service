@@ -21,11 +21,7 @@ public class RequestContext {
     public static List<String> getUserPermissions() {
         return (List<String>) getHeaders().get(USER_PERMISSION_HEADER);
     }
-    public static List<String> getUserProducts() {
-        return (List<String>) getHeaders().get(USER_PRODUCTS_IDS_HEADER);
-    }
-
-    public static void clear() {
-        headersThreadLocal.remove();
+    public static List<Long> getUserProducts() {
+        return (List<Long>) getHeaders().get(USER_PRODUCTS_IDS_HEADER);
     }
 }

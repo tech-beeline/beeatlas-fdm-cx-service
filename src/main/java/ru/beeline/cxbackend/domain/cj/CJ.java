@@ -41,5 +41,5 @@ public class CJ {
 
     @Column(name = "id_product_ext")
     @JsonProperty("id_product")
-    private String idProductExt;
+    private Long idProductExt;
 }

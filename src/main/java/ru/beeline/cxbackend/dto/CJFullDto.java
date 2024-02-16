@@ -29,7 +29,7 @@ public class CJFullDto {
     private Long authorId;
 
     @JsonProperty("id_product")
-    private String idProductExt;
+    private Long idProductExt;
 
     private List<StepDto> steps;
 

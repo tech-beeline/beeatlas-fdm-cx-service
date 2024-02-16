@@ -60,7 +60,7 @@ public class BI {
     private String eaGuid;
 
     @Column(name = "id_product_ext")
-    private String productId;
+    private Long productId;
 
     @Column(name = "owner_role")
     private String ownerRole;

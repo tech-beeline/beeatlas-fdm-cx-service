@@ -18,7 +18,7 @@ public class Product {
 
     @Id
     @Column(name = "id_product_ext")
-    private String id;
+    private Long id;
 
     private String name;
 

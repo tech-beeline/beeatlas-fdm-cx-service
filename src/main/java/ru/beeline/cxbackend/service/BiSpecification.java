@@ -8,7 +8,7 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 @Service
 public class BiSpecification {
 
-    public static Specification<BI> hasProductId(String productId) {
+    public static Specification<BI> hasProductId(Long productId) {
         return (root, query, cb) -> {
             if (productId == null) {
                 return cb.isTrue(cb.literal(true));

@@ -10,11 +10,11 @@ import java.util.List;
 @Repository
 public interface CJRepository extends JpaRepository<CJ, Long> {
 
-    List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIn(String search, List<String> idProducts);
+    List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIn(String search, List<Long> idProducts);
 
     List<CJ> findAllByNameContainsIgnoreCase(String search);
 
-    List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(String search, List<String> idProducts);
+    List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(String search, List<Long> idProducts);
 
     List<CJ> findAllByIdIn(List<Long> ids);
 
