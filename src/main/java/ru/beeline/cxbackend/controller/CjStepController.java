@@ -24,7 +24,7 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping(produces = "text/plain;charset=UTF-8")
+@RequestMapping
 @Api(value = "CX API", tags = "CJ Step")
 public class CjStepController {
 

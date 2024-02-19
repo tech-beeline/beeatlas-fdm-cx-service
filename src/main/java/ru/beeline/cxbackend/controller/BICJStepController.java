@@ -14,7 +14,7 @@ import java.util.List;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping(value = "/api/cx/v1", produces = "text/plain;charset=UTF-8")
+@RequestMapping(value = "/api/cx/v1")
 
 @Api(value = "BI by CjStep API", tags = "BI by CjStep")
 public class BICJStepController {

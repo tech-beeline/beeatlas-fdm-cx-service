@@ -15,7 +15,7 @@ import java.util.List;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping(value = "/api/cx/v1/references", produces = "text/plain;charset=UTF-8")
+@RequestMapping(value = "/api/cx/v1/references")
 @Api(value = "CX API", tags = "BI References")
 public class BIReferenceController {
 

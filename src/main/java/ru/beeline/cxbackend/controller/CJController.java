@@ -25,7 +25,7 @@ import static ru.beeline.cxbackend.utils.Constant.*;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping(produces = "text/plain;charset=UTF-8")
+@RequestMapping
 @Api(value = "CX API", tags = "CJ")
 public class CJController {
 
