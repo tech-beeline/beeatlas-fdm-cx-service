@@ -21,7 +21,7 @@ public class AccessToProduct {
             throw new UnauthorizedException("FORBIDDEN");
     }
     public static void validateAccessProduct(List<String> permissions, List<Long> product, CJ cj) {
-        if (cj.isBDraft() && !product.contains(cj.getIdProductExt()) && !permissions.contains(Permission.PermissionType.DESIGN_ARTIFACT.toString()))
+        if (cj.isBDraft() && !product.contains(cj.getIdProductExt()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }
 }
