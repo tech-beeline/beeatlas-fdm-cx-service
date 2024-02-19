@@ -53,7 +53,7 @@ public class CJController {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
         }
 
-        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTEFACT.toString())) {
             if (cj.getName().trim().isEmpty()) {
                 errors += "Поле name не может быть пустым.\n";
             }
@@ -62,16 +62,10 @@ public class CJController {
             }
 
             if (errors.isEmpty()) {
-                Product product = productService.findProductById(productId);
-                if (product != null) {
-                    CJ newCJ = cjService.createCJ(cj, product, (Long) getHeaders().get(USER_ID_HEADER));
+                    CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
                     logger.info("New cj created: " + newCJ);
                     return ResponseEntity.ok(newCJ);
-                } else {
-                    errors += "Продукт с id = " + productId + " не найден";
-                    logger.error("404 " + errors);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errors);
-                }
+
             } else {
                 logger.error("409 " + errors);
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(errors);
@@ -99,7 +93,7 @@ public class CJController {
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
                 currentCJ.getIdProductExt());
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTEFACT.toString())) {
             CJ cjByName = cjService.findByName(cjDto.getName());
             if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
                 errors += "Указанное имя CJ уже существует";
@@ -144,7 +138,7 @@ public class CJController {
             logger.error("422 " + errors);
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
         }
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTEFACT.toString())) {
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
             } else {
@@ -175,7 +169,7 @@ public class CJController {
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
                 currentCJ.getIdProductExt());
-        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTEFACT.toString())) {
             if (currentCJ.isBDraft()) {
                 cjService.deleteCJbyId(currentCJ);
                 return ResponseEntity.status(HttpStatus.OK).build();

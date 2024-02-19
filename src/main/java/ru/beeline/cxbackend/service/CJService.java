@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
-import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
+import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTEFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @Service
@@ -60,13 +60,13 @@ public class CJService {
         return cjRepository.findByName(name);
     }
 
-    public CJ createCJ(CJDto cj, Product product, Long userId) {
+    public CJ createCJ(CJDto cj, Long productId, Long userId) {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
                 .lastUpdated(new Date(System.currentTimeMillis()))
                 .authorId(userId)
-                .idProductExt(product.getId())
+                .idProductExt(productId)
                 .bDraft(true)
                 .build();
         cjRepository.save(newCJ);
@@ -154,14 +154,14 @@ public class CJService {
     }
 
     private List<CJ> getProducts(String search) {
-        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+        if (getUserPermissions().contains(DESIGN_ARTEFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
         return cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, getUserProducts());
     }
 
     private List<CJ> getMyProductsDefault(String search) {
-        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+        if (getUserPermissions().contains(DESIGN_ARTEFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
 

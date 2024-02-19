@@ -47,10 +47,10 @@ public class Permission {
     List<RolePermissions> roles;
 
     public enum PermissionType {
-        CREATE_ARTIFACT,
-        EDIT_ARTIFACT,
-        DELETE_ARTIFACT,
-        DESIGN_ARTIFACT
+        CREATE_ARTEFACT,
+        EDIT_ARTEFACT,
+        DELETE_ARTEFACT,
+        DESIGN_ARTEFACT
     }
 
     @Override
