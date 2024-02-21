@@ -7,17 +7,17 @@ import ru.beeline.cxbackend.exception.UnauthorizedException;
 
 import java.util.List;
 
-import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTEFACT;
+import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 
 public class AccessToProduct {
 
     public static void validateAccessProduct(List<String> permissions, List<Long> product, Long productId) {
-        if (!product.contains(productId) && !permissions.contains(Permission.PermissionType.DESIGN_ARTEFACT.toString()))
+        if (!product.contains(productId) && !permissions.contains(Permission.PermissionType.DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }
 
     public static void validateAccessProduct(List<String> permissions, List<Long> product, BI bi) {
-        if (bi.isDraft() && !product.contains(bi.getProductId()) && !permissions.contains(DESIGN_ARTEFACT.toString()))
+        if (bi.isDraft() && !product.contains(bi.getProductId()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
             throw new UnauthorizedException("FORBIDDEN");
     }
     public static void validateAccessProduct(List<String> permissions, List<Long> product, CJ cj) {

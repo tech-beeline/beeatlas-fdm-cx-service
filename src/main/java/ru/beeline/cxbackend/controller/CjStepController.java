@@ -59,7 +59,7 @@ public class CjStepController {
             logger.error("404 " + message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
         }
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTEFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             if (currentCJ.isBDraft()) {
                 return ResponseEntity.ok(cjStepService.addStep(id, cjStepDto));
             } else {
@@ -109,7 +109,7 @@ public class CjStepController {
                 getUserProducts(),
                 productId);
 
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTEFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             return ResponseEntity.ok(cjStepService.updateStep(cjStep, cjStepDto));
         } else {
             errors += "Недостаточно прав для изменения шага CJ";
@@ -137,7 +137,7 @@ public class CjStepController {
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), productId);
 
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTEFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             cjStepService.deleteStep(cjStep);
             return ResponseEntity.ok().build();
         } else {

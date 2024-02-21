@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
-import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTEFACT;
+import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.*;
 
 @Service
@@ -290,7 +290,7 @@ public class BusinessInteractionService {
     }
 
     private void validateNewProduct(Long idProduct) {
-        if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTEFACT.toString())) {
+        if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
             throw new UnauthorizedException("FORBIDDEN");
         }
     }
