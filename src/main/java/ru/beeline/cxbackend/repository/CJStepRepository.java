@@ -18,7 +18,7 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM cx.business_iteraction " +
             "JOIN cx.bi_in_cj_step ON cx.bi_in_cj_step.id_bi = cx.business_iteraction.id " +
-            "JOIN cx.cj_steps ON cx.cjsteps.id = cx.bi_in_cj_step.id_cj_step " +
+            "JOIN cx.cj_steps ON cx.cj_steps.id = cx.bi_in_cj_step.id_cj_step " +
             "WHERE cx.cj_steps.id_cj = :id AND cx.business_iteraction.b_draft = true", nativeQuery = true)
     Long countByBiIdAndDraft(@Param("id") Long id);
 }
