@@ -109,7 +109,7 @@ public class CjStepController {
                 getUserProducts(),
                 productId);
 
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             return ResponseEntity.ok(cjStepService.updateStep(cjStep, cjStepDto));
         } else {
             errors += "Недостаточно прав для изменения шага CJ";
