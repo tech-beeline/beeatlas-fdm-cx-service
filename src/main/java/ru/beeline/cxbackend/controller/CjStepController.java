@@ -137,7 +137,7 @@ public class CjStepController {
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), productId);
 
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
             cjStepService.deleteStep(cjStep);
             return ResponseEntity.ok().build();
         } else {
