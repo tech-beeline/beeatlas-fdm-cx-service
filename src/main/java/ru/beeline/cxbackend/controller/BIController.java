@@ -2,9 +2,13 @@ package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
@@ -14,18 +18,21 @@ import ru.beeline.cxbackend.service.BusinessInteractionService;
 
 import java.util.List;
 
+import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx/v1/library/business-interactions")
 @Api(value = "CX API", tags = "BI Library")
 public class BIController {
+    private Logger logger = LoggerFactory.getLogger(BIController.class);
 
     @Autowired
     private BusinessInteractionService businessInteractionService;
 
     @GetMapping
     @ApiOperation(value = "Получение BI по id продукта", response = List.class)
-    public ResponseEntity<List<BIDto>> getBI(@RequestParam(value = "id_product", required = false) Long idProduct) {
+    public ResponseEntity getBI(@RequestParam(value = "id_product", required = false) Long idProduct) {
         return ResponseEntity.ok(businessInteractionService.getBI(idProduct));
     }
 
@@ -51,16 +58,27 @@ public class BIController {
 
     @PostMapping
     @ApiOperation(value = "Добавление BI", response = List.class)
-    public ResponseEntity<BIDto> createBI(@RequestBody BI bi) {
-        return ResponseEntity.ok(businessInteractionService.createBI(bi));
+    public ResponseEntity createBI(@RequestBody BI bi) {
+        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+            return ResponseEntity.ok(businessInteractionService.createBI(bi));
+        } else {
+            logger.error("403 Недостаточно прав для создания BI");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Недостаточно прав для создания BI");
+        }
+
     }
 
     @PatchMapping("/{id}")
     @ApiOperation(value = "Редактирование BI", response = List.class)
-    public ResponseEntity<BIDto> patchBI(@RequestBody BI bi,
-                                         @PathVariable Long id
+    public ResponseEntity patchBI(@RequestBody BI bi,
+                                  @PathVariable Long id
     ) {
-        return ResponseEntity.ok(businessInteractionService.patchBI(id, bi));
+        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
+            return ResponseEntity.ok(businessInteractionService.patchBI(id, bi));
+        } else {
+            logger.error("403 Недостаточно прав для редактирования BI");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Недостаточно прав для редактирования BI");
+        }
     }
 
     @GetMapping("editability/{id}")
@@ -72,7 +90,13 @@ public class BIController {
     @DeleteMapping("/{id}")
     @ApiOperation(value = "удаление BI по id", response = List.class)
     public ResponseEntity deleteBIById(@PathVariable Long id) {
-        businessInteractionService.deleteBIById(id);
-        return ResponseEntity.ok(null);
+
+        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
+            businessInteractionService.deleteBIById(id);
+            return ResponseEntity.ok(null);
+        } else {
+            logger.error("403 Недостаточно прав для удаления BI");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Недостаточно прав для удаления BI");
+        }
     }
 }
