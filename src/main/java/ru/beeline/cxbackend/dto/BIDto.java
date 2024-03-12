@@ -1,5 +1,6 @@
 package ru.beeline.cxbackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,8 @@ import ru.beeline.cxbackend.domain.bi.BILink;
 import java.sql.Date;
 import java.util.List;
 
+import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
+import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 
 @Setter
 @Getter
@@ -20,7 +23,9 @@ public class BIDto {
     private String uniqueIdent;
     private String name;
     private String descr;
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date dtUpdated;
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date dtCreated;
     private boolean isCommunal = false;
     private boolean isTarget = false;
