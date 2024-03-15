@@ -5,3 +5,10 @@ env:
   SPRING_DATASOURCE_PASSWORD: "vault:eafdmmart/data/test/fdm#password"
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/test/fdm#driver"
   JWKS: "vault:eafdmmart/data/test/fdm#jwks"
+  
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/cors-allow-headers: Content-Type, authorization
+    nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+    nginx.ingress.kubernetes.io/cors-allow-origin: *
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
