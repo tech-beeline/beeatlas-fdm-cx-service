@@ -11,16 +11,16 @@ import ru.beeline.cxbackend.exception.*;
 @Slf4j
 public class CustomExceptionHandler {
 
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<Object> handleException(UnauthorizedException e) {
-        log.error(e.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-    }
-
     @ExceptionHandler(StatusNotFoundException.class)
     public ResponseEntity<Object> handleException(StatusNotFoundException e) {
         log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Object> handleException(ForbiddenException e) {
+        log.error(e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 
 }
