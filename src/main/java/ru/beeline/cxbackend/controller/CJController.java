@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.domain.Permission;
-import ru.beeline.cxbackend.domain.Product;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
@@ -21,7 +20,7 @@ import java.util.List;
 
 import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
-import static ru.beeline.cxbackend.utils.Constant.*;
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
@@ -62,9 +61,9 @@ public class CJController {
             }
 
             if (errors.isEmpty()) {
-                    CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
-                    logger.info("New cj created: " + newCJ);
-                    return ResponseEntity.ok(newCJ);
+                CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+                logger.info("New cj created: " + newCJ);
+                return ResponseEntity.ok(newCJ);
 
             } else {
                 logger.error("409 " + errors);
@@ -194,11 +193,9 @@ public class CJController {
 
     @GetMapping("/api/cx/v1/product/cj")
     @ApiOperation(value = "Получение списка CJ", response = List.class)
-    public List<CJ> getCJ(@RequestParam(required = false) String id_product,
+    public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
                           @RequestParam(required = false, defaultValue = "ALL") String sample,
                           @RequestParam(required = false, defaultValue = "") String search) {
-        return cjService.getAll(id_product, sample, search);
+        return cjService.getAll(idProduct, sample, search);
     }
-
-
 }
