@@ -5,7 +5,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.Product;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -134,7 +133,7 @@ public class CJService {
         return cjFullDto;
     }
 
-    public List<CJ> getAll(String idProduct, String sample, String search) {
+    public List<CJ> getAll(Long idProduct, String sample, String search) {
         List<CJ> result;
         switch (sample) {
             case "PUBLIC":
@@ -147,7 +146,7 @@ public class CJService {
                 result = getMyProductsDefault(search);
         }
         if (idProduct != null) {
-            result = result.stream().filter(cj -> cj.getIdProductExt().equals(idProduct)).collect(Collectors.toList());
+            result = result.stream().filter(cj -> Objects.equals(cj.getIdProductExt(), idProduct)).collect(Collectors.toList());
         }
 
         return result;
