@@ -1,11 +1,15 @@
 package ru.beeline.cxbackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 
 import java.sql.Date;
 import java.util.List;
+
+import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
+import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 
 
 @Data
@@ -20,6 +24,7 @@ public class CJFullDto {
     private String userPortrait;
 
     @JsonProperty("last_updated")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastUpdated;
 
     @JsonProperty("draft")
