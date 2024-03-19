@@ -14,7 +14,7 @@ import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
 import ru.beeline.cxbackend.exception.BINotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.*;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @Service
 public class BusinessInteractionService {
@@ -291,7 +291,7 @@ public class BusinessInteractionService {
 
     private void validateNewProduct(Long idProduct) {
         if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
-            throw new UnauthorizedException("FORBIDDEN");
+            throw new ForbiddenException("FORBIDDEN");
         }
     }
 

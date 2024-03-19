@@ -3,7 +3,7 @@ package ru.beeline.cxbackend.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,8 +45,8 @@ public class HeaderInterceptor implements HandlerInterceptor {
             logger.info("Set headers complete");
             return true;
         } catch (Exception e) {
-            logger.info("401 Not authorized.");
-            throw new UnauthorizedException("401 Not authorized.");
+            logger.info("403 Forbidden.");
+            throw new ForbiddenException("403 Forbidden.");
         }
     }
 
