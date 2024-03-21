@@ -52,13 +52,13 @@ public class CjStepController {
         String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
-            validateAccessProduct(getUserPermissions(),
-                    getUserProducts(),
-                    currentCJ.getIdProductExt());
             String message = "CJ с id = " + id + " не найден";
             logger.error("404 " + message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
         }
+        validateAccessProduct(getUserPermissions(),
+                getUserProducts(),
+                currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             if (currentCJ.isBDraft()) {
                 return ResponseEntity.ok(cjStepService.addStep(id, cjStepDto));
