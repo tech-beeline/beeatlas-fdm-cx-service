@@ -79,7 +79,10 @@ public class BusinessInteractionService {
         List<BI> biList = businessInteractionRepository
                 .findAll(spec);
         List<BIDto> result = biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
-        return result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId())).collect(Collectors.toList());
+        if (!getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+            result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId())).collect(Collectors.toList());
+        }
+        return result;
     }
 
     public BIDto getBIById(Long id) throws BINotExistException {
