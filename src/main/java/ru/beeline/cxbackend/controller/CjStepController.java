@@ -12,11 +12,9 @@ import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
-import ru.beeline.cxbackend.exception.CJNotExistException;
-import ru.beeline.cxbackend.exception.StepNotExistException;
-import ru.beeline.cxbackend.service.*;
-
-import java.util.List;
+import ru.beeline.cxbackend.exception.*;
+import ru.beeline.cxbackend.service.CJService;
+import ru.beeline.cxbackend.service.CJStepService;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
@@ -40,21 +38,17 @@ public class CjStepController {
     @ResponseBody
     @ApiOperation(value = "Получение коллекции шагов CJ")
     public ResponseEntity getCJSteps(@PathVariable Long id) {
-        List<CJStep> steps = cjStepService.getStepByCJId(id);
-        return ResponseEntity.ok(steps);
+       return ResponseEntity.ok(cjStepService.getStepByCJId(id));
     }
 
     @PostMapping("/api/cx/v1/product/cj/{id}/step")
     @ResponseBody
     @ApiOperation(value = "Добавление шага в коллекцию шагов CJ")
     public ResponseEntity addCJStep(@PathVariable Long id,
-                                    @RequestBody CjStepDto cjStepDto) throws CJNotExistException {
-        String errors = "";
+                                    @RequestBody CjStepDto cjStepDto){
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
-            String message = "CJ с id = " + id + " не найден";
-            logger.error("404 " + message);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+            throw new NotFoundException("CJ с id = " + id + " не найден");
         }
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
@@ -63,14 +57,10 @@ public class CjStepController {
             if (currentCJ.isBDraft()) {
                 return ResponseEntity.ok(cjStepService.addStep(id, cjStepDto));
             } else {
-                String message = "CJ с id = " + id + " находится в статусе Опубликован. Добавление шага невозможно.";
-                logger.error("409 " + message);
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
+                throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Добавление шага невозможно.");
             }
         } else {
-            errors += "Недостаточно прав для добавления шага CJ";
-            logger.error("403 " + errors);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
+            throw new ForbiddenException("Недостаточно прав для добавления шага CJ");
         }
     }
 
@@ -78,32 +68,14 @@ public class CjStepController {
     @ResponseBody
     @ApiOperation(value = "Получение шага CJ по id")
     public ResponseEntity getCJStepById(@PathVariable Long id) {
-        CJStep cjStep = null;
-        try {
-            cjStep = cjStepService.getStepById(id);
-        } catch (StepNotExistException e) {
-            String message = "CJ шаг с id = " + id + " не найден";
-            logger.error("404 " + message);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-        }
-        return ResponseEntity.ok(cjStep);
+        return ResponseEntity.ok(cjStepService.getStepById(id));
     }
 
     @PatchMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение шага CJ")
-    public ResponseEntity updateCJStep(@PathVariable Long id, @RequestBody CjStepDto cjStepDto) throws CJNotExistException {
-        String errors = "";
-
-        CJStep cjStep = null;
-        try {
-            cjStep = cjStepService.getStepById(id);
-        } catch (StepNotExistException e) {
-            String message = "CJ шаг с id = " + id + " не найден";
-            logger.error("404 " + message);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-        }
-
+    public ResponseEntity updateCJStep(@PathVariable Long id, @RequestBody CjStepDto cjStepDto) {
+        CJStep cjStep = cjStepService.getStepById(id);
         Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
@@ -112,27 +84,15 @@ public class CjStepController {
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             return ResponseEntity.ok(cjStepService.updateStep(cjStep, cjStepDto));
         } else {
-            errors += "Недостаточно прав для изменения шага CJ";
-            logger.error("403 " + errors);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
+            throw new ForbiddenException("Недостаточно прав для изменения шага CJ");
         }
     }
 
     @DeleteMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
     @ApiOperation(value = "Удаление шага CJ")
-    public ResponseEntity deleteCJStep(@PathVariable Long id) throws CJNotExistException {
-
-        String errors = "";
-
-        CJStep cjStep = null;
-        try {
-            cjStep = cjStepService.getStepById(id);
-        } catch (StepNotExistException e) {
-            String message = "CJ шаг с id = " + id + " не найден";
-            logger.error("404 " + message);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
-        }
+    public ResponseEntity deleteCJStep(@PathVariable Long id){
+                CJStep cjStep = cjStepService.getStepById(id);
         Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), productId);
@@ -141,9 +101,7 @@ public class CjStepController {
             cjStepService.deleteStep(cjStep);
             return ResponseEntity.ok().build();
         } else {
-            errors += "Недостаточно прав для удаления шага CJ";
-            logger.error("403 " + errors);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errors);
+            throw new ForbiddenException("Недостаточно прав для удаления шага CJ");
         }
     }
 
