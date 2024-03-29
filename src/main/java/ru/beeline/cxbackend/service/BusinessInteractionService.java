@@ -15,6 +15,7 @@ import ru.beeline.cxbackend.dto.BIEditabilityDto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -85,7 +86,7 @@ public class BusinessInteractionService {
         return result;
     }
 
-    public BIDto getBIById(Long id){
+    public BIDto getBIById(Long id) {
         BI bi = businessInteractionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
@@ -243,7 +244,9 @@ public class BusinessInteractionService {
     @Transactional
     public BIDto patchBI(Long id, BI bi) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
-
+        if (bi.checkFieldsForNull()) {
+            throw new UnprocessedEntityException("Пустой обьект BI");
+        }
         BI oldEntity = businessInteractionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("BI не найдено"));
 
