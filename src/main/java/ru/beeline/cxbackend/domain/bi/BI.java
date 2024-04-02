@@ -101,79 +101,79 @@ public class BI {
 
     public boolean checkFieldsForNull() {
 
-        if (getId() == null) {
+        if (getId() != null) {
             return false;
         }
 
-        if (getUniqueIdent() == null) {
+        if (getUniqueIdent() != null) {
             return false;
         }
 
-        if (getName() == null) {
+        if (getName() != null) {
             return false;
         }
 
-        if (getDescr() == null) {
+        if (getDescr() != null) {
             return false;
         }
 
-        if (getDtUpdated() == null) {
+        if (getDtUpdated() != null) {
             return false;
         }
 
-        if (getDtCreated() == null) {
+        if (getDtCreated() != null) {
             return false;
         }
 
-        if (getTouchPoints() == null) {
+        if (getTouchPoints() != null) {
             return false;
         }
 
-        if (getFeeling() == null) {
+        if (getFeeling() != null) {
             return false;
         }
 
-        if (getEaGuid() == null) {
+        if (getEaGuid() != null) {
             return false;
         }
 
-        if (getProductId() == null) {
+        if (getProductId() != null) {
             return false;
         }
 
-        if (getOwnerRole() == null) {
+        if (getOwnerRole() != null) {
             return false;
         }
 
-        if (getStatus() == null) {
+        if (getStatus() != null) {
             return false;
         }
 
-        if (getClientScenario() == null) {
+        if (getClientScenario() != null) {
             return false;
         }
 
-        if (getUcsReaction() == null) {
+        if (getUcsReaction() != null) {
             return false;
         }
 
-        if (getParticipants() == null) {
+        if (getParticipants() != null) {
             return false;
         }
 
-        if (getChannel() == null) {
+        if (getChannel() != null) {
             return false;
         }
 
-        if (getFlowLink() == null) {
+        if (getFlowLink() != null) {
             return false;
         }
 
-        if (getDocument() == null) {
+        if (getDocument() != null) {
             return false;
         }
 
-        if (getMockupLink() == null) {
+        if (getMockupLink() != null) {
             return false;
         }
 
