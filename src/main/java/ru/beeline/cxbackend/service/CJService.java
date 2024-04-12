@@ -8,12 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
-import ru.beeline.cxbackend.domain.cj.CJParametersView;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.StepDto;
-import ru.beeline.cxbackend.exception.CJNotExistException;
+import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -103,16 +102,12 @@ public class CJService {
         cjRepository.deleteById(cj.getId());
     }
 
-    public List<CJParametersView> getParametersViewByCJId(Long id) {
-        return cjParametersViewRepository.findByCjId(id);
-    }
-
-    public CJ getById(Long id) throws CJNotExistException {
+    public CJ getById(Long id) {
         return cjRepository.findById(id)
-                .orElseThrow(() -> new CJNotExistException("CJ with id " + id + " does not exist"));
+                .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
     }
 
-    public CJFullDto getFullDtoById(Long id) throws CJNotExistException {
+    public CJFullDto getFullDtoById(Long id){
         CJ cj = getById(id);
         validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         CJFullDto cjFullDto = modelMapper.map(cj, CJFullDto.class);

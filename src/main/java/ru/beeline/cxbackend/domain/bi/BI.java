@@ -99,4 +99,84 @@ public class BI {
     @Where(clause = "type_id = 3")
     private List<BILink> mockupLink;
 
+    public boolean checkFieldsForNull() {
+
+        if (getId() != null) {
+            return false;
+        }
+
+        if (getUniqueIdent() != null) {
+            return false;
+        }
+
+        if (getName() != null) {
+            return false;
+        }
+
+        if (getDescr() != null) {
+            return false;
+        }
+
+        if (getDtUpdated() != null) {
+            return false;
+        }
+
+        if (getDtCreated() != null) {
+            return false;
+        }
+
+        if (getTouchPoints() != null) {
+            return false;
+        }
+
+        if (getFeeling() != null) {
+            return false;
+        }
+
+        if (getEaGuid() != null) {
+            return false;
+        }
+
+        if (getProductId() != null) {
+            return false;
+        }
+
+        if (getOwnerRole() != null) {
+            return false;
+        }
+
+        if (getStatus() != null) {
+            return false;
+        }
+
+        if (getClientScenario() != null) {
+            return false;
+        }
+
+        if (getUcsReaction() != null) {
+            return false;
+        }
+
+        if (getParticipants() != null) {
+            return false;
+        }
+
+        if (getChannel() != null) {
+            return false;
+        }
+
+        if (getFlowLink() != null) {
+            return false;
+        }
+
+        if (getDocument() != null) {
+            return false;
+        }
+
+        if (getMockupLink() != null) {
+            return false;
+        }
+
+        return true;
+    }
 }

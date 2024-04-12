@@ -8,4 +8,4 @@ env:
   JWKS: "vault:eafdmmart/data/prod/fdm#jwks"
 
 
-replicaCount: 3
+replicaCount: 1

@@ -13,8 +13,9 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
-import ru.beeline.cxbackend.exception.BINotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
+import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.*;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @Service
 public class BusinessInteractionService {
@@ -79,12 +80,15 @@ public class BusinessInteractionService {
         List<BI> biList = businessInteractionRepository
                 .findAll(spec);
         List<BIDto> result = biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
-        return result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId())).collect(Collectors.toList());
+        if (!getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+            result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId())).collect(Collectors.toList());
+        }
+        return result;
     }
 
-    public BIDto getBIById(Long id) throws BINotExistException {
+    public BIDto getBIById(Long id) {
         BI bi = businessInteractionRepository.findById(id)
-                .orElseThrow(() -> new BINotExistException("BI with id " + id + " not found"));
+                .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
     }
@@ -110,7 +114,7 @@ public class BusinessInteractionService {
         }
         Optional<BI> biEntityOptional = businessInteractionRepository.findById(bi.getIdBi());
         if (!biEntityOptional.isPresent()) {
-            throw new RuntimeException("BI не найдено");
+            throw new NotFoundException("BI не найдено");
         }
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         checkMaxOrder(bi, existSteps);
@@ -240,9 +244,11 @@ public class BusinessInteractionService {
     @Transactional
     public BIDto patchBI(Long id, BI bi) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
-
+        if (bi.checkFieldsForNull()) {
+            throw new UnprocessedEntityException("Пустой обьект BI");
+        }
         BI oldEntity = businessInteractionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("BI не найдено"));
+                .orElseThrow(() -> new NotFoundException("BI не найдено"));
 
         validateUpdate(oldEntity);
         validateNewProduct(oldEntity.getProductId());
@@ -291,7 +297,7 @@ public class BusinessInteractionService {
 
     private void validateNewProduct(Long idProduct) {
         if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
-            throw new UnauthorizedException("FORBIDDEN");
+            throw new ForbiddenException("FORBIDDEN");
         }
     }
 
@@ -308,7 +314,7 @@ public class BusinessInteractionService {
     @Transactional
     public void deleteBIById(Long id) {
         BI bi = businessInteractionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("BI с id = " + id + " не найден"));
+                .orElseThrow(() -> new NotFoundException("BI с id = " + id + " не найден"));
         validateUpdate(bi);
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
         biInCJStepRepository.deleteAllByBiId(id);
@@ -326,12 +332,12 @@ public class BusinessInteractionService {
 
     @Transactional
     public void deleteBIByStepId(Long idStep, Long idBi) {
-        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new RuntimeException("CJ шаг с id = " + idStep + " не найден")).getCjId();
-        Long productId = cjRepository.findById(cjId).orElseThrow(() -> new RuntimeException("CJ с id = " + cjId + " не найден")).getIdProductExt();
+        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("CJ шаг с id = " + idStep + " не найден")).getCjId();
+        Long productId = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ с id = " + cjId + " не найден")).getIdProductExt();
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
 
         Optional<BI> biOptional = businessInteractionRepository.findById(idBi);
-        BI bi = biOptional.orElseThrow(() -> new RuntimeException("BI с id = " + idBi + " не найден"));
+        BI bi = biOptional.orElseThrow(() -> new NotFoundException("BI с id = " + idBi + " не найден"));
         validateCj(bi);
 
         BIInCJStep biInCjStep = biInCJStepRepository.findByCjStepIdAndBiId(idStep, idBi);

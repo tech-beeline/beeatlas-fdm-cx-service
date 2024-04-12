@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -18,5 +19,5 @@ public class StepDto {
     @JsonProperty("id_cj")
     private Long cjId;
 
-    private List<BIDto> bi;
+    private List<BIDto> bi = new ArrayList<>();
 }

@@ -3,12 +3,10 @@ package ru.beeline.cxbackend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
-import ru.beeline.cxbackend.exception.StepNotExistException;
-import ru.beeline.cxbackend.exception.UnauthorizedException;
+import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.repository.BIInCJStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
@@ -66,9 +64,9 @@ public class CJStepService {
         return cjStepRepository.saveAndFlush(cjStep);
     }
 
-    public CJStep getStepById(Long id) throws StepNotExistException {
+    public CJStep getStepById(Long id){
         CJStep cjStep = cjStepRepository.findById(id)
-                .orElseThrow(() -> new StepNotExistException("Step with id " + id + " does not exist"));
+                .orElseThrow(() -> new NotFoundException("Step with id " + id + " does not exist"));
 
         validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(cjStep.getCjId()).get());
 
