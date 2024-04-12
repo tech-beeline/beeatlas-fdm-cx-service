@@ -7,7 +7,6 @@ env:
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/test/func/fdm#driver"
   JWKS: "vault:eafdmmart/data/test/func/fdm#jwks"
 
-  
 ingress:
   annotations:
     nginx.ingress.kubernetes.io/cors-allow-headers: Content-Type, authorization
