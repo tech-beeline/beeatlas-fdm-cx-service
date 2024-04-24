@@ -49,7 +49,7 @@ public class BICJStepController {
                 .body(businessInteractionService.getCJByBIID(id));
     }
 
-    @DeleteMapping("/product/step/{id_step}/bi/{id}")
+    @DeleteMapping("/product/cj/step/{id_step}/bi/{id}")
     @ApiOperation(value = "Удаление BI из шага CJ")
     public ResponseEntity DeleteBIByCJStep(@PathVariable(value = "id_step") Long idStep,
                                            @PathVariable(value = "id") Long idBi) {
