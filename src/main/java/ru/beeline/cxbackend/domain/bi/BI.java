@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.Where;
 import ru.beeline.cxbackend.domain.bi.ref.BIFeeling;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
-
 import javax.persistence.*;
 import java.sql.Date;
 import java.util.List;
