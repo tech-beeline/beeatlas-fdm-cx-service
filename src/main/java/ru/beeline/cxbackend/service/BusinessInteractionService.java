@@ -64,7 +64,6 @@ public class BusinessInteractionService {
     @Autowired
     private BIMapper biMapper;
 
-
     public List<BIDto> getBI(Long idProduct) {
         List<BI> biList = businessInteractionRepository
                 .findAll(BiSpecification.hasProductId(idProduct));
@@ -81,7 +80,7 @@ public class BusinessInteractionService {
                 .findAll(spec);
         List<BIDto> result = biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
         if (!getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
-            result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId())).collect(Collectors.toList());
+            result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId()) || !biDto.isDraft()).collect(Collectors.toList());
         }
         return result;
     }
@@ -94,6 +93,10 @@ public class BusinessInteractionService {
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
+        Long cjId = cjStepRepository.findById(idStep).get().getCjId();
+        CJ cj = cjRepository.findById(cjId).get();
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
+
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!biInCJStepList.isEmpty()) {
             List<BI> biList = businessInteractionRepository.findAllByIdIn(idStep, biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
@@ -105,9 +108,9 @@ public class BusinessInteractionService {
     @Transactional
     public void editBIByStepId(Long idStep, BiByCjStepDto bi) {
         Long cjId = cjStepRepository.findById(idStep).get().getCjId();
-        Long productId = cjRepository.findById(cjId).get().getIdProductExt();
+        Long idProductExt = cjRepository.findById(cjId).get().getIdProductExt();
         validateAccessProduct(getUserPermissions(),
-                getUserProducts(), productId);
+                getUserProducts(), idProductExt);
 
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
@@ -333,8 +336,8 @@ public class BusinessInteractionService {
     @Transactional
     public void deleteBIByStepId(Long idStep, Long idBi) {
         Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("CJ шаг с id = " + idStep + " не найден")).getCjId();
-        Long productId = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ с id = " + cjId + " не найден")).getIdProductExt();
-        validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
+        Long idProductExt = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ с id = " + cjId + " не найден")).getIdProductExt();
+        validateAccessProduct(getUserPermissions(), getUserProducts(), idProductExt);
 
         Optional<BI> biOptional = businessInteractionRepository.findById(idBi);
         BI bi = biOptional.orElseThrow(() -> new NotFoundException("BI с id = " + idBi + " не найден"));

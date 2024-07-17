@@ -114,7 +114,6 @@ public class CJController {
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
     public ResponseEntity updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
-        String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");

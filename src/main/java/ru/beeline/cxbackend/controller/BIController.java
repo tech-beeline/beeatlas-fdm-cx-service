@@ -102,7 +102,6 @@ public class BIController {
     @DeleteMapping("/{id}")
     @ApiOperation(value = "удаление BI по id", response = List.class)
     public ResponseEntity deleteBIById(@PathVariable Long id) {
-
         if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
             businessInteractionService.deleteBIById(id);
             return ResponseEntity
