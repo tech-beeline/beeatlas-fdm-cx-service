@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.utils.Constant.USER_PERMISSION_HEADER;
 import static ru.beeline.cxbackend.utils.Constant.USER_PRODUCTS_IDS_HEADER;
+import static ru.beeline.cxbackend.utils.Constant.USER_ROLES_HEADER;
 
 public class RequestContext {
     private static final ThreadLocal<Map<String, Object>> headersThreadLocal = new ThreadLocal<>();
@@ -28,5 +29,9 @@ public class RequestContext {
                 .map(Long::parseLong)
                 .collect(Collectors.toList());
         return longList;
+    }
+
+    public static List<String> getUserRole() {
+        return (List<String>) getHeaders().get(USER_ROLES_HEADER);
     }
 }

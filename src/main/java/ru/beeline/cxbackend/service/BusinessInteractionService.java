@@ -6,7 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.bi.*;
+import ru.beeline.cxbackend.domain.bi.BI;
+import ru.beeline.cxbackend.domain.bi.BIInCJStep;
+import ru.beeline.cxbackend.domain.bi.BILink;
+import ru.beeline.cxbackend.domain.bi.BIParticipants;
+import ru.beeline.cxbackend.domain.bi.LinkEnum;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
@@ -17,14 +21,28 @@ import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
-import ru.beeline.cxbackend.repository.*;
+import ru.beeline.cxbackend.repository.BIFeelingRepository;
+import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.BILinkRepository;
+import ru.beeline.cxbackend.repository.BIParticipantRepository;
+import ru.beeline.cxbackend.repository.BIParticipantsRepository;
+import ru.beeline.cxbackend.repository.BIRelationsRepository;
+import ru.beeline.cxbackend.repository.BIStatusRepository;
+import ru.beeline.cxbackend.repository.BusinessInteractionRepository;
+import ru.beeline.cxbackend.repository.CJRepository;
+import ru.beeline.cxbackend.repository.CJStepRepository;
 
 import java.sql.Date;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserRole;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
@@ -311,6 +329,10 @@ public class BusinessInteractionService {
                 || !entityOptional.isPresent()) {
             result.setEditability(false);
         }
+
+        if (getUserRole().contains("DEFAULT") && !getUserProducts().contains(entityOptional.get().getProductId()))
+            result.setEditability(false);
+
         return result;
     }
 
