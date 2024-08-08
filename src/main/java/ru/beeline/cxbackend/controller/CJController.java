@@ -15,7 +15,6 @@ import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.exception.*;
 import ru.beeline.cxbackend.service.CJService;
-import ru.beeline.cxbackend.service.ProductService;
 
 import java.util.List;
 
@@ -33,10 +32,6 @@ public class CJController {
 
     @Autowired
     private CJService cjService;
-
-    @Autowired
-    private ProductService productService;
-
 
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody

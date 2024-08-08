@@ -111,8 +111,8 @@ public class BusinessInteractionService {
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
-        Long cjId = cjStepRepository.findById(idStep).get().getCjId();
-        CJ cj = cjRepository.findById(cjId).get();
+        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("cjStep не найдено")).getCjId();
+        CJ cj = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ не найдено"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
 
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(idStep);
@@ -125,18 +125,16 @@ public class BusinessInteractionService {
 
     @Transactional
     public void editBIByStepId(Long idStep, BiByCjStepDto bi) {
-        Long cjId = cjStepRepository.findById(idStep).get().getCjId();
-        Long idProductExt = cjRepository.findById(cjId).get().getIdProductExt();
+        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("cjStep не найдено")).getCjId();
+        Long idProductExt = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("cj не найдено")).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), idProductExt);
 
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
         }
-        Optional<BI> biEntityOptional = businessInteractionRepository.findById(bi.getIdBi());
-        if (!biEntityOptional.isPresent()) {
-            throw new NotFoundException("BI не найдено");
-        }
+        BI biEntity = businessInteractionRepository.findById(bi.getIdBi()).orElseThrow(() -> new NotFoundException("cj не найдено"));
+
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         checkMaxOrder(bi, existSteps);
 
@@ -144,7 +142,7 @@ public class BusinessInteractionService {
         Optional<BIInCJStep> currentCjByOrder = existSteps.stream().filter(biInCJStep -> biInCJStep.getOrder().equals(bi.getOrder())).findFirst();
 
         if (!currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
-            existSteps.add(new BIInCJStep(null, biEntityOptional.get(), idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
         }
 
         if (currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
@@ -155,7 +153,7 @@ public class BusinessInteractionService {
                         }
                     }
             );
-            existSteps.add(new BIInCJStep(null, biEntityOptional.get(), idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
         }
 
         if (!currentCjByOrder.isPresent() && currentCjByBIid.isPresent()) {

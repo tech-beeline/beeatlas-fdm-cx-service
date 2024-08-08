@@ -31,8 +31,6 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 @Service
 public class CJService {
 
-    private static final String USER_LOGIN = "winaccountname";
-
     @Autowired
     private CJRepository cjRepository;
 
