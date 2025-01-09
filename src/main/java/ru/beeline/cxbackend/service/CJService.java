@@ -97,12 +97,8 @@ public class CJService {
             biInCJStepRepository.deleteAllByCjStepIdIn(stepIds);
         }
         cjStepRepository.deleteAllByCjId(cj.getId());
-        cjRepository.deleteById(cj.getId());
-    }
-
-    public CJ deleteLogical(Long id) {
-        return cjRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
+        cj.setDeletedDate(new Date(System.currentTimeMillis()));
+        cjRepository.save(cj);
     }
 
     public CJ getById(Long id) {

@@ -36,6 +36,12 @@ public class CJ {
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
 
+    @Column(name = "deleted_date")
+    private Date deletedDate;
+
+    @Column(name = "created_date")
+    private Date createdDate;
+
     @Column(name = "b_draft")
     @JsonProperty("draft")
     private boolean bDraft = true;
