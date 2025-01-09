@@ -33,11 +33,11 @@ public class BI {
 
     private String descr;
 
-    @Column(name = "dt_updated")
-    private Date dtUpdated;
+    @Column(name = "last_modified_date")
+    private Date lastModifiedDate;
 
-    @Column(name = "dt_created")
-    private Date dtCreated;
+    @Column(name = "created_date")
+    private Date createdDate;
 
     @Column(name = "b_Communal")
     private boolean isCommunal = false;
@@ -63,6 +63,15 @@ public class BI {
 
     @Column(name = "owner_role")
     private String ownerRole;
+
+    @Column(name = "metrics")
+    private String metrics;
+
+    @Column(name = "deleted_date")
+    private Date deletedDate;
+
+    @Column(name = "author_id")
+    private Long authorId;
 
     @ManyToOne
     @JoinColumn(name = "status_id")
@@ -116,11 +125,11 @@ public class BI {
             return false;
         }
 
-        if (getDtUpdated() != null) {
+        if (getLastModifiedDate() != null) {
             return false;
         }
 
-        if (getDtCreated() != null) {
+        if (getCreatedDate() != null) {
             return false;
         }
 
@@ -173,6 +182,10 @@ public class BI {
         }
 
         if (getMockupLink() != null) {
+            return false;
+        }
+
+        if (getMetrics() != null) {
             return false;
         }
 

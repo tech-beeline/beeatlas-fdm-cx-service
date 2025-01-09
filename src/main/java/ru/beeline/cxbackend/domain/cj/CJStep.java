@@ -24,6 +24,8 @@ public class CJStep {
 
     private String name;
 
+    private String description;
+
     @Column(name = "id_cj")
     @JsonProperty("id_cj")
     private Long cjId;

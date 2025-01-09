@@ -60,7 +60,7 @@ public class CJService {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
-                .lastUpdated(new Date(System.currentTimeMillis()))
+                .lastModifiedDate(new Date(System.currentTimeMillis()))
                 .authorId(userId)
                 .idProductExt(productId)
                 .bDraft(true)
@@ -79,7 +79,7 @@ public class CJService {
         Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
         Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
-        cj.setLastUpdated(new Date(System.currentTimeMillis()));
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
         cjRepository.save(cj);
         return cj;
     }
@@ -98,6 +98,11 @@ public class CJService {
         }
         cjStepRepository.deleteAllByCjId(cj.getId());
         cjRepository.deleteById(cj.getId());
+    }
+
+    public CJ deleteLogical(Long id) {
+        return cjRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
     }
 
     public CJ getById(Long id) {

@@ -31,10 +31,10 @@ public class CJ {
     @JsonProperty("user_portrait")
     private String userPortrait;
 
-    @Column(name = "last_updated")
-    @JsonProperty("last_updated")
+    @Column(name = "last_modified_date")
+    @JsonProperty("last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date lastUpdated;
+    private Date lastModifiedDate;
 
     @Column(name = "b_draft")
     @JsonProperty("draft")

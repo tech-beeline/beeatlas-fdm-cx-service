@@ -199,8 +199,8 @@ public class BusinessInteractionService {
     public BIDto createBI(BI bi) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
 
-        bi.setDtCreated(new Date((new java.util.Date()).getTime()));
-        bi.setDtUpdated(new Date((new java.util.Date()).getTime()));
+        bi.setCreatedDate(new Date((new java.util.Date()).getTime()));
+        bi.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
 
         List<BILink> docs = bi.getDocument();
         List<BILink> mockupLink = bi.getMockupLink();
@@ -309,7 +309,7 @@ public class BusinessInteractionService {
         if (bi.getFeeling() != null && bi.getFeeling().getId() != null) {
             oldEntity.setFeeling(biFeelingRepository.findById(bi.getFeeling().getId()).orElse(null));
         }
-        oldEntity.setDtUpdated(new Date((new java.util.Date()).getTime()));
+        oldEntity.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
         oldEntity.setId(id);
         return biMapper.biToBIDto(businessInteractionRepository.save(oldEntity));
     }
