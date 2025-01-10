@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.utils.Constant.USER_PERMISSION_HEADER;
-import static ru.beeline.cxbackend.utils.Constant.USER_PRODUCTS_IDS_HEADER;
-import static ru.beeline.cxbackend.utils.Constant.USER_ROLES_HEADER;
+import static ru.beeline.cxbackend.utils.Constant.*;
 
 public class RequestContext {
     private static final ThreadLocal<Map<String, Object>> headersThreadLocal = new ThreadLocal<>();
@@ -33,5 +31,9 @@ public class RequestContext {
 
     public static List<String> getUserRole() {
         return (List<String>) getHeaders().get(USER_ROLES_HEADER);
+    }
+
+    public static Long getUserId() {
+        return Long.parseLong(getHeaders().get(USER_ID_HEADER).toString());
     }
 }

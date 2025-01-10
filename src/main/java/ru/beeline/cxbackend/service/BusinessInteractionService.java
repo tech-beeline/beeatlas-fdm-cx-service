@@ -85,7 +85,7 @@ public class BusinessInteractionService {
     }
 
     public BIDto getBIById(Long id) {
-        BI bi = businessInteractionRepository.findById(id)
+        BI bi = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
@@ -180,6 +180,7 @@ public class BusinessInteractionService {
     public BIDto createBI(BI bi) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
 
+        bi.setAuthorId(getUserId());
         bi.setCreatedDate(new Date((new java.util.Date()).getTime()));
         bi.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
 
@@ -247,7 +248,7 @@ public class BusinessInteractionService {
         if (bi.checkFieldsForNull()) {
             throw new UnprocessedEntityException("Пустой обьект BI");
         }
-        BI oldEntity = businessInteractionRepository.findById(id)
+        BI oldEntity = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("BI не найдено"));
 
         validateUpdate(oldEntity);
@@ -292,6 +293,7 @@ public class BusinessInteractionService {
         }
         oldEntity.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
         oldEntity.setId(id);
+        oldEntity.setAuthorId(getUserId());
         return biMapper.biToBIDto(businessInteractionRepository.save(oldEntity));
     }
 

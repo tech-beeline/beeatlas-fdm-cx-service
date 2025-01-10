@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.bi.BI;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BusinessInteractionRepository extends
@@ -25,4 +26,6 @@ public interface BusinessInteractionRepository extends
             "WHERE cx.bi_in_cj_step.id_bi in :ids and cx.bi_in_cj_step.id_cj_step = :cjStepId " +
             "ORDER BY cx.bi_in_cj_step.order", nativeQuery = true)
     List<BI> findAllByIdIn(Long cjStepId, List<Long> ids);
+
+    Optional<BI> findByIdAndDeletedDateIsNull(Long id);
 }
