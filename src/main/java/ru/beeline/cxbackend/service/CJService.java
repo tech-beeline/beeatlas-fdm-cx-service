@@ -61,6 +61,7 @@ public class CJService {
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
                 .lastModifiedDate(new Date(System.currentTimeMillis()))
+                .createdDate(new Date(System.currentTimeMillis()))
                 .authorId(userId)
                 .idProductExt(productId)
                 .bDraft(true)

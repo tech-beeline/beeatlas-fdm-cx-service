@@ -1,5 +1,6 @@
 package ru.beeline.cxbackend.domain.bi;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.Where;
@@ -8,6 +9,9 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import javax.persistence.*;
 import java.sql.Date;
 import java.util.List;
+
+import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
+import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 
 @Builder
 @Getter
@@ -34,9 +38,11 @@ public class BI {
     private String descr;
 
     @Column(name = "last_modified_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
 
     @Column(name = "created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
 
     @Column(name = "b_Communal")
