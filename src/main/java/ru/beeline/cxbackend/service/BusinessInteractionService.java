@@ -161,7 +161,9 @@ public class BusinessInteractionService {
             currentCjByBIid.get().setOrder(bi.getOrder());
         }
         biInCJStepRepository.saveAllAndFlush(existSteps);
-
+        CJ cj = cjRepository.findById(cjId).get();
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cjRepository.save(cj);
     }
 
     private static void checkMaxOrder(BiByCjStepDto bi, List<BIInCJStep> existSteps) {

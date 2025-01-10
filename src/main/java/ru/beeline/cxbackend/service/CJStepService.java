@@ -11,6 +11,7 @@ import ru.beeline.cxbackend.repository.BIInCJStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
 
+import java.sql.Date;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -44,6 +45,7 @@ public class CJStepService {
         CJStep cjStep = CJStep.builder()
                 .name(cjStepDto.getName())
                 .order(cjStepDto.getOrder())
+                .description(cjStepDto.getDescription())
                 .cjId(id)
                 .build();
 
@@ -93,8 +95,14 @@ public class CJStepService {
                 }
             }
             cjStep.setOrder(cjStepDto.getOrder());
+            cjStep.setDescription(cjStepDto.getDescription());
         }
-        return cjStepRepository.save(cjStep);
+        cjStep =  cjStepRepository.save(cjStep);
+        CJ cj = cjRepository.findById(cjStep.getCjId()).get();
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cjRepository.save(cj);
+        return cjStep;
+
     }
 
     @Transactional

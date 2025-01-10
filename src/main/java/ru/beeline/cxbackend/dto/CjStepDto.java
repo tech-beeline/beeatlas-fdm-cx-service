@@ -6,4 +6,5 @@ import lombok.Data;
 public class CjStepDto {
     private String name;
     private Integer order;
+    private String description;
 }
