@@ -16,8 +16,8 @@ import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
-import java.sql.Date;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,8 +60,8 @@ public class CJService {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
-                .lastModifiedDate(new Date(System.currentTimeMillis()))
-                .createdDate(new Date(System.currentTimeMillis()))
+                .lastModifiedDate(new Date())
+                .createdDate(new Date())
                 .authorId(userId)
                 .idProductExt(productId)
                 .bDraft(true)
@@ -107,8 +107,11 @@ public class CJService {
                 .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
     }
 
-    public CJFullDto getFullDtoById(Long id){
+    public CJFullDto getFullDtoById(Long id) {
         CJ cj = getById(id);
+        if (cj.getDeletedDate() != null) {
+            throw new NotFoundException("CJ with id " + id + " does not exist");
+        }
         validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         CJFullDto cjFullDto = modelMapper.map(cj, CJFullDto.class);
 
@@ -143,8 +146,9 @@ public class CJService {
         if (idProduct != null) {
             result = result.stream().filter(cj -> Objects.equals(cj.getIdProductExt(), idProduct)).collect(Collectors.toList());
         }
-
-        return result;
+        return result.stream()
+                .filter(cj -> cj.getDeletedDate() == null)
+                .collect(Collectors.toList());
     }
 
     private List<CJ> getProducts(String search) {

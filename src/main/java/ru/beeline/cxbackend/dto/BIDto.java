@@ -1,6 +1,7 @@
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,8 +24,10 @@ public class BIDto {
     private String uniqueIdent;
     private String name;
     private String descr;
+    @JsonProperty("last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date dtUpdated;
+    @JsonProperty("created_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date dtCreated;
     private boolean isCommunal = false;
@@ -43,4 +46,7 @@ public class BIDto {
     private List<BILink> flowLink;
     private List<BILink> document;
     private List<BILink> mockupLink;
+    private String metrics;
+    @JsonProperty("author_id")
+    private Integer authorId;
 }
