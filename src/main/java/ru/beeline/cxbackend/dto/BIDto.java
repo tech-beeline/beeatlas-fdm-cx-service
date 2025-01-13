@@ -24,10 +24,6 @@ public class BIDto {
     private String uniqueIdent;
     private String name;
     private String descr;
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtUpdated;
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtCreated;
     private boolean isCommunal = false;
     private boolean isTarget = false;
     private boolean isDraft = false;

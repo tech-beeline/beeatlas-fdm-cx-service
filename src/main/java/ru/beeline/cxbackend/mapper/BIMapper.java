@@ -31,8 +31,6 @@ public class BIMapper {
         biDto.setParticipants(mapBIParticipants(bi.getParticipants()));
         biDto.setFeelings(modelMapper.map(bi.getFeeling(), BIFeelingDto.class));
         biDto.setStatus(modelMapper.map(bi.getStatus(), BIStatusDto.class));
-        biDto.setDtCreated(bi.getCreatedDate());
-        biDto.setDtUpdated(bi.getLastModifiedDate());
         return biDto;
     }
 
