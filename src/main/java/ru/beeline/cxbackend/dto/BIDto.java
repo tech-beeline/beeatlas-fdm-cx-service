@@ -38,6 +38,10 @@ public class BIDto {
     private String eaGuid;
     private Long productId;
     private String ownerRole;
+    private String metrics;
+    private Long authorId;
+    private Date createdDate;
+    private Date lastModifiedDate;
     private BIStatusDto status;
     private String clientScenario;
     private String ucsReaction;
