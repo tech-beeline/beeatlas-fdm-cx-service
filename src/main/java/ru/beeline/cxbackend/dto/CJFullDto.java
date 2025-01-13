@@ -20,12 +20,9 @@ public class CJFullDto {
 
     private String name;
 
-    @JsonProperty("user_portrait")
-    private String userPortrait;
-
-    @JsonProperty("last_updated")
+    @JsonProperty("last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date lastUpdated;
+    private Date lastModifiedDate;
 
     @JsonProperty("draft")
     private Boolean bDraft;
@@ -37,6 +34,13 @@ public class CJFullDto {
     private Long idProductExt;
 
     private List<StepDto> steps;
+
+    @JsonProperty("user_portrait")
+    private String userPortrait;
+
+    @JsonProperty("created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date createdDate;
 
 }
 

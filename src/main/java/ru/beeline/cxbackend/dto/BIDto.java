@@ -33,8 +33,13 @@ public class BIDto {
     private Long productId;
     private String ownerRole;
     private String metrics;
+    @JsonProperty("author_id")
     private Long authorId;
+    @JsonProperty("created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
+    @JsonProperty("last_modified_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
     private BIStatusDto status;
     private String clientScenario;

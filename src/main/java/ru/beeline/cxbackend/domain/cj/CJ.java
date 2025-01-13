@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import javax.persistence.*;
-import java.sql.Date;
+import java.util.Date;
 
 import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
 import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
@@ -40,6 +40,7 @@ public class CJ {
     private Date deletedDate;
 
     @Column(name = "created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
 
     @Column(name = "b_draft")

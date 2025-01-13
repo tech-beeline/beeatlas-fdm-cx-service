@@ -10,14 +10,17 @@ import java.util.List;
 @Data
 @Getter
 public class StepDto {
+
+    private List<BIDto> bi = new ArrayList<>();
+
     private Long id;
+
+    @JsonProperty("id_cj")
+    private Long cjId;
 
     private Integer order;
 
     private String name;
 
-    @JsonProperty("id_cj")
-    private Long cjId;
-
-    private List<BIDto> bi = new ArrayList<>();
+    private String description;
 }
