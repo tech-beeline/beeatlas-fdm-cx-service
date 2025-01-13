@@ -1,6 +1,7 @@
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,10 @@ public class BIDto {
     private String eaGuid;
     private Long productId;
     private String ownerRole;
+    private String metrics;
+    private Long authorId;
+    private Date createdDate;
+    private Date lastModifiedDate;
     private BIStatusDto status;
     private String clientScenario;
     private String ucsReaction;
