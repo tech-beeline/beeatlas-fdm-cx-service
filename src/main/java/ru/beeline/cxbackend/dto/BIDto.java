@@ -24,12 +24,6 @@ public class BIDto {
     private String uniqueIdent;
     private String name;
     private String descr;
-    @JsonProperty("last_modified_date")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtUpdated;
-    @JsonProperty("created_date")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtCreated;
     private boolean isCommunal = false;
     private boolean isTarget = false;
     private boolean isDraft = false;
@@ -39,8 +33,13 @@ public class BIDto {
     private Long productId;
     private String ownerRole;
     private String metrics;
+    @JsonProperty("author_id")
     private Long authorId;
+    @JsonProperty("created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
+    @JsonProperty("last_modified_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
     private BIStatusDto status;
     private String clientScenario;
@@ -50,7 +49,4 @@ public class BIDto {
     private List<BILink> flowLink;
     private List<BILink> document;
     private List<BILink> mockupLink;
-    private String metrics;
-    @JsonProperty("author_id")
-    private Integer authorId;
 }
