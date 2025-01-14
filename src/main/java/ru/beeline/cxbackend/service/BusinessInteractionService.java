@@ -74,6 +74,7 @@ public class BusinessInteractionService {
                 .where(BiSpecification.hasProductId(idProduct))
                 .and(BiSpecification.hasNameContaining(text).or(BiSpecification.hasBINumberContaining(text)))
                 .and(BiSpecification.hasStatusId(idStatus))
+                .and(BiSpecification.isDeletedDateNull())
                 .and(BiSpecification.isDraft(isDraft));
         List<BI> biList = businessInteractionRepository
                 .findAll(spec);
