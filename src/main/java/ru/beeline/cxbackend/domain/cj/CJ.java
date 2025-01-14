@@ -33,7 +33,6 @@ public class CJ {
     private String userPortrait;
 
     @Column(name = "last_modified_date")
-    @JsonProperty("last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
 

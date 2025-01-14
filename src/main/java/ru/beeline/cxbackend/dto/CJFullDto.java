@@ -20,7 +20,6 @@ public class CJFullDto {
 
     private String name;
 
-    @JsonProperty("last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date lastModifiedDate;
 
@@ -38,9 +37,7 @@ public class CJFullDto {
     @JsonProperty("user_portrait")
     private String userPortrait;
 
-    @JsonProperty("created_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
-
 }
 
