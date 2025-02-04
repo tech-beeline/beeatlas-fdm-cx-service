@@ -1,14 +1,17 @@
 package ru.beeline.cxbackend.domain.bi;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.Where;
 import ru.beeline.cxbackend.domain.bi.ref.BIFeeling;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
-
 import javax.persistence.*;
 import java.sql.Date;
 import java.util.List;
+
+import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
+import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 
 @Builder
 @Getter
@@ -34,11 +37,13 @@ public class BI {
 
     private String descr;
 
-    @Column(name = "dt_updated")
-    private Date dtUpdated;
+    @Column(name = "last_modified_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date lastModifiedDate;
 
-    @Column(name = "dt_created")
-    private Date dtCreated;
+    @Column(name = "created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date createdDate;
 
     @Column(name = "b_Communal")
     private boolean isCommunal = false;
@@ -64,6 +69,15 @@ public class BI {
 
     @Column(name = "owner_role")
     private String ownerRole;
+
+    @Column(name = "metrics")
+    private String metrics;
+
+    @Column(name = "deleted_date")
+    private Date deletedDate;
+
+    @Column(name = "author_id")
+    private Long authorId;
 
     @ManyToOne
     @JoinColumn(name = "status_id")
@@ -117,11 +131,11 @@ public class BI {
             return false;
         }
 
-        if (getDtUpdated() != null) {
+        if (getLastModifiedDate() != null) {
             return false;
         }
 
-        if (getDtCreated() != null) {
+        if (getCreatedDate() != null) {
             return false;
         }
 
@@ -174,6 +188,10 @@ public class BI {
         }
 
         if (getMockupLink() != null) {
+            return false;
+        }
+
+        if (getMetrics() != null) {
             return false;
         }
 

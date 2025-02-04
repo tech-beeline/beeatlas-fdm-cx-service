@@ -23,10 +23,6 @@ public class BIDto {
     private String uniqueIdent;
     private String name;
     private String descr;
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtUpdated;
-    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date dtCreated;
     private boolean isCommunal = false;
     private boolean isTarget = false;
     private boolean isDraft = false;
@@ -35,6 +31,12 @@ public class BIDto {
     private String eaGuid;
     private Long productId;
     private String ownerRole;
+    private String metrics;
+    private Long authorId;
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date createdDate;
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date lastModifiedDate;
     private BIStatusDto status;
     private String clientScenario;
     private String ucsReaction;

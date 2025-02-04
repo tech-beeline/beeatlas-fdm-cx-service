@@ -1,11 +1,12 @@
 package ru.beeline.cxbackend.domain.cj;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import javax.persistence.*;
-import java.sql.Date;
+import java.util.Date;
 
 import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
 import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
@@ -31,10 +32,17 @@ public class CJ {
     @JsonProperty("user_portrait")
     private String userPortrait;
 
-    @Column(name = "last_updated")
-    @JsonProperty("last_updated")
+    @Column(name = "last_modified_date")
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    private Date lastUpdated;
+    private Date lastModifiedDate;
+
+    @Column(name = "deleted_date")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Date deletedDate;
+
+    @Column(name = "created_date")
+    @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
+    private Date createdDate;
 
     @Column(name = "b_draft")
     @JsonProperty("draft")

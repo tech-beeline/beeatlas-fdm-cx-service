@@ -52,5 +52,9 @@ public class BiSpecification {
             return cb.like(cb.lower(root.get("uniqueIdent")), "%" + number.toLowerCase() + "%");
         };
     }
+
+    public static Specification<BI> isDeletedDateNull() {
+        return (root, query, cb) -> cb.isNull(root.get("deletedDate"));
+    }
 }
 

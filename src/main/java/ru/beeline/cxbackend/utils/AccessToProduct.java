@@ -16,13 +16,14 @@ public class AccessToProduct {
             throw new ForbiddenException("FORBIDDEN");
     }
 
+    public static void validateAccessProduct(List<String> permissions, List<Long> product, CJ cj) {
+        if (cj.isBDraft() && !product.contains(cj.getIdProductExt()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
+            throw new ForbiddenException("FORBIDDEN");
+    }
+
     public static void validateAccessProduct(List<String> permissions, List<Long> product, BI bi) {
         if (bi.isDraft() && !product.contains(bi.getProductId()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
             throw new ForbiddenException("FORBIDDEN");
     }
 
-    public static void validateAccessProduct(List<String> permissions, List<Long> product, CJ cj) {
-        if (cj.isBDraft() && !product.contains(cj.getIdProductExt()) && !permissions.contains(DESIGN_ARTIFACT.toString()))
-            throw new ForbiddenException("FORBIDDEN");
-    }
 }

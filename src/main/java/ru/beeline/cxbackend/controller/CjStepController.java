@@ -76,10 +76,10 @@ public class CjStepController {
     @ApiOperation(value = "Изменение шага CJ")
     public ResponseEntity updateCJStep(@PathVariable Long id, @RequestBody CjStepDto cjStepDto) {
         CJStep cjStep = cjStepService.getStepById(id);
-        Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
+        Long idProductExt = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(),
-                productId);
+                idProductExt);
 
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             return ResponseEntity.ok(cjStepService.updateStep(cjStep, cjStepDto));
@@ -93,9 +93,9 @@ public class CjStepController {
     @ApiOperation(value = "Удаление шага CJ")
     public ResponseEntity deleteCJStep(@PathVariable Long id){
                 CJStep cjStep = cjStepService.getStepById(id);
-        Long productId = cjService.getById(cjStep.getCjId()).getIdProductExt();
+        Long idProductExt = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
-                getUserProducts(), productId);
+                getUserProducts(), idProductExt);
 
         if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
             cjStepService.deleteStep(cjStep);
