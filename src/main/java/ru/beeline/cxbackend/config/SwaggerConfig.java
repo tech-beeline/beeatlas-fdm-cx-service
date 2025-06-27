@@ -26,7 +26,7 @@ public class SwaggerConfig {
 
     private ApiInfo getApiInfo() {
         return new ApiInfo(
-                "Eafdmmart API",
+                "Cx service API",
                 "API документация",
                 "1.0",
                 "Terms of service",
