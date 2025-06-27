@@ -80,8 +80,10 @@ public class CJService {
         Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
         Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
-        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-        cjRepository.save(cj);
+        if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
+            cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+            cjRepository.save(cj);
+        }
         return cj;
     }
 
