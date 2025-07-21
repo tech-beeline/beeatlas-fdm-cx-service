@@ -13,7 +13,11 @@ import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.exception.*;
+import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.exception.ConflictException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
+import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.service.CJService;
 
 import java.util.List;
@@ -134,7 +138,7 @@ public class CJController {
     @DeleteMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Удаление CJ")
-    public ResponseEntity deleteCJById(@PathVariable Long id){
+    public ResponseEntity deleteCJById(@PathVariable Long id) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
@@ -158,7 +162,7 @@ public class CJController {
 
     @GetMapping("/api/cx/v1/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id", response = List.class)
-    public CJFullDto getCJById(@PathVariable Long id){
+    public CJFullDto getCJById(@PathVariable Long id) {
         return cjService.getFullDtoById(id);
     }
 
@@ -168,5 +172,11 @@ public class CJController {
                           @RequestParam(required = false, defaultValue = "ALL") String sample,
                           @RequestParam(required = false, defaultValue = "") String search) {
         return cjService.getAll(idProduct, sample, search);
+    }
+
+    @GetMapping("api/cx/v2/product/cj/{id}")
+    @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
+    public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
+        return cjService.getFullDtoByIdV2(id);
     }
 }
