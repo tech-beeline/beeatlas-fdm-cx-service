@@ -23,10 +23,13 @@ public class RequestContext {
 
     public static List<Long> getUserProducts() {
         List<String> stringList = (List<String>) getHeaders().get(USER_PRODUCTS_IDS_HEADER);
-        List<Long> longList = stringList.stream()
+        if (stringList == null || stringList.isEmpty()) {
+            return List.of();
+        }
+        return stringList.stream()
+                .filter(str -> str != null && !str.trim().isEmpty())
                 .map(Long::parseLong)
                 .collect(Collectors.toList());
-        return longList;
     }
 
     public static List<String> getUserRole() {
