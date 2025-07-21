@@ -6,13 +6,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.client.UserClient;
 import ru.beeline.cxbackend.domain.bi.*;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
+import ru.beeline.cxbackend.dto.AuthorDto;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
+import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
+import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
@@ -63,6 +67,9 @@ public class BusinessInteractionService {
     @Autowired
     private BIMapper biMapper;
 
+    @Autowired
+    private UserClient userClient;
+
     public List<BIDto> getBI(Long idProduct) {
         List<BI> biList = businessInteractionRepository
                 .findAll(BiSpecification.hasProductId(idProduct));
@@ -90,6 +97,19 @@ public class BusinessInteractionService {
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
+    }
+
+    public BIV2Dto getBIByIdV2(Long id) {
+        BI bi = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
+                .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
+        validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
+        UserProfileDto userProfileDto = userClient.getUserProfile(bi.getAuthorId());
+        AuthorDto authorDto = AuthorDto.builder()
+                .id(userProfileDto.getId())
+                .Email(userProfileDto.getEmail())
+                .fullName(userProfileDto.getFullName())
+                .build();
+        return biMapper.biToBIV2Dto(bi, authorDto);
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {

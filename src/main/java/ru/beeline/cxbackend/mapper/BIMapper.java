@@ -34,6 +34,15 @@ public class BIMapper {
         return biDto;
     }
 
+    public BIV2Dto biToBIV2Dto(BI bi, AuthorDto authorDto) {
+        BIV2Dto biV2Dto = modelMapper.map(bi, BIV2Dto.class);
+        biV2Dto.setParticipants(mapBIParticipants(bi.getParticipants()));
+        biV2Dto.setFeelings(modelMapper.map(bi.getFeeling(), BIFeelingDto.class));
+        biV2Dto.setStatus(modelMapper.map(bi.getStatus(), BIStatusDto.class));
+        biV2Dto.setAuthor(modelMapper.map(authorDto, AuthorDto.class));
+        return biV2Dto;
+    }
+
     private List<BIParticipantsDto> mapBIParticipants(List<BIParticipants> participants) {
         return participants.stream()
                 .map(participant -> {
