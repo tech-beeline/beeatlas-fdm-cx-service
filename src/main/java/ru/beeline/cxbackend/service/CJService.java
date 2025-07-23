@@ -21,6 +21,7 @@ import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
+import javax.annotation.PostConstruct;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -59,6 +60,12 @@ public class CJService {
 
     @Autowired
     private UserClient userClient;
+
+    @PostConstruct
+    public void initModelMapperMapping() {
+        modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
+                .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
+    }
 
     public CJ findByName(String name) {
         return cjRepository.findByName(name);
@@ -138,6 +145,7 @@ public class CJService {
 
     public CJFullDtoV2 getFullDtoByIdV2(Long id) {
         CJ cj = getAndValidateCJ(id);
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
         AuthorDto authorDto = AuthorDto.builder()
                 .id(userProfileDto.getId())
