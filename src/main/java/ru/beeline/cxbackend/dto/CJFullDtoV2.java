@@ -31,7 +31,7 @@ public class CJFullDtoV2 {
 
     private Long authorId;
 
-    private Long idProductExt;
+    private Long productId;
 
     private List<StepDtoV2> steps;
 
