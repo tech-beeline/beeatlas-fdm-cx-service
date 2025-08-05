@@ -29,8 +29,6 @@ public class CJFullDtoV2 {
     @JsonProperty("draft")
     private Boolean bDraft;
 
-    private Long authorId;
-
     private Long productId;
 
     private List<StepDtoV2> steps;
