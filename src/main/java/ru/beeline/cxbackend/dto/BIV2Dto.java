@@ -33,7 +33,6 @@ public class BIV2Dto {
     private Long productId;
     private String ownerRole;
     private String metrics;
-    private Long authorId;
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
