@@ -1,11 +1,13 @@
 package ru.beeline.cxbackend.service;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.beeline.cxbackend.client.UserClient;
+import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -14,10 +16,14 @@ import ru.beeline.cxbackend.dto.AuthorDto;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.dto.CJV2Dto;
 import ru.beeline.cxbackend.dto.StepDto;
 import ru.beeline.cxbackend.dto.StepDtoV2;
 import ru.beeline.cxbackend.dto.UserProfileDto;
+import ru.beeline.cxbackend.exception.ConflictException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -29,11 +35,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static ru.beeline.cxbackend.controller.RequestContext.getHeaders;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
+@Slf4j
 @Service
 public class CJService {
 
@@ -79,6 +88,43 @@ public class CJService {
                 .createdDate(new Date())
                 .authorId(userId)
                 .idProductExt(productId)
+                .bDraft(true)
+                .build();
+        cjRepository.save(newCJ);
+        return newCJ;
+    }
+
+    public CJ createCJV2(CJV2Dto cj) {
+        validateAccessProduct(getUserPermissions());
+        if (!(getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+            throw new ForbiddenException("Недостаточно прав для создания CJ");
+        }
+        validateCJPostDto(cj);
+        CJ newCJ = createCJ(cj, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+        log.info("New cj created: " + newCJ);
+        return newCJ;
+    }
+
+    private void validateCJPostDto(CJV2Dto cj) {
+        StringBuilder errMsg = new StringBuilder();
+        if (cj.getName() == null || cj.getName().isEmpty()) {
+            errMsg.append("Поле name не может быть пустым.");
+            throw new ConflictException(errMsg.toString());
+        }
+        if (findByName(cj.getName()) != null) {
+            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
+        }
+    }
+
+    public CJ createCJ(CJV2Dto cj, Long userId) {
+        Integer productId = cj.getProductId();
+        CJ newCJ = CJ.builder()
+                .name(cj.getName())
+                .userPortrait(cj.getUserPortrait())
+                .lastModifiedDate(new Date())
+                .createdDate(new Date())
+                .authorId(userId)
+                .idProductExt(productId == null ? null : Long.valueOf(cj.getProductId()))
                 .bDraft(true)
                 .build();
         cjRepository.save(newCJ);

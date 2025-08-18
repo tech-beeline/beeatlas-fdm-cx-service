@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
 @Service
 public class BusinessInteractionService {
@@ -201,6 +202,7 @@ public class BusinessInteractionService {
     //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
     public BIDto createBI(BI bi) {
+        validateProductId(bi.getProductId());
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
 
         bi.setAuthorId(getUserId());
