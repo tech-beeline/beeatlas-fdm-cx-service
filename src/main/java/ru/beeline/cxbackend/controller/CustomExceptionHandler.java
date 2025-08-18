@@ -66,4 +66,12 @@ public class CustomExceptionHandler {
                 .body(e.getMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleException(IllegalArgumentException e) {
+        log.error(e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                .body("400 Bad Request : " + e.getMessage());
+    }
 }

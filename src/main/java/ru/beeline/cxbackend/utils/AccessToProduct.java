@@ -12,6 +12,9 @@ import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIF
 public class AccessToProduct {
 
     public static void validateAccessProduct(List<String> permissions, List<Long> product, Long productId) {
+        if(productId==null){
+            throw new IllegalArgumentException("Параметр productId не должен быть пустым.");
+        }
         if (!product.contains(productId) && !permissions.contains(Permission.PermissionType.DESIGN_ARTIFACT.toString()))
             throw new ForbiddenException("FORBIDDEN");
     }
