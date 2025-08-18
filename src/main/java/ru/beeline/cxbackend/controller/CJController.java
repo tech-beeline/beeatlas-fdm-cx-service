@@ -51,7 +51,7 @@ public class CJController {
         if (cjService.findByName(cj.getName()) != null) {
             throw new UnprocessedEntityException("Указанное имя CJ уже существует");
         }
-        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+        if (getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             if (cj.getName().trim().isEmpty()) {
                 errors += "Поле name не может быть пустым.\n";
             }
@@ -59,9 +59,7 @@ public class CJController {
                 errors += "Поле user_portrait не может быть пустым.\n";
             }
             if (errors.isEmpty()) {
-                CJ newCJ = cjService.createCJ(cj,
-                                              productId,
-                                              Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+                CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
                 logger.info("New cj created: " + newCJ);
                 return ResponseEntity.status(HttpStatus.OK).body(newCJ);
             } else {
@@ -95,7 +93,6 @@ public class CJController {
             if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
                 throw new UnprocessedEntityException("Указанное имя CJ уже существует");
             }
-
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.status(HttpStatus.OK)
                         .header("content-type", MediaType.APPLICATION_JSON_VALUE)
@@ -103,12 +100,9 @@ public class CJController {
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
             }
-
-
         } else {
             throw new ForbiddenException("Недостаточно прав для редактирования CJ");
         }
-
     }
 
     @PatchMapping("/api/cx/v1/product/cj/{id}")
