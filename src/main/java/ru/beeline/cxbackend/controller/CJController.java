@@ -20,6 +20,7 @@ import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.service.CJService;
+import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
 import java.util.List;
 
@@ -38,6 +39,9 @@ public class CJController {
     @Autowired
     private CJService cjService;
 
+    @Autowired
+    private CJimportFromBpmnService cJimportFromBpmnService;
+
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
@@ -55,11 +59,11 @@ public class CJController {
                 errors += "Поле user_portrait не может быть пустым.\n";
             }
             if (errors.isEmpty()) {
-                CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+                CJ newCJ = cjService.createCJ(cj,
+                                              productId,
+                                              Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
                 logger.info("New cj created: " + newCJ);
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .body(newCJ);
+                return ResponseEntity.status(HttpStatus.OK).body(newCJ);
             } else {
                 throw new ConflictException(errors);
             }
@@ -85,9 +89,7 @@ public class CJController {
             String message = "CJ с id = " + id + " не найден";
             throw new NotFoundException(message);
         }
-        validateAccessProduct(getUserPermissions(),
-                getUserProducts(),
-                currentCJ.getIdProductExt());
+        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             CJ cjByName = cjService.findByName(cjDto.getName());
             if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
@@ -95,8 +97,7 @@ public class CJController {
             }
 
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                return ResponseEntity
-                        .status(HttpStatus.OK)
+                return ResponseEntity.status(HttpStatus.OK)
                         .header("content-type", MediaType.APPLICATION_JSON_VALUE)
                         .body(cjService.updateCJ(currentCJ, cjDto));
             } else {
@@ -118,9 +119,7 @@ public class CJController {
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
-        validateAccessProduct(getUserPermissions(),
-                getUserProducts(),
-                currentCJ.getIdProductExt());
+        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         CJ cjByName = cjService.findByName(cjDto.getName());
         if (cjDto.getName() != null && cjByName != null && !cjByName.getId().equals(id)) {
             throw new UnprocessedEntityException("Указанное имя CJ уже существует");
@@ -144,15 +143,11 @@ public class CJController {
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
-        validateAccessProduct(getUserPermissions(),
-                getUserProducts(),
-                currentCJ.getIdProductExt());
+        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
             if (currentCJ.isBDraft()) {
                 cjService.deleteCJbyId(currentCJ);
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .build();
+                return ResponseEntity.status(HttpStatus.OK).build();
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Удаление невозможно.");
             }
@@ -179,5 +174,13 @@ public class CJController {
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
     public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
         return cjService.getFullDtoByIdV2(id);
+    }
+
+    @PostMapping("/api/cx/v1/bpmn/cj/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Создание CJ продукта из bpmn")
+    public ResponseEntity createCJ(@PathVariable Long id) {
+        cJimportFromBpmnService.importFromBpmn(id);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
