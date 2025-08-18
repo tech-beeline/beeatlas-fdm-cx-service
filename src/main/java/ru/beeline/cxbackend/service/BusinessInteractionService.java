@@ -22,6 +22,7 @@ import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
+import ru.beeline.cxbackend.utils.Utils;
 
 import java.sql.Date;
 import java.util.*;
@@ -249,7 +250,7 @@ public class BusinessInteractionService {
         }
         biLinkRepository.flush();
 
-        finalBi.setUniqueIdent(createUniqueIdent(finalBi.getId()));
+        finalBi.setUniqueIdent(Utils.createUniqueIdent(finalBi.getId()));
         finalBi.setDocument(docs);
         finalBi.setFlowLink(scenarios);
         finalBi.setMockupLink(mockupLink);
@@ -257,11 +258,6 @@ public class BusinessInteractionService {
         businessInteractionRepository.save(finalBi);
         businessInteractionRepository.flush();
         return biMapper.biToBIDto(businessInteractionRepository.findById(finalBi.getId()).orElse(null));
-    }
-
-    private String createUniqueIdent(Long id) {
-        String idString = String.format("%08d", id);
-        return "BI." + idString.substring(0, 2) + "." + idString.substring(2, 4) + "." + idString.substring(4, 6) + "." + idString.substring(6);
     }
 
     //TODO: Абсолютная Дичь, нужно рефакторить

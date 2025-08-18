@@ -1,0 +1,12 @@
+package ru.beeline.cxbackend.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.beeline.cxbackend.domain.bi.BI;
+import ru.beeline.cxbackend.domain.bi.BiStep;
+import ru.beeline.cxbackend.domain.bi.BiStepTypeEnum;
+
+import java.util.Optional;
+
+public interface BiStepRepository extends JpaRepository<BiStep, Integer> {
+    Optional<BiStep> findByNameAndAndBiAndAndBpmnIdAndStepType(String name, BI bi, String bpmnId, BiStepTypeEnum biStepTypeEnum);
+}

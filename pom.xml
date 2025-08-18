@@ -10,7 +10,7 @@
     </parent>
     <groupId>ri.beeline</groupId>
     <artifactId>cx-backend</artifactId>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <name>cx-backend</name>
     <description>cx-backend</description>
     <properties>

@@ -5,6 +5,7 @@ env:
   SPRING_DATASOURCE_PASSWORD: "vault:eafdmmart/data/dev/fdm#password"
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/dev/fdm#driver"
   INTEGRATION_AUTH_SERVER_URL: "vault:eafdmmart/data/dev/fdm#authserverurl"
+  INTEGRATION_DOCUMENT_SERVER_URL: "vault:eafdmmart/data/dev/fdm#documentserverurl"
 
   JWKS: "vault:eafdmmart/data/dev/fdm#jwks"
 

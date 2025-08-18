@@ -113,6 +113,9 @@ public class BI {
     @Where(clause = "type_id = 3")
     private List<BILink> mockupLink;
 
+    @Column(name = "id_bpmn", length = 50, nullable = true)
+    private String idBpmn;
+
     public boolean checkFieldsForNull() {
 
         if (getId() != null) {
