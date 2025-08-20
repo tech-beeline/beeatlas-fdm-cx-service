@@ -125,7 +125,7 @@ public class CJService {
                 .createdDate(new Date())
                 .authorId(userId)
                 .idProductExt(productId == null ? null : Long.valueOf(cj.getProductId()))
-                .bDraft(true)
+                .bDraft(cj.getDraft() != null ? cj.getDraft() :true)
                 .build();
         cjRepository.save(newCJ);
         return newCJ;
