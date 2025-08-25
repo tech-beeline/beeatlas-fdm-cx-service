@@ -34,7 +34,7 @@ public class DocumentClient {
             headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/cj/" + docId,
+            return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/6/" + docId,
                                          HttpMethod.GET,
                                          entity,
                                          new ParameterizedTypeReference<byte[]>() {});
