@@ -1,5 +1,6 @@
 package ru.beeline.cxbackend.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
+@Slf4j
 @Service
 public class CJimportFromBpmnService {
 
@@ -65,7 +67,6 @@ public class CJimportFromBpmnService {
     }
 
     public void importFromBpmn(Long id) {
-        try {
             cjRepository.findByIdAndDeletedDateIsNull(id)
                     .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
 
@@ -73,11 +74,6 @@ public class CJimportFromBpmnService {
 
             checkFileExtension(document);
             extractModel(document.getBody(), id);
-
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {
@@ -97,7 +93,7 @@ public class CJimportFromBpmnService {
         throw new BadRequestException("File extension is not .bpmn");
     }
 
-    public void extractModel(byte[] content, Long id) throws Exception {
+    public void extractModel(byte[] content, Long id){
         Element processElement = prepareExtract(content);
         ProcessCJ processCJ = new ProcessCJ();
         processCJ.id = processElement.getAttribute("id");
@@ -330,9 +326,9 @@ public class CJimportFromBpmnService {
         return sortedList;
     }
 
-    private static Element prepareExtract(byte[] content)
-            throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    private static Element prepareExtract(byte[] content){
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
 
@@ -346,6 +342,11 @@ public class CJimportFromBpmnService {
         }
         Element processElement = (Element) processList.item(0);
         return processElement;
+        } catch(Exception e){
+            log.error(e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+
     }
 
 
