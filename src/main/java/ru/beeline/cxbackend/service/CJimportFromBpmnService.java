@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 import ru.beeline.cxbackend.client.DocumentClient;
 import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.domain.bi.BI;
@@ -27,9 +26,7 @@ import ru.beeline.cxbackend.utils.Utils;
 import javax.annotation.PostConstruct;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
@@ -67,13 +64,13 @@ public class CJimportFromBpmnService {
     }
 
     public void importFromBpmn(Long id) {
-            cjRepository.findByIdAndDeletedDateIsNull(id)
-                    .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
+        cjRepository.findByIdAndDeletedDateIsNull(id)
+                .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
 
-            ResponseEntity<byte[]> document = documentClient.getDocument(id);
+        ResponseEntity<byte[]> document = documentClient.getDocument(id);
 
-            checkFileExtension(document);
-            extractModel(document.getBody(), id);
+        checkFileExtension(document);
+        extractModel(document.getBody(), id);
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {
@@ -93,7 +90,7 @@ public class CJimportFromBpmnService {
         throw new BadRequestException("File extension is not .bpmn");
     }
 
-    public void extractModel(byte[] content, Long id){
+    public void extractModel(byte[] content, Long id) {
         Element processElement = prepareExtract(content);
         ProcessCJ processCJ = new ProcessCJ();
         processCJ.id = processElement.getAttribute("id");
@@ -326,23 +323,23 @@ public class CJimportFromBpmnService {
         return sortedList;
     }
 
-    private static Element prepareExtract(byte[] content){
+    private static Element prepareExtract(byte[] content) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+            factory.setNamespaceAware(true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
 
-        Element definitions = builder.parse(new ByteArrayInputStream(content)).getDocumentElement();
-        NodeList processList = definitions.getElementsByTagNameNS("*", "process");
-        if (processList.getLength() == 0) {
-            throw new IllegalArgumentException("No bpmn:process element found in BPMN XML");
-        }
-        if (processList.getLength() > 1) {
-            throw new BadRequestException("BPMN XML should contain exactly one process element");
-        }
-        Element processElement = (Element) processList.item(0);
-        return processElement;
-        } catch(Exception e){
+            Element definitions = builder.parse(new ByteArrayInputStream(content)).getDocumentElement();
+            NodeList processList = definitions.getElementsByTagNameNS("*", "process");
+            if (processList.getLength() == 0) {
+                throw new IllegalArgumentException("No bpmn:process element found in BPMN XML");
+            }
+            if (processList.getLength() > 1) {
+                throw new BadRequestException("BPMN XML should contain exactly one process element");
+            }
+            Element processElement = (Element) processList.item(0);
+            return processElement;
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
