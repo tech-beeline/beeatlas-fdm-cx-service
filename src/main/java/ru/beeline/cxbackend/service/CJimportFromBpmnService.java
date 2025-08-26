@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -32,6 +33,7 @@ import java.util.function.Function;
 
 @Slf4j
 @Service
+@Transactional
 public class CJimportFromBpmnService {
 
     @Autowired
@@ -126,13 +128,14 @@ public class CJimportFromBpmnService {
                                                                              .cjId(id)
                                                                              .idBpmn(stage.getId())
                                                                              .build());
-
+            log.info("name = " + cjStep.getName());
             for (Integer biIter = 0; biIter < stage.getBiElements().size(); biIter++) {
                 BIElement bi = stage.getBiElements().get(biIter);
                 BI biOptional = null;
                 if ("callActivity".equals(bi.type)) {
                     biOptional = biRepository.findByUniqueIdent(bi.getProcessId());
                     if (biOptional != null) {
+                        log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                         biInCJStepRepository.save(BIInCJStep.builder()
                                                           .cjStepId(cjStep.getId())
                                                           .buisnessIteraction(biOptional)
@@ -141,7 +144,6 @@ public class CJimportFromBpmnService {
                     }
                 }
                 if ("subProcess".equals(bi.type)) {
-
                     biOptional = biRepository.findByNameAndIdBpmn(bi.getName(), bi.getId());
                     if (biOptional == null) {
                         biOptional = biRepository.save(BI.builder()
@@ -153,10 +155,12 @@ public class CJimportFromBpmnService {
                                                                .status(bIStatusRepository.findById(2L).get())
                                                                .idBpmn(bi.getId())
                                                                .build());
+                        log.info("add BI name = " + biOptional.getName());
                         biOptional.setUniqueIdent(Utils.createUniqueIdent(biOptional.getId()));
                         biOptional = biRepository.save(biOptional);
 
                     }
+                    log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                     biInCJStepRepository.save(BIInCJStep.builder()
                                                       .cjStepId(cjStep.getId())
                                                       .buisnessIteraction(biOptional)
@@ -176,6 +180,7 @@ public class CJimportFromBpmnService {
                                 step.getId(),
                                 biStepTypeEnum.get());
                         if (stepOptional.isEmpty()) {
+                            log.info("add STEP name = " + step.getName());
                             biStepRepository.save(ru.beeline.cxbackend.domain.bi.BiStep.builder()
                                                           .name(step.getName())
                                                           .bi(biOptional)
