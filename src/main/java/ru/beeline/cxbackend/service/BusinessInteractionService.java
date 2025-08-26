@@ -14,8 +14,11 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.AuthorDto;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
+import ru.beeline.cxbackend.dto.BILinkDto;
+import ru.beeline.cxbackend.dto.BIPostDto;
 import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
+import ru.beeline.cxbackend.dto.ParticipantDto;
 import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -200,66 +203,100 @@ public class BusinessInteractionService {
         }
     }
 
-    //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
-    public BIDto createBI(BI bi) {
-        validateProductId(bi.getProductId());
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
-
-        bi.setAuthorId(getUserId());
-        bi.setCreatedDate(new Date((new java.util.Date()).getTime()));
-        bi.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
-
-        List<BILink> docs = bi.getDocument();
-        List<BILink> mockupLink = bi.getMockupLink();
-        List<BILink> scenarios = bi.getFlowLink();
-        List<BIParticipants> participants = bi.getParticipants();
-
-        bi.setDocument(new ArrayList<>());
-        bi.setFlowLink(new ArrayList<>());
-        bi.setMockupLink(new ArrayList<>());
-        bi.setParticipants(new ArrayList<>());
-
-        bi.setFeeling(biFeelingRepository.findById(bi.getFeeling().getId()).orElse(null));
-        bi.setStatus(biStatusRepository.findById(bi.getStatus().getId()).orElse(null));
-        bi.setUniqueIdent(UUID.randomUUID().toString());
-        BI finalBi = businessInteractionRepository.save(bi);
-        businessInteractionRepository.flush();
-
-        if (docs != null) {
-            docs = biLinkRepository.saveAll(docs.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(2L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (mockupLink != null) {
-            mockupLink = biLinkRepository.saveAll(mockupLink.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(3L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (scenarios != null) {
-            scenarios = biLinkRepository.saveAll(scenarios.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(1L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (participants != null) {
-            participants = biParticipantsRepository.saveAll(participants.stream().peek(participant -> {
-                participant.setBuisnessIteraction(finalBi);
-                participant.setParticipantEnum(biParticipantRepository.findById(participant.getIdType()).orElseGet(null));
-            }).collect(Collectors.toList()));
-        }
+    public BIDto createBI(BIPostDto biPostDto) {
+        validateProductId(biPostDto.getProductId());
+        validateAccessProduct(getUserPermissions(), getUserProducts(), biPostDto.getProductId());
+        BI saveBI = buildBI(biPostDto);
+        List<BILink> docs = mapLinks(biPostDto.getDocument());
+        List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
+        List<BILink> scenarios = mapLinks(biPostDto.getFlowLink());
+        List<BIParticipants> participants = mapParticipants(biPostDto.getParticipants());
+        docs = saveLinks(docs, saveBI, 2L);
+        mockupLink = saveLinks(mockupLink, saveBI, 3L);
+        scenarios = saveLinks(scenarios, saveBI, 1L);
+        participants = saveParticipants(participants, saveBI);
+        List<BIChannelEnum> channels = biPostDto.getChannel() != null ? biPostDto.getChannel() : null;
+        saveBI.setChannel(channels);
         biLinkRepository.flush();
-
-        finalBi.setUniqueIdent(Utils.createUniqueIdent(finalBi.getId()));
-        finalBi.setDocument(docs);
-        finalBi.setFlowLink(scenarios);
-        finalBi.setMockupLink(mockupLink);
-        finalBi.setParticipants(participants);
-        businessInteractionRepository.save(finalBi);
+        saveBI.setUniqueIdent(Utils.createUniqueIdent(saveBI.getId()));
+        saveBI.setDocument(docs);
+        saveBI.setFlowLink(scenarios);
+        saveBI.setMockupLink(mockupLink);
+        saveBI.setParticipants(participants);
+        businessInteractionRepository.save(saveBI);
         businessInteractionRepository.flush();
-        return biMapper.biToBIDto(businessInteractionRepository.findById(finalBi.getId()).orElse(null));
+        return biMapper.biToBIDto(businessInteractionRepository.findById(saveBI.getId()).orElse(null));
+    }
+
+    private BI buildBI(BIPostDto dto) {
+        BI saveBI = BI.builder()
+                .name(dto.getName())
+                .descr(dto.getDescr())
+                .isCommunal(dto.getCommunal() != null ? dto.getCommunal() : false)
+                .isTarget(dto.getTarget() != null ? dto.getTarget() : false)
+                .isDraft(dto.getDraft() != null ? dto.getDraft() : false)
+                .touchPoints(dto.getTouchPoints())
+                .eaGuid(dto.getEaGuid())
+                .productId(dto.getProductId())
+                .ownerRole(dto.getOwnerRole())
+                .metrics(dto.getMetrics())
+                .clientScenario(dto.getClientScenario())
+                .ucsReaction(dto.getUcsReaction())
+                .feeling(dto.getFeeling() != null ? biFeelingRepository.findById(dto.getFeeling().getId()).orElse(null) : null)
+                .status(dto.getStatus() != null ? biStatusRepository.findById(dto.getStatus().getId()).orElse(null) : null)
+                .authorId(getUserId())
+                .createdDate(new Date((new java.util.Date()).getTime()))
+                .lastModifiedDate(new Date((new java.util.Date()).getTime()))
+                .uniqueIdent(UUID.randomUUID().toString())
+                .document(new ArrayList<>())
+                .flowLink(new ArrayList<>())
+                .mockupLink(new ArrayList<>())
+                .participants(new ArrayList<>())
+                .channel(new ArrayList<>())
+                .build();
+        return businessInteractionRepository.saveAndFlush(saveBI);
+    }
+
+    private List<BILink> mapLinks(List<BILinkDto> linkDtos) {
+        if (linkDtos == null) return null;
+        return linkDtos.stream().map(dto -> {
+            BILink link = new BILink();
+            link.setDescr(dto.getDescr());
+            link.setUrl(dto.getUrl());
+            return link;
+        }).collect(Collectors.toList());
+    }
+
+    private List<BIParticipants> mapParticipants(List<ParticipantDto> dtos) {
+        if (dtos == null) return null;
+        return dtos.stream().map(dto -> {
+            BIParticipants p = new BIParticipants();
+            p.setIdType(dto.getIdType());
+            p.setDescr(dto.getDescr());
+            p.setValue(dto.getValue());
+            return p;
+        }).collect(Collectors.toList());
+    }
+
+    private List<BILink> saveLinks(List<BILink> links, BI bi, Long typeId) {
+        if (links == null) return null;
+        links.forEach(link -> {
+            link.setIdBi(bi);
+            link.setType(LinkEnum.builder().id(typeId).build());
+        });
+        return biLinkRepository.saveAll(links);
+    }
+
+    private List<BIParticipants> saveParticipants(List<BIParticipants> participants, BI bi) {
+        if (participants == null) return null;
+        participants.forEach(p -> {
+            p.setBuisnessIteraction(bi);
+            p.setParticipantEnum(
+                    biParticipantRepository.findById(p.getIdType()).orElse(null)
+            );
+        });
+        return biParticipantsRepository.saveAll(participants);
     }
 
     //TODO: Абсолютная Дичь, нужно рефакторить
