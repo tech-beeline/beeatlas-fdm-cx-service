@@ -12,6 +12,7 @@ import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
+import ru.beeline.cxbackend.dto.BIPostDto;
 import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -68,7 +69,7 @@ public class BIController {
 
     @PostMapping("/v1/library/business-interactions")
     @ApiOperation(value = "Добавление BI", response = List.class)
-    public ResponseEntity createBI(@RequestBody BI bi) {
+    public ResponseEntity createBI(@RequestBody BIPostDto bi) {
         if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.createBI(bi));
         } else {
