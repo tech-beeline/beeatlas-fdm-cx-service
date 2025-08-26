@@ -36,6 +36,8 @@ public class CJimportFromBpmnService {
 
     @Autowired
     private CJRepository cjRepository;
+    @Autowired
+    private BIStatusRepository bIStatusRepository;
 
     @Autowired
     private DocumentClient documentClient;
@@ -148,6 +150,7 @@ public class CJimportFromBpmnService {
                                                                .createdDate(new java.sql.Date((new Date()).getTime()))
                                                                .uniqueIdent("1")
                                                                .authorId(RequestContext.getUserId())
+                                                               .status(bIStatusRepository.findById(2L).get())
                                                                .idBpmn(bi.getId())
                                                                .build());
                         biOptional.setUniqueIdent(Utils.createUniqueIdent(biOptional.getId()));
