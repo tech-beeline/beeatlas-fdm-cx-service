@@ -276,6 +276,10 @@ public class CJService {
         if (!otherCJs.isEmpty()) {
             userCJs.addAll(otherCJs);
         }
+        List<CJ> withProductExtNull = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIsNull(search);
+        if (!withProductExtNull.isEmpty()) {
+            userCJs.addAll(withProductExtNull);
+        }
         return userCJs;
     }
 

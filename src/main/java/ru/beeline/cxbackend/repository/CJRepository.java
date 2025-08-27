@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface CJRepository extends JpaRepository<CJ, Long> {
 
     List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIn(String search, List<Long> idProducts);
+    List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIsNull(String search);
 
     List<CJ> findAllByNameContainsIgnoreCase(String search);
 
