@@ -349,7 +349,7 @@ public class CJimportFromBpmnService {
             return processElement;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
 
     }
