@@ -133,18 +133,24 @@ public class CJimportFromBpmnService {
                 BIElement bi = stage.getBiElements().get(biIter);
                 BI biOptional = null;
                 if ("callActivity".equals(bi.type)) {
-                    biOptional = biRepository.findByUniqueIdent(bi.getProcessId());
+                    biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
                     if (biOptional != null) {
                         log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
-                        biInCJStepRepository.save(BIInCJStep.builder()
-                                                          .cjStepId(cjStep.getId())
-                                                          .buisnessIteraction(biOptional)
-                                                          .order(biIter.longValue())
-                                                          .build());
+                        BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(),
+                                                                                           biOptional.getId());
+                        biInCJStep = biInCJStep != null ? biInCJStep : biInCJStepRepository.save(BIInCJStep.builder()
+                                                                                                         .cjStepId(
+                                                                                                                 cjStep.getId())
+                                                                                                         .buisnessIteraction(
+                                                                                                                 biOptional)
+                                                                                                         .order(biIter.longValue())
+                                                                                                         .build());
+
+                        ;
                     }
                 }
                 if ("subProcess".equals(bi.type)) {
-                    biOptional = biRepository.findByNameAndIdBpmn(bi.getName(), bi.getId());
+                    biOptional = biRepository.findByNameAndIdBpmnAndDeletedDateIsNull(bi.getName(), bi.getId());
                     if (biOptional == null) {
                         biOptional = biRepository.save(BI.builder()
                                                                .name(bi.name)
@@ -161,11 +167,15 @@ public class CJimportFromBpmnService {
 
                     }
                     log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
-                    biInCJStepRepository.save(BIInCJStep.builder()
-                                                      .cjStepId(cjStep.getId())
-                                                      .buisnessIteraction(biOptional)
-                                                      .order(biIter.longValue())
-                                                      .build());
+                    BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(),
+                                                                                       biOptional.getId());
+                    biInCJStep = biInCJStep != null ? biInCJStep : biInCJStepRepository.save(BIInCJStep.builder()
+                                                                                                     .cjStepId(
+                                                                                                             cjStep.getId())
+                                                                                                     .buisnessIteraction(
+                                                                                                             biOptional)
+                                                                                                     .order(biIter.longValue())
+                                                                                                     .build());
                 }
                 for (int stepsIter = 0; stepsIter < bi.getBiSteps().size(); stepsIter++) {
                     BiStep step = bi.getBiSteps().get(stepsIter);
@@ -214,7 +224,7 @@ public class CJimportFromBpmnService {
                         if (extElements.getLength() > 0) {
                             Element calledElement = (Element) extElements.item(0);
                             bi.processId = calledElement.getAttribute("processId");
-                            BI biOptional = biRepository.findByUniqueIdent(bi.getProcessId());
+                            BI biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
                             if (biOptional == null) {
                                 throw new BadRequestException("unique_ident is " + bi.getProcessId() + " not found");
                             }
