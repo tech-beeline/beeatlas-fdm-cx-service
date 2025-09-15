@@ -6,6 +6,7 @@ env:
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/test/e2e/fdm#driver"
   INTEGRATION_AUTH_SERVER_URL: "vault:eafdmmart/data/test/e2e/fdm#authserverurl"
   INTEGRATION_DOCUMENT_SERVER_URL: "vault:eafdmmart/data/test/e2e/fdm#documentserverurl"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "vault:eafdmmart/data/test/e2e/fdm#opentelemetry"
 
   JWKS: "vault:eafdmmart/data/test/e2e/fdm#jwks"
 
