@@ -14,7 +14,6 @@ import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.CJFullDtoV2;
-import ru.beeline.cxbackend.dto.CJV2Dto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -68,13 +67,6 @@ public class CJController {
         } else {
             throw new ForbiddenException("Недостаточно прав для создания CJ");
         }
-    }
-
-    @PostMapping("/api/cx/v1/cj")
-    @ResponseBody
-    @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity<CJ> createCJ(@RequestBody CJV2Dto cj) {
-        return ResponseEntity.status(HttpStatus.OK).body(cjService.createCJV2(cj));
     }
 
     @PutMapping("/api/cx/v1/product/cj/{id}")
