@@ -41,6 +41,34 @@ public class CJController {
     @Autowired
     private CJimportFromBpmnService cJimportFromBpmnService;
 
+    @GetMapping("/api/cx/v1/product/cj/{id}")
+    @ApiOperation(value = "получение CJ продукта по id", response = List.class)
+    public CJFullDto getCJById(@PathVariable Long id) {
+        return cjService.getFullDtoById(id);
+    }
+
+    @GetMapping("/api/cx/v1/product/cj")
+    @ApiOperation(value = "Получение списка CJ", response = List.class)
+    public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
+                          @RequestParam(required = false, defaultValue = "ALL") String sample,
+                          @RequestParam(required = false, defaultValue = "") String search) {
+        return cjService.getAll(idProduct, sample, search);
+    }
+
+    @GetMapping("api/cx/v2/product/cj/{id}")
+    @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
+    public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
+        return cjService.getFullDtoByIdV2(id);
+    }
+
+    @PostMapping("/api/cx/v1/bpmn/cj/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Создание CJ продукта из bpmn")
+    public ResponseEntity createCJ(@PathVariable Long id) {
+        cJimportFromBpmnService.importFromBpmn(id);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
@@ -140,33 +168,5 @@ public class CJController {
         } else {
             throw new ForbiddenException("Недостаточно прав для удаления CJ");
         }
-    }
-
-    @GetMapping("/api/cx/v1/product/cj/{id}")
-    @ApiOperation(value = "получение CJ продукта по id", response = List.class)
-    public CJFullDto getCJById(@PathVariable Long id) {
-        return cjService.getFullDtoById(id);
-    }
-
-    @GetMapping("/api/cx/v1/product/cj")
-    @ApiOperation(value = "Получение списка CJ", response = List.class)
-    public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
-                          @RequestParam(required = false, defaultValue = "ALL") String sample,
-                          @RequestParam(required = false, defaultValue = "") String search) {
-        return cjService.getAll(idProduct, sample, search);
-    }
-
-    @GetMapping("api/cx/v2/product/cj/{id}")
-    @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
-    public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
-        return cjService.getFullDtoByIdV2(id);
-    }
-
-    @PostMapping("/api/cx/v1/bpmn/cj/{id}")
-    @ResponseBody
-    @ApiOperation(value = "Создание CJ продукта из bpmn")
-    public ResponseEntity createCJ(@PathVariable Long id) {
-        cJimportFromBpmnService.importFromBpmn(id);
-        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
