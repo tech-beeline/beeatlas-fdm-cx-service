@@ -89,9 +89,20 @@ public class CJService {
                 .authorId(userId)
                 .idProductExt(productId)
                 .bDraft(true)
+                .uniqueIdent("temporary")
                 .build();
-        cjRepository.save(newCJ);
+        cjRepository.saveAndFlush(newCJ);
+        newCJ.setUniqueIdent(generateUniqueIdent(newCJ.getId()));
         return newCJ;
+    }
+
+    private String generateUniqueIdent(Long id) {
+        String padded = String.format("%08d", id);
+        return "CJ." +
+                padded.substring(0, 2) + "." +
+                padded.substring(2, 4) + "." +
+                padded.substring(4, 6) + "." +
+                padded.substring(6, 8);
     }
 
     public CJ createCJV2(CJV2Dto cj) {
@@ -125,7 +136,7 @@ public class CJService {
                 .createdDate(new Date())
                 .authorId(userId)
                 .idProductExt(productId == null ? null : Long.valueOf(cj.getProductId()))
-                .bDraft(cj.getDraft() != null ? cj.getDraft() :true)
+                .bDraft(cj.getDraft() != null ? cj.getDraft() : true)
                 .build();
         cjRepository.save(newCJ);
         return newCJ;
