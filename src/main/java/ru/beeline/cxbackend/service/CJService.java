@@ -83,7 +83,7 @@ public class CJService {
                 .build();
         cjRepository.saveAndFlush(newCJ);
         newCJ.setUniqueIdent(generateUniqueIdent(newCJ.getId()));
-        return newCJ;
+        return cjRepository.save(newCJ);
     }
 
     private String generateUniqueIdent(Long id) {
