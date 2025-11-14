@@ -39,4 +39,7 @@ public class CJFullDtoV2 {
     private Date createdDate;
 
     private AuthorDto author;
+
+    private String uniqueIdent;
 }
+
