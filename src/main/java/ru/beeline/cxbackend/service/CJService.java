@@ -5,13 +5,18 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.client.UserClient;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
+import ru.beeline.cxbackend.dto.AuthorDto;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
+import ru.beeline.cxbackend.dto.CJFullDtoV2;
 import ru.beeline.cxbackend.dto.StepDto;
+import ru.beeline.cxbackend.dto.StepDtoV2;
+import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
@@ -51,6 +56,9 @@ public class CJService {
 
     @Autowired
     private BIMapper biMapper;
+
+    @Autowired
+    private UserClient userClient;
 
     public CJ findByName(String name) {
         return cjRepository.findByName(name);
@@ -110,13 +118,9 @@ public class CJService {
     }
 
     public CJFullDto getFullDtoById(Long id) {
-        CJ cj = getById(id);
-        if (cj.getDeletedDate() != null) {
-            throw new NotFoundException("CJ with id " + id + " does not exist");
-        }
+        CJ cj = getAndValidateCJ(id);
         validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         CJFullDto cjFullDto = modelMapper.map(cj, CJFullDto.class);
-
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjFullDto.getId());
         List<StepDto> stepDtos = cjStepList.stream().map(cjStep -> {
                     StepDto stepDto = modelMapper.map(cjStep, StepDto.class);
@@ -129,8 +133,53 @@ public class CJService {
                 }).sorted(Comparator.comparing(StepDto::getOrder))
                 .collect(Collectors.toList());
         cjFullDto.setSteps(stepDtos);
-
         return cjFullDto;
+    }
+
+    public CJFullDtoV2 getFullDtoByIdV2(Long id) {
+        CJ cj = getAndValidateCJ(id);
+        UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
+        AuthorDto authorDto = AuthorDto.builder()
+                .id(userProfileDto.getId())
+                .Email(userProfileDto.getEmail())
+                .fullName(userProfileDto.getFullName())
+                .build();
+        CJFullDtoV2 cjFullDtoV2 = modelMapper.map(cj, CJFullDtoV2.class);
+        cjFullDtoV2.setAuthor(authorDto);
+        cjFullDtoV2.setSteps(getAndConvertSteps(cjFullDtoV2.getId()));
+        return cjFullDtoV2;
+    }
+
+    private CJ getAndValidateCJ(Long id) {
+        CJ cj = getById(id);
+        if (cj.getDeletedDate() != null) {
+            throw new NotFoundException("CJ with id " + id + " does not exist");
+        }
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
+        return cj;
+    }
+
+    private List<StepDtoV2> getAndConvertSteps(Long cjId) {
+        List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjId);
+        return cjStepList.stream()
+                .map(this::convertToStepDto)
+                .sorted(Comparator.comparing(StepDtoV2::getOrder))
+                .collect(Collectors.toList());
+    }
+
+    private StepDtoV2 convertToStepDto(CJStep cjStep) {
+        StepDtoV2 stepDtoV2 = modelMapper.map(cjStep, StepDtoV2.class);
+        List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDtoV2.getId());
+        if (!biInCJStepList.isEmpty()) {
+            List<Long> biIds = biInCJStepList.stream()
+                    .map(BIInCJStep::getBiId)
+                    .collect(Collectors.toList());
+            List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biIds).stream()
+                    .distinct()
+                    .collect(Collectors.toList());
+            stepDtoV2.setBi(biMapper.biToBIDto(biList));
+        }
+        return stepDtoV2;
     }
 
     public List<CJ> getAll(Long idProduct, String sample, String search) {

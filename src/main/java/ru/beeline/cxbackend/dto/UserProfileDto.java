@@ -1,8 +1,7 @@
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import ru.beeline.cxbackend.domain.UserProfile;
 
 import java.util.Date;
@@ -11,6 +10,9 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserProfileDto {
 
     private Long id;
@@ -30,10 +32,4 @@ public class UserProfileDto {
 
     private List<RoleDto> roles;
 
-    public UserProfileDto(String idExt, String fullName, String login, String email) {
-        this.idExt = idExt;
-        this.fullName = fullName;
-        this.login = login;
-        this.email = email;
-    }
 }
