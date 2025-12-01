@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
@@ -23,9 +24,9 @@ import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
 import java.util.List;
 
-import static ru.beeline.cxbackend.controller.RequestContext.*;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
-import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
@@ -69,32 +70,12 @@ public class CJController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @CustomHeaders
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity createCJ(@PathVariable Long productId, @RequestBody CJDto cj) {
-        String errors = "";
-        validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
-        if (cjService.findByName(cj.getName()) != null) {
-            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
-        }
-        if (getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
-            if (cj.getName().trim().isEmpty()) {
-                errors += "Поле name не может быть пустым.\n";
-            }
-            if (cj.getUserPortrait().trim().isEmpty()) {
-                errors += "Поле user_portrait не может быть пустым.\n";
-            }
-            if (errors.isEmpty()) {
-                CJ newCJ = cjService.createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
-                logger.info("New cj created: " + newCJ);
-                return ResponseEntity.status(HttpStatus.OK).body(newCJ);
-            } else {
-                throw new ConflictException(errors);
-            }
-        } else {
-            throw new ForbiddenException("Недостаточно прав для создания CJ");
-        }
+    public ResponseEntity<CJ> createCJ(@PathVariable Long productId, @RequestBody CJDto cj) {
+        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
     @PutMapping("/api/cx/v1/product/cj/{id}")
@@ -170,3 +151,4 @@ public class CJController {
         }
     }
 }
+
