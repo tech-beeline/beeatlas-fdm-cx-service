@@ -121,7 +121,7 @@ public class CJimportFromBpmnService {
         for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
             CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
 
-            CJStep cjStep = cjStepRepository.findFirstByCjIdAndNameAndIdBpmn(id, stage.name, stage.id);
+            CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
             cjStep = cjStep != null ? cjStep : cjStepRepository.save(CJStep.builder()
                                                                              .order(stageIter)
                                                                              .name(stage.name)
@@ -150,7 +150,7 @@ public class CJimportFromBpmnService {
                     }
                 }
                 if ("subProcess".equals(bi.type)) {
-                    biOptional = biRepository.findByNameAndIdBpmnAndDeletedDateIsNull(bi.getName(), bi.getId());
+                    biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
                     if (biOptional == null) {
                         biOptional = biRepository.save(BI.builder()
                                                                .name(bi.name)
@@ -184,8 +184,7 @@ public class CJimportFromBpmnService {
                             .findFirst();
 
                     if (biStepTypeEnum.isPresent()) {
-                        Optional<ru.beeline.cxbackend.domain.bi.BiStep> stepOptional = biStepRepository.findByNameAndAndBiAndAndBpmnIdAndStepType(
-                                step.getName(),
+                        Optional<ru.beeline.cxbackend.domain.bi.BiStep> stepOptional = biStepRepository.findByBiAndBpmnIdAndStepType(
                                 biOptional,
                                 step.getId(),
                                 biStepTypeEnum.get());

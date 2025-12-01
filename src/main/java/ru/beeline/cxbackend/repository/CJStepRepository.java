@@ -23,6 +23,6 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
             "WHERE cx.cj_steps.id_cj = :id AND cx.business_iteraction.b_draft = true", nativeQuery = true)
     Long countByBiIdAndDraft(@Param("id") Long id);
 
-    CJStep findFirstByCjIdAndNameAndIdBpmn(Long cjId, String name, String id);
+    CJStep findFirstByCjIdAndIdBpmn(Long cjId, String id);
 
 }
