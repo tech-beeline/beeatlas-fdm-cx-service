@@ -8,5 +8,5 @@ import ru.beeline.cxbackend.domain.bi.BiStepTypeEnum;
 import java.util.Optional;
 
 public interface BiStepRepository extends JpaRepository<BiStep, Integer> {
-    Optional<BiStep> findByNameAndAndBiAndAndBpmnIdAndStepType(String name, BI bi, String bpmnId, BiStepTypeEnum biStepTypeEnum);
+    Optional<BiStep> findByBiAndBpmnIdAndStepType(BI bi, String bpmnId, BiStepTypeEnum biStepTypeEnum);
 }

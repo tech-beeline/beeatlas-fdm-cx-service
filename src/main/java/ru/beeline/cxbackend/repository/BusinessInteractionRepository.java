@@ -29,6 +29,7 @@ public interface BusinessInteractionRepository extends
 
     Optional<BI> findByIdAndDeletedDateIsNull(Long id);
 
-    BI findByNameAndIdBpmnAndDeletedDateIsNull(String name, String id);
+    BI findByIdBpmnAndDeletedDateIsNull(String id);
+
     BI findByUniqueIdentAndDeletedDateIsNull(String id);
 }
