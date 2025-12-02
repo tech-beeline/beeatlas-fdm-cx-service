@@ -2,8 +2,6 @@ package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,20 +32,20 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 @Api(value = "CX API", tags = "CJ")
 public class CJController {
 
-    private Logger logger = LoggerFactory.getLogger(CJController.class);
-
     @Autowired
     private CJService cjService;
 
     @Autowired
     private CJimportFromBpmnService cJimportFromBpmnService;
 
+    @CustomHeaders
     @GetMapping("/api/cx/v1/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id", response = List.class)
     public CJFullDto getCJById(@PathVariable Long id) {
         return cjService.getFullDtoById(id);
     }
 
+    @CustomHeaders
     @GetMapping("/api/cx/v1/product/cj")
     @ApiOperation(value = "Получение списка CJ", response = List.class)
     public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
@@ -56,16 +54,18 @@ public class CJController {
         return cjService.getAll(idProduct, sample, search);
     }
 
+    @CustomHeaders
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
     public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
         return cjService.getFullDtoByIdV2(id);
     }
 
+    @CustomHeaders
     @PostMapping("/api/cx/v1/bpmn/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта из bpmn")
-    public ResponseEntity createCJ(@PathVariable Long id) {
+    public ResponseEntity<Void> createCJ(@PathVariable Long id) {
         cJimportFromBpmnService.importFromBpmn(id);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -78,10 +78,11 @@ public class CJController {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
+    @CustomHeaders
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CJ> editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
         String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
@@ -106,10 +107,11 @@ public class CJController {
         }
     }
 
+    @CustomHeaders
     @PatchMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CJ> updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
@@ -130,10 +132,11 @@ public class CJController {
         }
     }
 
+    @CustomHeaders
     @DeleteMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Удаление CJ")
-    public ResponseEntity deleteCJById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCJById(@PathVariable Long id) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
