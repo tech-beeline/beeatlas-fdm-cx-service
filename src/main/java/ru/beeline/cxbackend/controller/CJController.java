@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -54,6 +55,7 @@ public class CJController {
         return cjService.getAll(idProduct, sample, search);
     }
 
+    @ApiErrorCodes({400, 401, 403, 404, 500})
     @CustomHeaders
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
