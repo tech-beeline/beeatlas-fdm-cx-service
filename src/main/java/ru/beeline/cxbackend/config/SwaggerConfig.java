@@ -23,7 +23,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(getApiInfo())
                 .useDefaultResponseMessages(false)
-                .globalResponses(HttpMethod.GET, getGlobalErrorResponses())
+                .globalResponses(HttpMethod.GET, getErrorResponses())
                 .globalResponses(HttpMethod.POST, getGlobalErrorResponses())
                 .globalResponses(HttpMethod.PUT, getGlobalErrorResponses())
                 .globalResponses(HttpMethod.DELETE, getGlobalErrorResponses())
@@ -42,7 +42,18 @@ public class SwaggerConfig {
                 new ResponseBuilder().code("401").description("Требуется аутентификация").build(),
                 new ResponseBuilder().code("403").description("Доступ запрещен").build(),
                 new ResponseBuilder().code("404").description("Ресурс не найден").build(),
+                new ResponseBuilder().code("409").description("Конфликт данных").build(),
                 new ResponseBuilder().code("500").description("Внутренняя ошибка сервера").build()
+
+        );
+    }
+
+    private List<Response> getErrorResponses() {
+        return Arrays.asList(
+                new ResponseBuilder().code("400").description("Неверные входные данные").build(),
+                new ResponseBuilder().code("401").description("Требуется аутентификация").build(),
+                new ResponseBuilder().code("500").description("Внутренняя ошибка сервера").build()
+
         );
     }
 
