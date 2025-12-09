@@ -73,6 +73,8 @@ public class CJimportFromBpmnService {
         ResponseEntity<byte[]> document = documentClient.getDocument(id);
         checkFileExtension(document);
         extractModel(document.getBody(), id, cj);
+        cj.setBpmn(true);
+        cjRepository.save(cj);
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {

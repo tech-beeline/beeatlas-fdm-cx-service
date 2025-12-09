@@ -58,4 +58,7 @@ public class CJ {
 
     @Column(name = "unique_ident")
     private String uniqueIdent;
+
+    @Column(name = "bpmn")
+    private Boolean bpmn;
 }
