@@ -18,6 +18,7 @@ import ru.beeline.cxbackend.domain.bi.BiStepTypeEnum;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.dto.DocumentationTypeDTO;
 import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.model.*;
@@ -70,7 +71,8 @@ public class CJimportFromBpmnService {
     public void importFromBpmn(Long id) {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
-        ResponseEntity<byte[]> document = documentClient.getDocument(id);
+        List<DocumentationTypeDTO> documentationTypeDTO = documentClient.getDocumentationType("CJ");
+        ResponseEntity<byte[]> document = documentClient.getDocument(id,documentationTypeDTO.get(0).getId());
         checkFileExtension(document);
         extractModel(document.getBody(), id, cj);
         cj.setBpmn(true);
