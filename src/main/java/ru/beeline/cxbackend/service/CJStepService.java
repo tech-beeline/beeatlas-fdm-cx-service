@@ -42,9 +42,6 @@ public class CJStepService {
     @Autowired
     private BIInCJStepRepository biInCJStepRepository;
 
-    @Autowired
-    private BiStepRepository biStepRepository;
-
     public List<CjStepFullDto> getStepByCJId(Long id) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(id).get());
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(id).stream()
@@ -138,19 +135,5 @@ public class CJStepService {
                     .collect(Collectors.toList());
         }
         cjStepRepository.saveAllAndFlush(existSteps);
-    }
-
-    public void patchBiStep(Integer id, PatchStepDto patchStepDto) {
-        BiStep biStep = biStepRepository.findById(id).orElseThrow(() -> new NotFoundException("BiStep с id " + id + " не найден"));
-        if (patchStepDto.getErrorRate() != null) {
-            biStep.setErrorRate(patchStepDto.getErrorRate());
-        }
-        if (patchStepDto.getRps() != null) {
-            biStep.setRps(patchStepDto.getRps());
-        }
-        if (patchStepDto.getLatency() != null) {
-            biStep.setLatency(patchStepDto.getLatency());
-        }
-        biStepRepository.save(biStep);
     }
 }

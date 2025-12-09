@@ -39,10 +39,10 @@ public class BiStep {
     @Column(name = "id_bpmn", length = 50, nullable = false)
     private String bpmnId;
 
-    private Integer latency;
+    private Float latency;
 
     @Column(name = "error_rate")
-    private Integer errorRate;
+    private Float errorRate;
 
-    private Integer rps;
+    private Float rps;
 }

@@ -15,6 +15,8 @@ import javax.persistence.*;
 public class BiStepRelation {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bi_steps_relations_generator")
+    @SequenceGenerator(name = "bi_steps_relations_generator", sequenceName = "bi_steps_relations_id_seq", allocationSize = 1)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,11 +26,23 @@ public class BiStepRelation {
     @Column(name = "id_bi_steps", insertable = false, updatable = false)
     private Integer biStepId;
 
-    @Column(name = "entity_type", length = 50, nullable = false)
-    private String entityType;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "entity_id", nullable = false)
-    private Integer entityId;
+    @Column(name = "product_id")
+    private Integer productId;
+
+    @Column(name = "tc_id")
+    private Integer tcId;
+
+    @Column(name = "operation_id")
+    private Integer operationId;
+
+    @Column(name = "interface_id")
+    private Integer interfaceId;
+
+    @Column(name = "user_id")
+    private Integer userId;
 
     @Column(name = "\"order\"")
     private Integer order;

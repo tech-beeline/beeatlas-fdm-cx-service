@@ -27,7 +27,7 @@ public class SwaggerConfig {
                 .globalResponses(HttpMethod.POST, getGlobalErrorResponses())
                 .globalResponses(HttpMethod.PUT, getGlobalErrorResponses())
                 .globalResponses(HttpMethod.DELETE, getGlobalErrorResponses())
-                .globalResponses(HttpMethod.PATCH, getGlobalErrorResponses())
+                .globalResponses(HttpMethod.PATCH, getErrorResponses())
                 .securitySchemes(List.of(apiKey()))
                 .securityContexts(List.of(securityContext()))
                 .select()

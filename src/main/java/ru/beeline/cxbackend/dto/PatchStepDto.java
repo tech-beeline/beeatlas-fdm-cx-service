@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PatchStepDto {
 
-    private Integer latency;
-    private Integer errorRate;
-    private Integer rps;
+    private Float latency;
+    private Float errorRate;
+    private Float rps;
 }

@@ -1,5 +1,6 @@
 package ru.beeline.cxbackend.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import ru.beeline.cxbackend.dto.BIPostDto;
 import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
 import ru.beeline.cxbackend.dto.ParticipantDto;
+import ru.beeline.cxbackend.dto.PatchRelationStepDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -36,6 +39,7 @@ import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIF
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
+@Slf4j
 @Service
 public class BusinessInteractionService {
 
@@ -74,6 +78,12 @@ public class BusinessInteractionService {
 
     @Autowired
     private UserClient userClient;
+
+    @Autowired
+    private BiStepRepository biStepRepository;
+
+    @Autowired
+    BiStepRelationRepository biStepRelationRepository;
 
     public List<BIDto> getBI(Long idProduct) {
         List<BI> biList = businessInteractionRepository
@@ -440,5 +450,93 @@ public class BusinessInteractionService {
 
     public Optional<BIStatus> getStatusById(Long id) {
         return biStatusRepository.findById(id);
+    }
+
+    @Transactional
+    public void patchBiStep(Integer id, PatchStepDto patchStepDto) {
+        BiStep biStep = biStepRepository.findById(id).orElseThrow(()
+                -> new NotFoundException("BiStep с id " + id + " не найден"));
+        if (patchStepDto.getErrorRate() != null) {
+            biStep.setErrorRate(patchStepDto.getErrorRate());
+        }
+        if (patchStepDto.getRps() != null) {
+            biStep.setRps(patchStepDto.getRps());
+        }
+        if (patchStepDto.getLatency() != null) {
+            biStep.setLatency(patchStepDto.getLatency());
+        }
+        biStepRepository.save(biStep);
+    }
+
+    @Transactional
+    public void updateRelationBiStep(Integer id, List<PatchRelationStepDto> patchRelationStepDtos, String userId) {
+        validationDto(patchRelationStepDtos);
+        BiStep biStep = biStepRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("BiStep с id " + id + " не найден"));
+        List<BiStepRelation> existingRelations = biStepRelationRepository.findByBiStepId(id);
+        Map<Integer, BiStepRelation> existingRelationsMap = existingRelations.stream()
+                .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
+        Set<Integer> existingIds = existingRelationsMap.keySet();
+        Set<Integer> newIds = patchRelationStepDtos.stream()
+                .map(PatchRelationStepDto::getId)
+                .collect(Collectors.toSet());
+        Set<Integer> idsToDelete = new HashSet<>(existingIds);
+        idsToDelete.removeAll(newIds);
+        if (!idsToDelete.isEmpty()) {
+            biStepRelationRepository.deleteByBiStepIdAndIdIn(id, idsToDelete);
+            log.info("Удалено {} записей из таблицы bi_steps_relations.", idsToDelete.size());
+            log.info("id удаленных записей {} .", idsToDelete);
+        }
+        for (PatchRelationStepDto request : patchRelationStepDtos) {
+            BiStepRelation existingRelation = existingRelationsMap.get(request.getId());
+            if (existingRelation != null) {
+                updateRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                biStepRelationRepository.save(existingRelation);
+            } else {
+                BiStepRelation newRelation = createRelation(request, biStep, Integer.parseInt(userId));
+                biStepRelationRepository.save(newRelation);
+            }
+        }
+    }
+
+    private void validationDto(List<PatchRelationStepDto> patchRelationStepDtos) {
+        patchRelationStepDtos.forEach(obj -> {
+            if (obj.getId() == null) {
+                throw new IllegalArgumentException("В списке отсутствует обязательное поле id");
+            }
+        });
+    }
+
+    private BiStepRelation createRelation(PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        return BiStepRelation.builder()
+                .id(request.getId())
+                .biStep(biStep)
+                .userId(userId)
+                .description(request.getDescription())
+                .productId(request.getProductId())
+                .tcId(request.getTcId())
+                .operationId(request.getOperationId())
+                .interfaceId(request.getInterfaceId())
+                .build();
+    }
+
+    private void updateRelation(BiStepRelation relation, PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        relation.setBiStep(biStep);
+        relation.setUserId(userId);
+        if (request.getDescription() != null) {
+            relation.setDescription(request.getDescription());
+        }
+        if (request.getProductId() != null) {
+            relation.setProductId(request.getProductId());
+        }
+        if (request.getTcId() != null) {
+            relation.setTcId(request.getTcId());
+        }
+        if (request.getOperationId() != null) {
+            relation.setOperationId(request.getOperationId());
+        }
+        if (request.getInterfaceId() != null) {
+            relation.setInterfaceId(request.getInterfaceId());
+        }
     }
 }
