@@ -3,13 +3,16 @@ package ru.beeline.cxbackend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.domain.bi.BiStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
 import ru.beeline.cxbackend.dto.CjStepFullDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.CjStepMapper;
 import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.BiStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
 
@@ -38,6 +41,9 @@ public class CJStepService {
 
     @Autowired
     private BIInCJStepRepository biInCJStepRepository;
+
+    @Autowired
+    private BiStepRepository biStepRepository;
 
     public List<CjStepFullDto> getStepByCJId(Long id) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(id).get());
@@ -109,7 +115,7 @@ public class CJStepService {
             cjStep.setOrder(cjStepDto.getOrder());
             cjStep.setDescription(cjStepDto.getDescription());
         }
-        cjStep =  cjStepRepository.save(cjStep);
+        cjStep = cjStepRepository.save(cjStep);
         CJ cj = cjRepository.findById(cjStep.getCjId()).get();
         cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
         cjRepository.save(cj);
@@ -132,5 +138,19 @@ public class CJStepService {
                     .collect(Collectors.toList());
         }
         cjStepRepository.saveAllAndFlush(existSteps);
+    }
+
+    public void patchBiStep(Integer id, PatchStepDto patchStepDto) {
+        BiStep biStep = biStepRepository.findById(id).orElseThrow(() -> new NotFoundException("BiStep с id " + id + " не найден"));
+        if (patchStepDto.getErrorRate() != null) {
+            biStep.setErrorRate(patchStepDto.getErrorRate());
+        }
+        if (patchStepDto.getRps() != null) {
+            biStep.setRps(patchStepDto.getRps());
+        }
+        if (patchStepDto.getLatency() != null) {
+            biStep.setLatency(patchStepDto.getLatency());
+        }
+        biStepRepository.save(biStep);
     }
 }
