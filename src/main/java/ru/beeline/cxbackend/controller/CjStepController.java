@@ -5,12 +5,14 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -42,6 +44,14 @@ public class CjStepController {
         return ResponseEntity.ok(cjStepService.getStepByCJId(id));
     }
 
+    @GetMapping("/api/cx/v1/product/cj/step/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Получение шага CJ по id")
+    public ResponseEntity getCJStepById(@PathVariable Long id) {
+        return ResponseEntity.ok(cjStepService.getStepFullDto(id));
+    }
+
+
     @PostMapping("/api/cx/v1/product/cj/{id}/step")
     @ResponseBody
     @ApiOperation(value = "Добавление шага в коллекцию шагов CJ")
@@ -65,13 +75,6 @@ public class CjStepController {
         }
     }
 
-    @GetMapping("/api/cx/v1/product/cj/step/{id}")
-    @ResponseBody
-    @ApiOperation(value = "Получение шага CJ по id")
-    public ResponseEntity getCJStepById(@PathVariable Long id) {
-        return ResponseEntity.ok(cjStepService.getStepFullDto(id));
-    }
-
     @PatchMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение шага CJ")
@@ -87,6 +90,14 @@ public class CjStepController {
         } else {
             throw new ForbiddenException("Недостаточно прав для изменения шага CJ");
         }
+    }
+
+    @PatchMapping("/api/cx/v1/library/business-interactions/step/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Редактирования шагов внутри бизнес сценария")
+    public ResponseEntity<Void> updateCJStep(@PathVariable Integer id, @RequestBody PatchStepDto patchStepDto) {
+        cjStepService.patchBiStep(id, patchStepDto);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @DeleteMapping("/api/cx/v1/product/cj/step/{id}")
