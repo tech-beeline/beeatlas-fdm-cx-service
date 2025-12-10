@@ -2,18 +2,20 @@ package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.ApiErrorCodes;
+import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
 import ru.beeline.cxbackend.dto.BIPostDto;
 import ru.beeline.cxbackend.dto.BIV2Dto;
+import ru.beeline.cxbackend.dto.PatchRelationStepDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.service.BusinessInteractionService;
@@ -21,13 +23,13 @@ import ru.beeline.cxbackend.service.BusinessInteractionService;
 import java.util.List;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx")
 @Api(value = "CX API", tags = "BI Library")
 public class BIController {
-    private Logger logger = LoggerFactory.getLogger(BIController.class);
 
     @Autowired
     private BusinessInteractionService businessInteractionService;
@@ -67,6 +69,12 @@ public class BIController {
         return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getBIByIdV2(id));
     }
 
+    @GetMapping("/v1/library/business-interactions/editability/{id}")
+    @ApiOperation(value = "Получение возможности редактирования BI", response = List.class)
+    public ResponseEntity<BIEditabilityDto> getEditabilityDtoBI(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getEditabilityBI(id));
+    }
+
     @PostMapping("/v1/library/business-interactions")
     @ApiOperation(value = "Добавление BI", response = List.class)
     public ResponseEntity createBI(@RequestBody BIPostDto bi) {
@@ -89,10 +97,26 @@ public class BIController {
         }
     }
 
-    @GetMapping("/v1/library/business-interactions/editability/{id}")
-    @ApiOperation(value = "Получение возможности редактирования BI", response = List.class)
-    public ResponseEntity<BIEditabilityDto> getEditabilityDtoBI(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getEditabilityBI(id));
+    @ApiErrorCodes({401, 403, 404, 400, 500})
+    @ResponseStatus(HttpStatus.CREATED)
+    @CustomHeaders
+    @PatchMapping("/v1/library/business-interactions/step/{id}")
+    @ApiOperation(value = "Редактирования шагов внутри бизнес сценария")
+    public ResponseEntity<Void> updateBiStep(@PathVariable Integer id, @RequestBody PatchStepDto patchStepDto) {
+        businessInteractionService.patchBiStep(id, patchStepDto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @ApiErrorCodes({401, 403, 404, 400, 500})
+    @ResponseStatus(HttpStatus.CREATED)
+    @CustomHeaders
+    @PatchMapping("/v1/library/business-interactions/step/{id}/relation")
+    @ApiOperation(value = "Редактирования связи технической реализации с выбранным шагом бизнес сценария")
+    public ResponseEntity<Void> updateRelationBiStep(@PathVariable Integer id,
+                                                     @RequestBody List<PatchRelationStepDto> patchRelationStepDtos,
+                                                     @RequestHeader(value = USER_ID_HEADER, required = false) String userId) {
+        businessInteractionService.updateRelationBiStep(id, patchRelationStepDtos, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/v1/library/business-interactions/{id}")

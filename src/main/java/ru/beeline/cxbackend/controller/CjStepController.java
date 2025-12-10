@@ -2,17 +2,13 @@ package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
-import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -34,8 +30,6 @@ public class CjStepController {
 
     @Autowired
     private CJService cjService;
-
-    private Logger logger = LoggerFactory.getLogger(CjStepController.class);
 
     @GetMapping("/api/cx/v1/product/cj/{id}/step")
     @ResponseBody
@@ -92,14 +86,6 @@ public class CjStepController {
         }
     }
 
-    @PatchMapping("/api/cx/v1/library/business-interactions/step/{id}")
-    @ResponseBody
-    @ApiOperation(value = "Редактирования шагов внутри бизнес сценария")
-    public ResponseEntity<Void> updateCJStep(@PathVariable Integer id, @RequestBody PatchStepDto patchStepDto) {
-        cjStepService.patchBiStep(id, patchStepDto);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
     @DeleteMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
     @ApiOperation(value = "Удаление шага CJ")
@@ -116,5 +102,4 @@ public class CjStepController {
             throw new ForbiddenException("Недостаточно прав для удаления шага CJ");
         }
     }
-
 }
