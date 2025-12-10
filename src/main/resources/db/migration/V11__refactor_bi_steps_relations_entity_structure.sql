@@ -1,16 +1,16 @@
 
-ALTER TABLE cx.bi_steps_relations ADD description text NULL;
-ALTER TABLE cx.bi_steps_relations ADD product_id int4 NULL;
-ALTER TABLE cx.bi_steps_relations ADD tc_id int4 NULL;
-ALTER TABLE cx.bi_steps_relations ADD operation_id int4 NULL;
-ALTER TABLE cx.bi_steps_relations ADD interface_id int4 NULL;
-ALTER TABLE cx.bi_steps_relations ADD user_id int4 NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS description text NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS product_id int4 NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS tc_id int4 NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS operation_id int4 NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS interface_id int4 NULL;
+ALTER TABLE cx.bi_steps_relations ADD COLUMN IF NOT EXISTS user_id int4 NULL;
 
 
-ALTER TABLE cx.bi_steps_relations DROP COLUMN entity_type;
-ALTER TABLE cx.bi_steps_relations DROP COLUMN entity_id;
+ALTER TABLE cx.bi_steps_relations DROP COLUMN IF EXISTS entity_type;
+ALTER TABLE cx.bi_steps_relations DROP COLUMN IF EXISTS entity_id;
 
-CREATE SEQUENCE cx.bi_steps_relations_id_seq
+CREATE SEQUENCE IF NOT EXISTS cx.bi_steps_relations_id_seq
     INCREMENT BY 1
     MINVALUE 1
     MAXVALUE 9223372036854775807
