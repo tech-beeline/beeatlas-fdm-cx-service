@@ -15,8 +15,6 @@ import javax.persistence.*;
 public class BiStepRelation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bi_steps_relations_generator")
-    @SequenceGenerator(name = "bi_steps_relations_generator", sequenceName = "bi_steps_relations_id_seq", allocationSize = 1)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)

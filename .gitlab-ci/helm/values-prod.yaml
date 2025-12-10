@@ -6,6 +6,8 @@ env:
   SPRING_DATASOURCE_PASSWORD: "vault:eafdmmart/data/prod/fdm#password"
   INTEGRATION_AUTH_SERVER_URL: "vault:eafdmmart/data/prod/fdm#authserverurl"
   INTEGRATION_DOCUMENT_SERVER_URL: "vault:eafdmmart/data/prod/fdm#documentserverurl"
+  INTEGRATION_CAPABILITY_SERVER_URL: "vault:eafdmmart/data/prod/fdm#capabilityserver"
+  INTEGRATION_PRODUCT_SERVER_URL: "vault:eafdmmart/data/prod/fdm#productsserver"
   OTEL_EXPORTER_OTLP_ENDPOINT: "vault:eafdmmart/data/prod/fdm#opentelemetry"
 
   JWKS: "vault:eafdmmart/data/prod/fdm#jwks"
