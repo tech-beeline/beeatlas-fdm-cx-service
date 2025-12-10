@@ -45,4 +45,5 @@ public class BIDto {
     private List<BILink> flowLink;
     private List<BILink> document;
     private List<BILink> mockupLink;
+    private List<BiStepDto> biSteps;
 }

@@ -180,7 +180,8 @@ public class CJService {
                     StepDto stepDto = modelMapper.map(cjStep, StepDto.class);
                     List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDto.getId());
                     if (!biInCJStepList.isEmpty()) {
-                        List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
+                        List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream()
+                                .map(BIInCJStep::getBiId).collect(Collectors.toList()));
                         stepDto.setBi(biMapper.biToBIDto(biList.stream().distinct().collect(Collectors.toList())));
                     }
                     return stepDto;

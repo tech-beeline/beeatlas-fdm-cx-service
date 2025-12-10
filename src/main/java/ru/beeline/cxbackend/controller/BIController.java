@@ -98,13 +98,12 @@ public class BIController {
     }
 
     @ApiErrorCodes({401, 403, 404, 400, 500})
-    @ResponseStatus(HttpStatus.CREATED)
     @CustomHeaders
     @PatchMapping("/v1/library/business-interactions/step/{id}")
     @ApiOperation(value = "Редактирования шагов внутри бизнес сценария")
     public ResponseEntity<Void> updateBiStep(@PathVariable Integer id, @RequestBody PatchStepDto patchStepDto) {
         businessInteractionService.patchBiStep(id, patchStepDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @ApiErrorCodes({401, 403, 404, 400, 500})
