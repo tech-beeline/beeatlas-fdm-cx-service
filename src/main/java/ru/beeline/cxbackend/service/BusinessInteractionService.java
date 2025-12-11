@@ -469,32 +469,39 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public void updateRelationBiStep(Integer id, List<PatchRelationStepDto> patchRelationStepDtos, String userId) {
+    public void updateRelationBiStep(Integer biStepId, List<PatchRelationStepDto> patchRelationStepDtos, String userId) {
         validationDto(patchRelationStepDtos);
-        BiStep biStep = biStepRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("BiStep с id " + id + " не найден"));
-        List<BiStepRelation> existingRelations = biStepRelationRepository.findByBiStepId(id);
-        Map<Integer, BiStepRelation> existingRelationsMap = existingRelations.stream()
-                .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
-        Set<Integer> existingIds = existingRelationsMap.keySet();
-        Set<Integer> newIds = patchRelationStepDtos.stream()
+        BiStep biStep = biStepRepository.findById(biStepId)
+                .orElseThrow(() -> new NotFoundException("BiStep с id " + biStepId + " не найден"));
+        List<Integer> relationIdsFromRequest = patchRelationStepDtos.stream()
                 .map(PatchRelationStepDto::getId)
+                .collect(Collectors.toList());
+        List<BiStepRelation> allExistingRelations = biStepRelationRepository.findAllById(relationIdsFromRequest);
+        Map<Integer, BiStepRelation> existingRelationsMap = allExistingRelations.stream()
+                .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
+        List<BiStepRelation> relationsOfCurrentBiStep = biStepRelationRepository.findByBiStepId(biStepId);
+        Set<Integer> relationIdsOfCurrentBiStep = relationsOfCurrentBiStep.stream()
+                .map(BiStepRelation::getId)
                 .collect(Collectors.toSet());
-        Set<Integer> idsToDelete = new HashSet<>(existingIds);
-        idsToDelete.removeAll(newIds);
+        Set<Integer> idsToDelete = relationIdsOfCurrentBiStep.stream()
+                .filter(id -> !relationIdsFromRequest.contains(id))
+                .collect(Collectors.toSet());
         if (!idsToDelete.isEmpty()) {
-            biStepRelationRepository.deleteByBiStepIdAndIdIn(id, idsToDelete);
-            log.info("Удалено {} записей из таблицы bi_steps_relations.", idsToDelete.size());
-            log.info("id удаленных записей {} .", idsToDelete);
+            biStepRelationRepository.deleteByBiStepIdAndIdIn(biStepId, idsToDelete);
+            log.info("Удалено {} записей из таблицы bi_steps_relations для BiStep {}",
+                    idsToDelete.size(), biStepId);
         }
         for (PatchRelationStepDto request : patchRelationStepDtos) {
-            BiStepRelation existingRelation = existingRelationsMap.get(request.getId());
+            Integer relationId = request.getId();
+            BiStepRelation existingRelation = existingRelationsMap.get(relationId);
             if (existingRelation != null) {
                 updateRelation(existingRelation, request, biStep, Integer.parseInt(userId));
                 biStepRelationRepository.save(existingRelation);
+                log.debug("Обновлена связь с id {}", relationId);
             } else {
                 BiStepRelation newRelation = createRelation(request, biStep, Integer.parseInt(userId));
                 biStepRelationRepository.save(newRelation);
+                log.debug("Создана новая связь с id {}", relationId);
             }
         }
     }
