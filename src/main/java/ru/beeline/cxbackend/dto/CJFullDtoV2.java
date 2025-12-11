@@ -41,4 +41,6 @@ public class CJFullDtoV2 {
     private AuthorDto author;
 
     private String uniqueIdent;
+
+    private Boolean bpmn;
 }
