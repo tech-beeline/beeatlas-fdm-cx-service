@@ -469,7 +469,8 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public void updateRelationBiStep(Integer biStepId, List<PatchRelationStepDto> patchRelationStepDtos, String userId) {
+    public void updateRelationBiStep(Integer biStepId, List<PatchRelationStepDto> patchRelationStepDtos, String userId,
+                                     Boolean patch) {
         BiStep biStep = biStepRepository.findById(biStepId)
                 .orElseThrow(() -> new NotFoundException("BiStep с id " + biStepId + " не найден"));
         List<Integer> relationIdsFromRequest = patchRelationStepDtos.stream()
@@ -477,7 +478,7 @@ public class BusinessInteractionService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         Map<Integer, BiStepRelation> existingRelationsMap = new HashMap<>();
-        if(!relationIdsFromRequest.isEmpty()) {
+        if (!relationIdsFromRequest.isEmpty()) {
             List<BiStepRelation> allExistingRelations = biStepRelationRepository.findAllById(relationIdsFromRequest);
             existingRelationsMap = allExistingRelations.stream()
                     .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
@@ -498,15 +499,21 @@ public class BusinessInteractionService {
             Integer relationId = request.getId();
             BiStepRelation existingRelation = existingRelationsMap.get(relationId);
             if (existingRelation != null) {
-                updateRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                if (patch) {
+                    updateRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                    log.debug("Обновлена связь patch с id {}", relationId);
+                } else {
+                    putRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                    log.debug("Обновлена связь put с id {}", relationId);
+                }
                 biStepRelationRepository.save(existingRelation);
-                log.debug("Обновлена связь с id {}", relationId);
             } else {
                 BiStepRelation newRelation = createRelation(request, biStep, Integer.parseInt(userId));
                 biStepRelationRepository.save(newRelation);
                 log.debug("Создана новая связь с id {}", relationId);
             }
         }
+        log.debug("метод успешно завершен, сохранение связей.");
     }
 
     private BiStepRelation createRelation(PatchRelationStepDto request, BiStep biStep, Integer userId) {
@@ -540,5 +547,15 @@ public class BusinessInteractionService {
         if (request.getInterfaceId() != null) {
             relation.setInterfaceId(request.getInterfaceId());
         }
+    }
+
+    private void putRelation(BiStepRelation relation, PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        relation.setBiStep(biStep);
+        relation.setUserId(userId);
+        relation.setDescription(request.getDescription());
+        relation.setProductId(request.getProductId());
+        relation.setTcId(request.getTcId());
+        relation.setOperationId(request.getOperationId());
+        relation.setInterfaceId(request.getInterfaceId());
     }
 }
