@@ -114,7 +114,19 @@ public class BIController {
     public ResponseEntity<Void> updateRelationBiStep(@PathVariable Integer id,
                                                      @RequestBody List<PatchRelationStepDto> patchRelationStepDtos,
                                                      @RequestHeader(value = USER_ID_HEADER, required = false) String userId) {
-        businessInteractionService.updateRelationBiStep(id, patchRelationStepDtos, userId);
+        businessInteractionService.updateRelationBiStep(id, patchRelationStepDtos, userId, true);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @ApiErrorCodes({401, 403, 404, 400, 500})
+    @ResponseStatus(HttpStatus.CREATED)
+    @CustomHeaders
+    @PutMapping("/v1/library/business-interactions/step/{id}/relation")
+    @ApiOperation(value = "Редактирования связи технической реализации с выбранным шагом бизнес сценария")
+    public ResponseEntity<Void> putRelationBiStep(@PathVariable Integer id,
+                                                     @RequestBody List<PatchRelationStepDto> patchRelationStepDtos,
+                                                     @RequestHeader(value = USER_ID_HEADER, required = false) String userId) {
+        businessInteractionService.updateRelationBiStep(id, patchRelationStepDtos, userId, false);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
