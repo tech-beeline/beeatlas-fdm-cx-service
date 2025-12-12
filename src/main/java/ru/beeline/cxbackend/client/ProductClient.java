@@ -61,7 +61,7 @@ public class ProductClient {
             headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             headers.setContentType(MediaType.APPLICATION_JSON);
             ResponseEntity<List<ProductInterfaceDTO>> response =
-                    restTemplate.exchange(productServerUrl + "/product/" + cmdb + "/interface/arch",
+                    restTemplate.exchange(productServerUrl + "/api/v1/product/" + cmdb + "/interface/arch",
                             HttpMethod.GET,
                             new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() {
