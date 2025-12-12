@@ -470,15 +470,18 @@ public class BusinessInteractionService {
 
     @Transactional
     public void updateRelationBiStep(Integer biStepId, List<PatchRelationStepDto> patchRelationStepDtos, String userId) {
-        validationDto(patchRelationStepDtos);
         BiStep biStep = biStepRepository.findById(biStepId)
                 .orElseThrow(() -> new NotFoundException("BiStep с id " + biStepId + " не найден"));
         List<Integer> relationIdsFromRequest = patchRelationStepDtos.stream()
                 .map(PatchRelationStepDto::getId)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        List<BiStepRelation> allExistingRelations = biStepRelationRepository.findAllById(relationIdsFromRequest);
-        Map<Integer, BiStepRelation> existingRelationsMap = allExistingRelations.stream()
-                .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
+        Map<Integer, BiStepRelation> existingRelationsMap = new HashMap<>();
+        if(!relationIdsFromRequest.isEmpty()) {
+            List<BiStepRelation> allExistingRelations = biStepRelationRepository.findAllById(relationIdsFromRequest);
+            existingRelationsMap = allExistingRelations.stream()
+                    .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
+        }
         List<BiStepRelation> relationsOfCurrentBiStep = biStepRelationRepository.findByBiStepId(biStepId);
         Set<Integer> relationIdsOfCurrentBiStep = relationsOfCurrentBiStep.stream()
                 .map(BiStepRelation::getId)
@@ -504,14 +507,6 @@ public class BusinessInteractionService {
                 log.debug("Создана новая связь с id {}", relationId);
             }
         }
-    }
-
-    private void validationDto(List<PatchRelationStepDto> patchRelationStepDtos) {
-        patchRelationStepDtos.forEach(obj -> {
-            if (obj.getId() == null) {
-                throw new IllegalArgumentException("В списке отсутствует обязательное поле id");
-            }
-        });
     }
 
     private BiStepRelation createRelation(PatchRelationStepDto request, BiStep biStep, Integer userId) {
