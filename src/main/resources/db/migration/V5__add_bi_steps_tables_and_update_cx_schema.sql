@@ -2,6 +2,9 @@ DROP TABLE IF EXISTS bi_steps CASCADE;
 DROP TABLE IF EXISTS bi_steps_type_enum CASCADE;
 DROP TABLE IF EXISTS bi_steps_relations CASCADE;
 
+ALTER TABLE cx.business_iteraction
+    ADD CONSTRAINT pk_business_iteraction PRIMARY KEY (id);
+
 CREATE TABLE bi_steps
 (
     id           integer     NOT NULL, -- Идентификатор шага бизнес взаимодействия
