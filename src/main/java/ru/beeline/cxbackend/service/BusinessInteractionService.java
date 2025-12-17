@@ -1,23 +1,34 @@
 package ru.beeline.cxbackend.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.client.UserClient;
 import ru.beeline.cxbackend.domain.bi.*;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
+import ru.beeline.cxbackend.dto.AuthorDto;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
+import ru.beeline.cxbackend.dto.BILinkDto;
+import ru.beeline.cxbackend.dto.BIPostDto;
+import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
+import ru.beeline.cxbackend.dto.ParticipantDto;
+import ru.beeline.cxbackend.dto.PatchRelationStepDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
+import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
+import ru.beeline.cxbackend.utils.Utils;
 
 import java.sql.Date;
 import java.util.*;
@@ -26,7 +37,9 @@ import java.util.stream.Collectors;
 import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
+@Slf4j
 @Service
 public class BusinessInteractionService {
 
@@ -63,6 +76,15 @@ public class BusinessInteractionService {
     @Autowired
     private BIMapper biMapper;
 
+    @Autowired
+    private UserClient userClient;
+
+    @Autowired
+    private BiStepRepository biStepRepository;
+
+    @Autowired
+    BiStepRelationRepository biStepRelationRepository;
+
     public List<BIDto> getBI(Long idProduct) {
         List<BI> biList = businessInteractionRepository
                 .findAll(BiSpecification.hasProductId(idProduct));
@@ -90,6 +112,19 @@ public class BusinessInteractionService {
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
         validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
+    }
+
+    public BIV2Dto getBIByIdV2(Long id) {
+        BI bi = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
+                .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
+        validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
+        UserProfileDto userProfileDto = userClient.getUserProfile(bi.getAuthorId());
+        AuthorDto authorDto = AuthorDto.builder()
+                .id(userProfileDto.getId())
+                .Email(userProfileDto.getEmail())
+                .fullName(userProfileDto.getFullName())
+                .build();
+        return biMapper.biToBIV2Dto(bi, authorDto);
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
@@ -178,70 +213,100 @@ public class BusinessInteractionService {
         }
     }
 
-    //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
-    public BIDto createBI(BI bi) {
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
-
-        bi.setAuthorId(getUserId());
-        bi.setCreatedDate(new Date((new java.util.Date()).getTime()));
-        bi.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
-
-        List<BILink> docs = bi.getDocument();
-        List<BILink> mockupLink = bi.getMockupLink();
-        List<BILink> scenarios = bi.getFlowLink();
-        List<BIParticipants> participants = bi.getParticipants();
-
-        bi.setDocument(new ArrayList<>());
-        bi.setFlowLink(new ArrayList<>());
-        bi.setMockupLink(new ArrayList<>());
-        bi.setParticipants(new ArrayList<>());
-
-        bi.setFeeling(biFeelingRepository.findById(bi.getFeeling().getId()).orElse(null));
-        bi.setStatus(biStatusRepository.findById(bi.getStatus().getId()).orElse(null));
-        bi.setUniqueIdent(UUID.randomUUID().toString());
-        BI finalBi = businessInteractionRepository.save(bi);
-        businessInteractionRepository.flush();
-
-        if (docs != null) {
-            docs = biLinkRepository.saveAll(docs.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(2L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (mockupLink != null) {
-            mockupLink = biLinkRepository.saveAll(mockupLink.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(3L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (scenarios != null) {
-            scenarios = biLinkRepository.saveAll(scenarios.stream().peek(doc -> {
-                doc.setIdBi(finalBi);
-                doc.setType(LinkEnum.builder().id(1L).build());
-            }).collect(Collectors.toList()));
-        }
-        if (participants != null) {
-            participants = biParticipantsRepository.saveAll(participants.stream().peek(participant -> {
-                participant.setBuisnessIteraction(finalBi);
-                participant.setParticipantEnum(biParticipantRepository.findById(participant.getIdType()).orElseGet(null));
-            }).collect(Collectors.toList()));
-        }
+    public BIDto createBI(BIPostDto biPostDto) {
+        validateProductId(biPostDto.getProductId());
+        validateAccessProduct(getUserPermissions(), getUserProducts(), biPostDto.getProductId());
+        BI saveBI = buildBI(biPostDto);
+        List<BILink> docs = mapLinks(biPostDto.getDocument());
+        List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
+        List<BILink> scenarios = mapLinks(biPostDto.getFlowLink());
+        List<BIParticipants> participants = mapParticipants(biPostDto.getParticipants());
+        docs = saveLinks(docs, saveBI, 2L);
+        mockupLink = saveLinks(mockupLink, saveBI, 3L);
+        scenarios = saveLinks(scenarios, saveBI, 1L);
+        participants = saveParticipants(participants, saveBI);
+        List<BIChannelEnum> channels = biPostDto.getChannel() != null ? biPostDto.getChannel() : null;
+        saveBI.setChannel(channels);
         biLinkRepository.flush();
-
-        finalBi.setUniqueIdent(createUniqueIdent(finalBi.getId()));
-        finalBi.setDocument(docs);
-        finalBi.setFlowLink(scenarios);
-        finalBi.setMockupLink(mockupLink);
-        finalBi.setParticipants(participants);
-        businessInteractionRepository.save(finalBi);
+        saveBI.setUniqueIdent(Utils.createUniqueIdent(saveBI.getId()));
+        saveBI.setDocument(docs);
+        saveBI.setFlowLink(scenarios);
+        saveBI.setMockupLink(mockupLink);
+        saveBI.setParticipants(participants);
+        businessInteractionRepository.save(saveBI);
         businessInteractionRepository.flush();
-        return biMapper.biToBIDto(businessInteractionRepository.findById(finalBi.getId()).orElse(null));
+        return biMapper.biToBIDto(businessInteractionRepository.findById(saveBI.getId()).orElse(null));
     }
 
-    private String createUniqueIdent(Long id) {
-        String idString = String.format("%08d", id);
-        return "BI." + idString.substring(0, 2) + "." + idString.substring(2, 4) + "." + idString.substring(4, 6) + "." + idString.substring(6);
+    private BI buildBI(BIPostDto dto) {
+        BI saveBI = BI.builder()
+                .name(dto.getName())
+                .descr(dto.getDescr())
+                .isCommunal(dto.getCommunal() != null ? dto.getCommunal() : false)
+                .isTarget(dto.getTarget() != null ? dto.getTarget() : false)
+                .isDraft(dto.getDraft() != null ? dto.getDraft() : false)
+                .touchPoints(dto.getTouchPoints())
+                .eaGuid(dto.getEaGuid())
+                .productId(dto.getProductId())
+                .ownerRole(dto.getOwnerRole())
+                .metrics(dto.getMetrics())
+                .clientScenario(dto.getClientScenario())
+                .ucsReaction(dto.getUcsReaction())
+                .feeling(dto.getFeeling() != null ? biFeelingRepository.findById(dto.getFeeling().getId()).orElse(null) : null)
+                .status(dto.getStatus() != null ? biStatusRepository.findById(dto.getStatus().getId()).orElse(null) : null)
+                .authorId(getUserId())
+                .createdDate(new Date((new java.util.Date()).getTime()))
+                .lastModifiedDate(new Date((new java.util.Date()).getTime()))
+                .uniqueIdent(UUID.randomUUID().toString())
+                .document(new ArrayList<>())
+                .flowLink(new ArrayList<>())
+                .mockupLink(new ArrayList<>())
+                .participants(new ArrayList<>())
+                .channel(new ArrayList<>())
+                .build();
+        return businessInteractionRepository.saveAndFlush(saveBI);
+    }
+
+    private List<BILink> mapLinks(List<BILinkDto> linkDtos) {
+        if (linkDtos == null) return null;
+        return linkDtos.stream().map(dto -> {
+            BILink link = new BILink();
+            link.setDescr(dto.getDescr());
+            link.setUrl(dto.getUrl());
+            return link;
+        }).collect(Collectors.toList());
+    }
+
+    private List<BIParticipants> mapParticipants(List<ParticipantDto> dtos) {
+        if (dtos == null) return null;
+        return dtos.stream().map(dto -> {
+            BIParticipants p = new BIParticipants();
+            p.setIdType(dto.getIdType());
+            p.setDescr(dto.getDescr());
+            p.setValue(dto.getValue());
+            return p;
+        }).collect(Collectors.toList());
+    }
+
+    private List<BILink> saveLinks(List<BILink> links, BI bi, Long typeId) {
+        if (links == null) return null;
+        links.forEach(link -> {
+            link.setIdBi(bi);
+            link.setType(LinkEnum.builder().id(typeId).build());
+        });
+        return biLinkRepository.saveAll(links);
+    }
+
+    private List<BIParticipants> saveParticipants(List<BIParticipants> participants, BI bi) {
+        if (participants == null) return null;
+        participants.forEach(p -> {
+            p.setBuisnessIteraction(bi);
+            p.setParticipantEnum(
+                    biParticipantRepository.findById(p.getIdType()).orElse(null)
+            );
+        });
+        return biParticipantsRepository.saveAll(participants);
     }
 
     //TODO: Абсолютная Дичь, нужно рефакторить
@@ -385,5 +450,112 @@ public class BusinessInteractionService {
 
     public Optional<BIStatus> getStatusById(Long id) {
         return biStatusRepository.findById(id);
+    }
+
+    @Transactional
+    public void patchBiStep(Integer id, PatchStepDto patchStepDto) {
+        BiStep biStep = biStepRepository.findById(id).orElseThrow(()
+                -> new NotFoundException("BiStep с id " + id + " не найден"));
+        if (patchStepDto.getErrorRate() != null) {
+            biStep.setErrorRate(patchStepDto.getErrorRate());
+        }
+        if (patchStepDto.getRps() != null) {
+            biStep.setRps(patchStepDto.getRps());
+        }
+        if (patchStepDto.getLatency() != null) {
+            biStep.setLatency(patchStepDto.getLatency());
+        }
+        biStepRepository.save(biStep);
+    }
+
+    @Transactional
+    public void updateRelationBiStep(Integer biStepId, List<PatchRelationStepDto> patchRelationStepDtos, String userId,
+                                     Boolean patch) {
+        BiStep biStep = biStepRepository.findById(biStepId)
+                .orElseThrow(() -> new NotFoundException("BiStep с id " + biStepId + " не найден"));
+        List<Integer> relationIdsFromRequest = patchRelationStepDtos.stream()
+                .map(PatchRelationStepDto::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        Map<Integer, BiStepRelation> existingRelationsMap = new HashMap<>();
+        if (!relationIdsFromRequest.isEmpty()) {
+            List<BiStepRelation> allExistingRelations = biStepRelationRepository.findAllById(relationIdsFromRequest);
+            existingRelationsMap = allExistingRelations.stream()
+                    .collect(Collectors.toMap(BiStepRelation::getId, relation -> relation));
+        }
+        List<BiStepRelation> relationsOfCurrentBiStep = biStepRelationRepository.findByBiStepId(biStepId);
+        Set<Integer> relationIdsOfCurrentBiStep = relationsOfCurrentBiStep.stream()
+                .map(BiStepRelation::getId)
+                .collect(Collectors.toSet());
+        Set<Integer> idsToDelete = relationIdsOfCurrentBiStep.stream()
+                .filter(id -> !relationIdsFromRequest.contains(id))
+                .collect(Collectors.toSet());
+        if (!idsToDelete.isEmpty()) {
+            biStepRelationRepository.deleteByBiStepIdAndIdIn(biStepId, idsToDelete);
+            log.info("Удалено {} записей из таблицы bi_steps_relations для BiStep {}",
+                    idsToDelete.size(), biStepId);
+        }
+        for (PatchRelationStepDto request : patchRelationStepDtos) {
+            Integer relationId = request.getId();
+            BiStepRelation existingRelation = existingRelationsMap.get(relationId);
+            if (existingRelation != null) {
+                if (patch) {
+                    updateRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                    log.debug("Обновлена связь patch с id {}", relationId);
+                } else {
+                    putRelation(existingRelation, request, biStep, Integer.parseInt(userId));
+                    log.debug("Обновлена связь put с id {}", relationId);
+                }
+                biStepRelationRepository.save(existingRelation);
+            } else {
+                BiStepRelation newRelation = createRelation(request, biStep, Integer.parseInt(userId));
+                biStepRelationRepository.save(newRelation);
+                log.debug("Создана новая связь с id {}", relationId);
+            }
+        }
+        log.debug("метод успешно завершен, сохранение связей.");
+    }
+
+    private BiStepRelation createRelation(PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        return BiStepRelation.builder()
+                .id(request.getId())
+                .biStep(biStep)
+                .userId(userId)
+                .description(request.getDescription())
+                .productId(request.getProductId())
+                .tcId(request.getTcId())
+                .operationId(request.getOperationId())
+                .interfaceId(request.getInterfaceId())
+                .build();
+    }
+
+    private void updateRelation(BiStepRelation relation, PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        relation.setBiStep(biStep);
+        relation.setUserId(userId);
+        if (request.getDescription() != null) {
+            relation.setDescription(request.getDescription());
+        }
+        if (request.getProductId() != null) {
+            relation.setProductId(request.getProductId());
+        }
+        if (request.getTcId() != null) {
+            relation.setTcId(request.getTcId());
+        }
+        if (request.getOperationId() != null) {
+            relation.setOperationId(request.getOperationId());
+        }
+        if (request.getInterfaceId() != null) {
+            relation.setInterfaceId(request.getInterfaceId());
+        }
+    }
+
+    private void putRelation(BiStepRelation relation, PatchRelationStepDto request, BiStep biStep, Integer userId) {
+        relation.setBiStep(biStep);
+        relation.setUserId(userId);
+        relation.setDescription(request.getDescription());
+        relation.setProductId(request.getProductId());
+        relation.setTcId(request.getTcId());
+        relation.setOperationId(request.getOperationId());
+        relation.setInterfaceId(request.getInterfaceId());
     }
 }

@@ -1,11 +1,13 @@
 package ru.beeline.cxbackend.service;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.beeline.cxbackend.client.UserClient;
+import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -17,10 +19,17 @@ import ru.beeline.cxbackend.dto.CJFullDtoV2;
 import ru.beeline.cxbackend.dto.StepDto;
 import ru.beeline.cxbackend.dto.StepDtoV2;
 import ru.beeline.cxbackend.dto.UserProfileDto;
+import ru.beeline.cxbackend.exception.ConflictException;
+import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
-import ru.beeline.cxbackend.repository.*;
+import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.BusinessInteractionRepository;
+import ru.beeline.cxbackend.repository.CJRepository;
+import ru.beeline.cxbackend.repository.CJStepRepository;
 
+import javax.annotation.PostConstruct;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -28,11 +37,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static ru.beeline.cxbackend.controller.RequestContext.getHeaders;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
+@Slf4j
 @Service
 public class CJService {
 
@@ -49,9 +61,6 @@ public class CJService {
     private BIInCJStepRepository biInCJStepRepository;
 
     @Autowired
-    private CJParametersViewRepository cjParametersViewRepository;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -60,8 +69,42 @@ public class CJService {
     @Autowired
     private UserClient userClient;
 
+    @PostConstruct
+    public void initModelMapperMapping() {
+        modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
+                .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
+    }
+
     public CJ findByName(String name) {
         return cjRepository.findByName(name);
+    }
+
+    public CJ createNewCJ(CJDto cj, Long productId) {
+        validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
+        validateBody(cj);
+        CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+        log.info("New cj created: " + newCJ);
+        return newCJ;
+
+    }
+
+    private void validateBody(CJDto cj) {
+        if (!getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
+            throw new ForbiddenException("Недостаточно прав для создания CJ");
+        }
+        if (findByName(cj.getName()) != null) {
+            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
+        }
+        String errors = "";
+        if (cj.getName() == null || cj.getName().trim().isEmpty()) {
+            errors += "Поле name не может быть пустым.\n";
+        }
+        if (cj.getUserPortrait() == null || cj.getUserPortrait().trim().isEmpty()) {
+            errors += "Поле user_portrait не может быть пустым.\n";
+        }
+        if (!errors.isEmpty()) {
+            throw new ConflictException(errors);
+        }
     }
 
     public CJ createCJ(CJDto cj, Long productId, Long userId) {
@@ -73,9 +116,20 @@ public class CJService {
                 .authorId(userId)
                 .idProductExt(productId)
                 .bDraft(true)
+                .uniqueIdent("temporary")
                 .build();
-        cjRepository.save(newCJ);
-        return newCJ;
+        cjRepository.saveAndFlush(newCJ);
+        newCJ.setUniqueIdent(generateUniqueIdent(newCJ.getId()));
+        return cjRepository.save(newCJ);
+    }
+
+    private String generateUniqueIdent(Long id) {
+        String padded = String.format("%08d", id);
+        return "CJ." +
+                padded.substring(0, 2) + "." +
+                padded.substring(2, 4) + "." +
+                padded.substring(4, 6) + "." +
+                padded.substring(6, 8);
     }
 
     public CJ updateCJ(CJ cj, CJDto cjDto) {
@@ -126,7 +180,8 @@ public class CJService {
                     StepDto stepDto = modelMapper.map(cjStep, StepDto.class);
                     List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDto.getId());
                     if (!biInCJStepList.isEmpty()) {
-                        List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
+                        List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biInCJStepList.stream()
+                                .map(BIInCJStep::getBiId).collect(Collectors.toList()));
                         stepDto.setBi(biMapper.biToBIDto(biList.stream().distinct().collect(Collectors.toList())));
                     }
                     return stepDto;
@@ -138,6 +193,7 @@ public class CJService {
 
     public CJFullDtoV2 getFullDtoByIdV2(Long id) {
         CJ cj = getAndValidateCJ(id);
+        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
         AuthorDto authorDto = AuthorDto.builder()
                 .id(userProfileDto.getId())
@@ -221,6 +277,10 @@ public class CJService {
         otherCJs = otherCJs.stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
         if (!otherCJs.isEmpty()) {
             userCJs.addAll(otherCJs);
+        }
+        List<CJ> withProductExtNull = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIsNull(search);
+        if (!withProductExtNull.isEmpty()) {
+            userCJs.addAll(withProductExtNull);
         }
         return userCJs;
     }

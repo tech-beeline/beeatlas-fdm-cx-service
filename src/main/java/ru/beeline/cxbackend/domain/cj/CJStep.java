@@ -30,4 +30,6 @@ public class CJStep {
     @JsonProperty("id_cj")
     private Long cjId;
 
+    @Column(name = "id_bpmn", length = 50, nullable = true)
+    private String idBpmn;
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CJStepRepository extends JpaRepository<CJStep, Long> {
@@ -21,4 +22,7 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
             "JOIN cx.cj_steps ON cx.cj_steps.id = cx.bi_in_cj_step.id_cj_step " +
             "WHERE cx.cj_steps.id_cj = :id AND cx.business_iteraction.b_draft = true", nativeQuery = true)
     Long countByBiIdAndDraft(@Param("id") Long id);
+
+    CJStep findFirstByCjIdAndIdBpmn(Long cjId, String id);
+
 }

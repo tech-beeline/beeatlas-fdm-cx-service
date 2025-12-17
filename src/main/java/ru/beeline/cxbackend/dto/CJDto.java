@@ -14,5 +14,4 @@ public class CJDto {
     private String userPortrait;
     @JsonProperty("draft")
     private Boolean bDraft;
-
 }

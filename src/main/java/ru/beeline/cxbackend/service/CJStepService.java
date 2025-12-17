@@ -3,11 +3,16 @@ package ru.beeline.cxbackend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.beeline.cxbackend.domain.bi.BiStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
+import ru.beeline.cxbackend.dto.CjStepFullDto;
+import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.mapper.CjStepMapper;
 import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.BiStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
 
@@ -32,12 +37,16 @@ public class CJStepService {
     private CJRepository cjRepository;
 
     @Autowired
+    private CjStepMapper cjStepMapper;
+
+    @Autowired
     private BIInCJStepRepository biInCJStepRepository;
 
-    public List<CJStep> getStepByCJId(Long id) {
+    public List<CjStepFullDto> getStepByCJId(Long id) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), cjRepository.findById(id).get());
-        return cjStepRepository.findAllByCjId(id).stream()
-                .sorted(Comparator.comparing(CJStep::getOrder)).collect(Collectors.toList());
+        List<CJStep> cjStepList = cjStepRepository.findAllByCjId(id).stream()
+                .sorted(Comparator.comparing(CJStep::getOrder)).toList();
+        return cjStepList.stream().map(cjStep -> cjStepMapper.cjStepToSjStepFullDto(cjStep)).toList();
     }
 
     @Transactional
@@ -63,10 +72,16 @@ public class CJStepService {
                     .collect(Collectors.toList());
         }
         cjStepRepository.saveAllAndFlush(existSteps);
-        return cjStepRepository.saveAndFlush(cjStep);
+        cjStepRepository.saveAndFlush(cjStep);
+        return cjStepMapper.cjStepToSjStepFullDto(cjStep);
     }
 
-    public CJStep getStepById(Long id){
+    public CjStepFullDto getStepFullDto(Long id) {
+        CJStep cjStep = getStepById(id);
+        return cjStepMapper.cjStepToSjStepFullDto(cjStep);
+    }
+
+    public CJStep getStepById(Long id) {
         CJStep cjStep = cjStepRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Step with id " + id + " does not exist"));
 
@@ -78,7 +93,7 @@ public class CJStepService {
     }
 
     @Transactional
-    public CJStep updateStep(CJStep cjStep, CjStepDto cjStepDto) {
+    public CjStepFullDto updateStep(CJStep cjStep, CjStepDto cjStepDto) {
         Optional<CJ> currentCJ = cjRepository.findById(cjStep.getCjId());
         if (currentCJ.isPresent() && !currentCJ.get().isBDraft()) {
             throw new RuntimeException("CJ находится в статусе Опубликован. Изменение невозможно");
@@ -97,12 +112,11 @@ public class CJStepService {
             cjStep.setOrder(cjStepDto.getOrder());
             cjStep.setDescription(cjStepDto.getDescription());
         }
-        cjStep =  cjStepRepository.save(cjStep);
+        cjStep = cjStepRepository.save(cjStep);
         CJ cj = cjRepository.findById(cjStep.getCjId()).get();
         cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
         cjRepository.save(cj);
-        return cjStep;
-
+        return cjStepMapper.cjStepToSjStepFullDto(cjStep);
     }
 
     @Transactional

@@ -31,6 +31,14 @@ public class BICJStepController {
                 .body(businessInteractionService.getBIByStepId(idStep));
     }
 
+    @GetMapping("/product/cj/step/bi/{id}")
+    @ApiOperation(value = "Получение коллекции CJ по используемому в них BI", response = List.class)
+    public ResponseEntity<List<CJ>> getCJsByBiId(@PathVariable(value = "id") Long id) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(businessInteractionService.getCJByBIID(id));
+    }
+
     @PutMapping("/product/cj/step/{id}/bi")
     @ApiOperation(value = "Привязка BI к шагу CJ")
     public ResponseEntity editBIByCJStep(@PathVariable(value = "id") Long idStep,
@@ -39,14 +47,6 @@ public class BICJStepController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .build();
-    }
-
-    @GetMapping("/product/cj/step/bi/{id}")
-    @ApiOperation(value = "Получение коллекции CJ по используемому в них BI", response = List.class)
-    public ResponseEntity<List<CJ>> getCJsByBiId(@PathVariable(value = "id") Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(businessInteractionService.getCJByBIID(id));
     }
 
     @DeleteMapping("/product/cj/step/{id_step}/bi/{id}")

@@ -55,4 +55,10 @@ public class CJ {
     @Column(name = "id_product_ext")
     @JsonProperty("id_product")
     private Long idProductExt;
+
+    @Column(name = "unique_ident")
+    private String uniqueIdent;
+
+    @Column(name = "bpmn")
+    private Boolean bpmn;
 }

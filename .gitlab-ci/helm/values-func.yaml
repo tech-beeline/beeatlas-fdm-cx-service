@@ -6,6 +6,10 @@ env:
   SPRING_DATASOURCE_PASSWORD: "vault:eafdmmart/data/test/func/fdm#password"
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "vault:eafdmmart/data/test/func/fdm#driver"
   INTEGRATION_AUTH_SERVER_URL: "vault:eafdmmart/data/test/func/fdm#authserverurl"
+  INTEGRATION_DOCUMENT_SERVER_URL: "vault:eafdmmart/data/test/func/fdm#documentserverurl"
+  INTEGRATION_CAPABILITY_SERVER_URL: "vault:eafdmmart/data/test/func/fdm#capabilityserver"
+  INTEGRATION_PRODUCT_SERVER_URL: "vault:eafdmmart/data/test/func/fdm#productsserver"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "vault:eafdmmart/data/test/func/fdm#opentelemetry"
 
   JWKS: "vault:eafdmmart/data/test/func/fdm#jwks"
 

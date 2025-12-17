@@ -28,4 +28,8 @@ public interface BusinessInteractionRepository extends
     List<BI> findAllByIdIn(Long cjStepId, List<Long> ids);
 
     Optional<BI> findByIdAndDeletedDateIsNull(Long id);
+
+    BI findByIdBpmnAndDeletedDateIsNull(String id);
+
+    BI findByUniqueIdentAndDeletedDateIsNull(String id);
 }
