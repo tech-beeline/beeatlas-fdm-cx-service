@@ -72,7 +72,7 @@ public class CJimportFromBpmnService {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
         List<DocumentationTypeDTO> documentationTypeDTO = documentClient.getDocumentationType("CJ");
-        ResponseEntity<byte[]> document = documentClient.getDocument(id,documentationTypeDTO.get(0).getId());
+        ResponseEntity<byte[]> document = documentClient.getDocument(id, documentationTypeDTO.get(0).getId());
         checkFileExtension(document);
         extractModel(document.getBody(), id, cj);
         cj.setBpmn(true);
@@ -113,6 +113,7 @@ public class CJimportFromBpmnService {
             processCJ.collapsedSubProcesses.add(stage);
 
         }
+        sortModel(processCJ);
         saveElements(processCJ, id, cj);
     }
 
@@ -266,6 +267,55 @@ public class CJimportFromBpmnService {
                 processCJ.sequenceFlows.add(new SequenceFlow(id, sourceRef, targetRef));
             }
         }
+    }
+
+    private void sortModel(ProcessCJ processCJ) {
+        List<CollapsedSubProcess> stages = processCJ.getCollapsedSubProcesses();
+        stages = sortBySequenceFlow(stages, processCJ.sequenceFlows, stage -> stage.id);
+        processCJ.setCollapsedSubProcesses(stages);
+    }
+
+    private <T> List<T> sortBySequenceFlow(List<T> elements, List<SequenceFlow> sequenceFlows,
+                                           Function<T, String> getIdFunc) {
+        if (elements == null || elements.size() <= 1) {
+            return elements;
+        }
+        Set<String> elementIds = new HashSet<>();
+        for (T el : elements) {
+            elementIds.add(getIdFunc.apply(el));
+        }
+        Map<String, String> sourceToTarget = new HashMap<>();
+        Map<String, String> targetToSource = new HashMap<>();
+        for (SequenceFlow sf : sequenceFlows) {
+            if (elementIds.contains(sf.sourceRef) && elementIds.contains(sf.targetRef)) {
+                sourceToTarget.put(sf.sourceRef, sf.targetRef);
+                targetToSource.put(sf.targetRef, sf.sourceRef);
+            }
+        }
+        String startId = null;
+        for (String id : elementIds) {
+            if (!targetToSource.containsKey(id)) {
+                startId = id;
+                break;
+            }
+        }
+        if (startId == null) {
+            return elements;
+        }
+        Map<String, T> idToElement = new HashMap<>();
+        for (T el : elements) {
+            idToElement.put(getIdFunc.apply(el), el);
+        }
+        List<T> sortedList = new ArrayList<>();
+        String currentId = startId;
+        while (currentId != null) {
+            T elem = idToElement.get(currentId);
+            if (elem == null)
+                break;
+            sortedList.add(elem);
+            currentId = sourceToTarget.get(currentId);
+        }
+        return sortedList;
     }
 
     private static Element prepareExtract(byte[] content) {
