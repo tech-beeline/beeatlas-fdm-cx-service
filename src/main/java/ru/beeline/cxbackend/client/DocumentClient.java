@@ -39,7 +39,7 @@ public class DocumentClient {
             headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
             headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             HttpEntity<String> entity = new HttpEntity<>(headers);
-
+            log.info("get document: /api/v1/documents/" + documentationTypeId + "/" + docId);
             return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/" + documentationTypeId + "/" + docId,
                     HttpMethod.GET,
                     entity,
@@ -60,7 +60,7 @@ public class DocumentClient {
             headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
             headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             HttpEntity<String> entity = new HttpEntity<>(headers);
-
+            log.info("get Documentation Type: /api/v1/documentations/" + entityType);
             return restTemplate.exchange(documentServiceUrl + "/api/v1/documentations/" + entityType,
                     HttpMethod.GET,
                     entity,
