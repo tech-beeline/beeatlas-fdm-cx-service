@@ -64,7 +64,7 @@ public class CJController {
     }
 
     @CustomHeaders
-    @PostMapping("/api/cx/v1/bpmn/cj/{id}")
+    @PatchMapping("/api/cx/v1/bpmn/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта из bpmn")
     public ResponseEntity<Void> createCJ(@PathVariable Long id) {
