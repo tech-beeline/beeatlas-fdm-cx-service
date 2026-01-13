@@ -1,13 +1,13 @@
 package ru.beeline.cxbackend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface CJStepRepository extends JpaRepository<CJStep, Long> {
@@ -25,4 +25,10 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
 
     CJStep findFirstByCjIdAndIdBpmn(Long cjId, String id);
 
+    @Modifying
+    @Query("DELETE FROM CJStep cs WHERE cs.cjId = :cjId AND cs.idBpmn NOT IN :ids")
+    void deleteByCjIdAndIdBpmnNotIn(@Param("cjId") long cjId,
+                                    @Param("ids") List<String> ids);
+
+    void deleteByCjId(long cjId);
 }
