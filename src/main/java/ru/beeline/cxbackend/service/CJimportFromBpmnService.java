@@ -69,15 +69,29 @@ public class CJimportFromBpmnService {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class).addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
     }
 
-    public void importFromBpmn(Long id) {
+    public void importFromBpmnCreate(Long id) {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
+        ProcessCJ processCJ = extractModel(importFromBpmn(id));
+        saveElements(processCJ, id, cj);
+        cj.setBpmn(true);
+        cjRepository.save(cj);
+    }
+
+    public void importFromBpmnUpdate(Long id) {
+        CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
+                .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
+        ProcessCJ processCJ = extractModel(importFromBpmn(id));
+        saveOrUpdateElements(processCJ, id, cj);
+        cj.setBpmn(true);
+        cjRepository.save(cj);
+    }
+
+    public byte[] importFromBpmn(Long id) {
         List<DocumentationTypeDTO> documentationTypeDTO = documentClient.getDocumentationType("CJ");
         ResponseEntity<byte[]> document = documentClient.getDocument(id, documentationTypeDTO.get(0).getId());
         checkFileExtension(document);
-        extractModel(document.getBody(), id, cj);
-        cj.setBpmn(true);
-        cjRepository.save(cj);
+        return document.getBody();
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {
@@ -97,7 +111,7 @@ public class CJimportFromBpmnService {
         throw new BadRequestException("File extension is not .bpmn");
     }
 
-    public void extractModel(byte[] content, Long id, CJ cj) {
+    public ProcessCJ extractModel(byte[] content) {
         Element processElement = prepareExtract(content);
         ProcessCJ processCJ = new ProcessCJ();
         processCJ.id = processElement.getAttribute("id");
@@ -115,7 +129,7 @@ public class CJimportFromBpmnService {
 
         }
         sortModel(processCJ);
-        saveElements(processCJ, id, cj);
+        return processCJ;
     }
 
     private CJStep updateCjStep(CJStep cjStep, String name, Integer order) {
@@ -142,18 +156,86 @@ public class CJimportFromBpmnService {
         }
     }
 
+    private CJStep saveCjStep(int stageIter, CollapsedSubProcess stage, long id) {
+        return cjStepRepository.save(CJStep.builder()
+                .order(stageIter)
+                .name(stage.name)
+                .cjId(id)
+                .idBpmn(stage.getId())
+                .build());
+    }
+
+    private BIInCJStep saveBIInCJStep(CJStep cjStep, BI biOptional, Integer biIter) {
+        return biInCJStepRepository.save(BIInCJStep.builder()
+                .cjStepId(cjStep.getId())
+                .buisnessIteraction(biOptional)
+                .order(biIter.longValue())
+                .build());
+    }
+
     private void saveElements(ProcessCJ processCJ, long id, CJ cj) {
+        List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
+        for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
+            CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
+            CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
+            cjStep = cjStep != null ? cjStep : saveCjStep(stageIter, stage, id);
+            log.info("name = " + cjStep.getName());
+            for (Integer biIter = 0; biIter < stage.getBiElements().size(); biIter++) {
+                BIElement bi = stage.getBiElements().get(biIter);
+                BI biOptional = null;
+                if ("callActivity".equals(bi.type)) {
+                    biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
+                    if (biOptional != null) {
+                        log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
+                        BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(), biOptional.getId());
+                        biInCJStep = biInCJStep != null ? biInCJStep : saveBIInCJStep(cjStep, biOptional, biIter);
+                    }
+                }
+                if ("subProcess".equals(bi.type)) {
+                    biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
+                    if (biOptional == null) {
+                        saveSubProcess(bi, cj);
+                    }
+                    log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
+                    BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(), biOptional.getId());
+                    biInCJStep = biInCJStep != null ? biInCJStep : saveBIInCJStep(cjStep, biOptional, biIter);
+                }
+                stepProcessPost(bi, biOptional, biStepTypeEnums);
+            }
+        }
+    }
+
+    private void stepProcessPost(BIElement bi, BI biOptional, List<BiStepTypeEnum> biStepTypeEnums) {
+        for (int stepsIter = 0; stepsIter < bi.getBiSteps().size(); stepsIter++) {
+            BiStep step = bi.getBiSteps().get(stepsIter);
+            Optional<BiStepTypeEnum> biStepTypeEnum = biStepTypeEnums.stream()
+                    .filter(stepTypeEnum -> stepTypeEnum.getName().equalsIgnoreCase(step.getType()))
+                    .findFirst();
+            if (biStepTypeEnum.isPresent()) {
+                Optional<ru.beeline.cxbackend.domain.bi.BiStep> stepOptional = biStepRepository.findByBiAndBpmnIdAndStepType(
+                        biOptional,
+                        step.getId(),
+                        biStepTypeEnum.get());
+                if (stepOptional.isEmpty()) {
+                    log.info("add STEP name = " + step.getName());
+                    biStepRepository.save(ru.beeline.cxbackend.domain.bi.BiStep.builder()
+                            .name(step.getName())
+                            .bi(biOptional)
+                            .stepType(biStepTypeEnum.get())
+                            .bpmnId(step.getId())
+                            .build());
+                }
+            }
+        }
+    }
+
+    private void saveOrUpdateElements(ProcessCJ processCJ, long id, CJ cj) {
         List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
         cleanCjSteps(processCJ, id);
         for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
             CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
             CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
-            cjStep = cjStep != null ? updateCjStep(cjStep, stage.name, stageIter) : cjStepRepository.save(CJStep.builder()
-                    .order(stageIter)
-                    .name(stage.name)
-                    .cjId(id)
-                    .idBpmn(stage.getId())
-                    .build());
+            cjStep = cjStep != null ? updateCjStep(cjStep, stage.name, stageIter) : saveCjStep(stageIter, stage, id);
             log.info("name = " + cjStep.getName());
             List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(cjStep.getId());
             Map<Long, BIInCJStep> biInCJStepMap = biInCJStepList.stream().collect(Collectors.toMap(
@@ -181,11 +263,7 @@ public class CJimportFromBpmnService {
                     BIInCJStep biInCJStep = biInCJStepMap.get(biOptional.getId());
                     biInCJStepMap.remove(biOptional.getId());
                     biInCJStep = biInCJStep != null ? biInCJStepRepository.save(biInCJStep)
-                            : biInCJStepRepository.save(BIInCJStep.builder()
-                            .cjStepId(cjStep.getId())
-                            .buisnessIteraction(biOptional)
-                            .order(biIter.longValue())
-                            .build());
+                            : saveBIInCJStep(cjStep, biOptional, biIter);
                 } else {
                     log.info("Unknown bi.type: {}", bi.type);
                     continue;
@@ -207,11 +285,8 @@ public class CJimportFromBpmnService {
         log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
         BIInCJStep biInCJStep = biInCJStepMap.get(biOptional.getId());
         biInCJStepMap.remove(biOptional.getId());
-        biInCJStep = biInCJStep != null ? biInCJStepRepository.save(biInCJStep) : biInCJStepRepository.save(BIInCJStep.builder()
-                .cjStepId(cjStep.getId())
-                .buisnessIteraction(biOptional)
-                .order(biIter.longValue())
-                .build());
+        biInCJStep = biInCJStep != null ? biInCJStepRepository.save(biInCJStep)
+                : saveBIInCJStep(cjStep, biOptional, biIter);
     }
 
     private BI saveSubProcess(BIElement bi, CJ cj) {
