@@ -140,5 +140,4 @@ public class BIController {
             throw new ForbiddenException("Недостаточно прав для удаления BI");
         }
     }
-
 }
