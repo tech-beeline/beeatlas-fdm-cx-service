@@ -194,9 +194,9 @@ public class CJimportFromBpmnService {
                 if ("subProcess".equals(bi.type)) {
                     biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
                     if (biOptional == null) {
-                        saveSubProcess(bi, cj);
+                        biOptional = saveSubProcess(bi, cj);
                     }
-                    log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
+                        log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                     BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(), biOptional.getId());
                     biInCJStep = biInCJStep != null ? biInCJStep : saveBIInCJStep(cjStep, biOptional, biIter);
                 }
