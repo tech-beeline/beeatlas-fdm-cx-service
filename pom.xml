@@ -10,7 +10,7 @@
     </parent>
     <groupId>ri.beeline</groupId>
     <artifactId>cx-backend</artifactId>
-    <version>1.0.14</version>
+    <version>1.0.15</version>
     <name>cx-backend</name>
     <description>cx-backend</description>
     <properties>
@@ -138,6 +138,11 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>5.5.0.6356</version>
+            </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
