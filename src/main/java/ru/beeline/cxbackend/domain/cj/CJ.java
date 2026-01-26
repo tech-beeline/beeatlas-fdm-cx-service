@@ -7,6 +7,8 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
 import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
@@ -61,4 +63,13 @@ public class CJ {
 
     @Column(name = "bpmn")
     private Boolean bpmn;
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "cj_tags_relations",
+            schema = "cx",
+            joinColumns = @JoinColumn(name = "id_cj"),
+            inverseJoinColumns = @JoinColumn(name = "id_tag")
+    )
+    private Set<CJTag> tags = new HashSet<>();
 }
