@@ -26,7 +26,11 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
     CJStep findFirstByCjIdAndIdBpmn(Long cjId, String id);
 
     @Modifying
-    @Query("DELETE FROM CJStep cs WHERE cs.cjId = :cjId AND cs.idBpmn NOT IN :ids")
+    @Query("""
+                DELETE FROM CJStep cs
+                WHERE cs.cjId = :cjId
+                  AND (cs.idBpmn IS NULL OR cs.idBpmn NOT IN :ids)
+            """)
     void deleteByCjIdAndIdBpmnNotIn(@Param("cjId") long cjId,
                                     @Param("ids") List<String> ids);
 
