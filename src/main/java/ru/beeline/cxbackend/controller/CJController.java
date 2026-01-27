@@ -11,10 +11,7 @@ import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
-import ru.beeline.cxbackend.dto.CJDto;
-import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.dto.CJFullDtoV2;
-import ru.beeline.cxbackend.dto.CJPostDto;
+import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -50,9 +47,9 @@ public class CJController {
     @CustomHeaders
     @GetMapping("/api/cx/v1/product/cj")
     @ApiOperation(value = "Получение списка CJ", response = List.class)
-    public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
-                          @RequestParam(required = false, defaultValue = "ALL") String sample,
-                          @RequestParam(required = false, defaultValue = "") String search) {
+    public List<CjResponseDto> getCJ(@RequestParam(required = false) Long idProduct,
+                                     @RequestParam(required = false, defaultValue = "ALL") String sample,
+                                     @RequestParam(required = false, defaultValue = "") String search) {
         return cjService.getAll(idProduct, sample, search);
     }
 
@@ -86,7 +83,7 @@ public class CJController {
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity<CJ> createCJ(@PathVariable Long productId, @RequestBody CJPostDto cj) {
+    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId, @RequestBody CJPostDto cj) {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
@@ -94,7 +91,7 @@ public class CJController {
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CJ> editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
         String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
@@ -123,7 +120,7 @@ public class CJController {
     @PatchMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CJ> updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CjResponseDto> updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");

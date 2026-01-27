@@ -70,7 +70,7 @@ public class CJService {
     }
 
     @Transactional
-    public CJ createNewCJ(CJPostDto cj, Long productId) {
+    public CjResponseDto createNewCJ(CJPostDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
 
@@ -81,7 +81,7 @@ public class CJService {
         }
 
         log.info("New cj created: " + newCJ);
-        return newCJ;
+        return modelMapper.map(newCJ, CjResponseDto.class);
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
@@ -138,7 +138,7 @@ public class CJService {
                 padded.substring(6, 8);
     }
 
-    public CJ updateCJ(CJ cj, CJDto cjDto) {
+    public CjResponseDto updateCJ(CJ cj, CJDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
             throw new RuntimeException("Не допускается обработка CJ. Обработка возможна, только в статусе черновика");
         }
@@ -152,7 +152,7 @@ public class CJService {
             cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
             cjRepository.save(cj);
         }
-        return cj;
+        return modelMapper.map(cj, CjResponseDto.class);
     }
 
     @Transactional
@@ -244,7 +244,7 @@ public class CJService {
         return stepDtoV2;
     }
 
-    public List<CJ> getAll(Long idProduct, String sample, String search) {
+    public List<CjResponseDto> getAll(Long idProduct, String sample, String search) {
         List<CJ> result;
         switch (sample) {
             case "PUBLIC":
@@ -261,6 +261,7 @@ public class CJService {
         }
         return result.stream()
                 .filter(cj -> cj.getDeletedDate() == null)
+                .map(cj -> {return modelMapper.map(cj, CjResponseDto.class);})
                 .collect(Collectors.toList());
     }
 
