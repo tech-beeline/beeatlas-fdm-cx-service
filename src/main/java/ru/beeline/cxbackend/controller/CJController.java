@@ -64,11 +64,20 @@ public class CJController {
     }
 
     @CustomHeaders
+    @PatchMapping("/api/cx/v1/bpmn/cj/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Обновление CJ продукта из bpmn")
+    public ResponseEntity<Void> updateCJ(@PathVariable Long id) {
+        cJimportFromBpmnService.importFromBpmnUpdate(id);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @CustomHeaders
     @PostMapping("/api/cx/v1/bpmn/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта из bpmn")
     public ResponseEntity<Void> createCJ(@PathVariable Long id) {
-        cJimportFromBpmnService.importFromBpmn(id);
+        cJimportFromBpmnService.importFromBpmnCreate(id);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
