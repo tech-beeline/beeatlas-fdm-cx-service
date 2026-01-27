@@ -12,16 +12,29 @@ import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
-import ru.beeline.cxbackend.domain.cj.CJTag;
-import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.dto.AuthorDto;
+import ru.beeline.cxbackend.dto.CJDto;
+import ru.beeline.cxbackend.dto.CJFullDto;
+import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.dto.StepDto;
+import ru.beeline.cxbackend.dto.StepDtoV2;
+import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
-import ru.beeline.cxbackend.repository.*;
+import ru.beeline.cxbackend.repository.BIInCJStepRepository;
+import ru.beeline.cxbackend.repository.BusinessInteractionRepository;
+import ru.beeline.cxbackend.repository.CJRepository;
+import ru.beeline.cxbackend.repository.CJStepRepository;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getHeaders;
@@ -48,9 +61,6 @@ public class CJService {
     private BIInCJStepRepository biInCJStepRepository;
 
     @Autowired
-    private CJTagRepository cjTagRepository;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -69,50 +79,35 @@ public class CJService {
         return cjRepository.findByName(name);
     }
 
-    @Transactional
-    public CJ createNewCJ(CJPostDto cj, Long productId) {
+    public CJ createNewCJ(CJDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
-
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
-
-        if (cj.getTags() != null && !cj.getTags().isEmpty()) {
-            processTags(newCJ, cj.getTags());
-        }
-
         log.info("New cj created: " + newCJ);
         return newCJ;
+
     }
 
-    private void processTags(CJ cj, List<String> tagNames) {
-        for (String tagName : tagNames) {
-            CJTag tag = findOrCreateTag(tagName);
-            cj.getTags().add(tag);
-        }
-    }
-
-    private CJTag findOrCreateTag(String tagName) {
-        return cjTagRepository.findByName(tagName)
-                .orElseGet(() -> {
-                    CJTag newTag = CJTag.builder().name(tagName).build();
-                    return cjTagRepository.save(newTag);
-                });
-    }
-
-    private void validateBody(CJPostDto cj) {
+    private void validateBody(CJDto cj) {
         if (!getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             throw new ForbiddenException("Недостаточно прав для создания CJ");
+        }
+        if (findByName(cj.getName()) != null) {
+            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
         }
         String errors = "";
         if (cj.getName() == null || cj.getName().trim().isEmpty()) {
             errors += "Поле name не может быть пустым.\n";
+        }
+        if (cj.getUserPortrait() == null || cj.getUserPortrait().trim().isEmpty()) {
+            errors += "Поле user_portrait не может быть пустым.\n";
         }
         if (!errors.isEmpty()) {
             throw new ConflictException(errors);
         }
     }
 
-    public CJ createCJ(CJPostDto cj, Long productId, Long userId) {
+    public CJ createCJ(CJDto cj, Long productId, Long userId) {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
@@ -122,7 +117,6 @@ public class CJService {
                 .idProductExt(productId)
                 .bDraft(true)
                 .uniqueIdent("temporary")
-                .tags(new HashSet<>())
                 .build();
         cjRepository.saveAndFlush(newCJ);
         newCJ.setUniqueIdent(generateUniqueIdent(newCJ.getId()));

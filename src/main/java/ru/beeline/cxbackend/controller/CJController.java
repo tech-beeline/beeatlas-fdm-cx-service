@@ -14,7 +14,6 @@ import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.CJDto;
 import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.CJFullDtoV2;
-import ru.beeline.cxbackend.dto.CJPostDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -86,7 +85,7 @@ public class CJController {
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity<CJ> createCJ(@PathVariable Long productId, @RequestBody CJPostDto cj) {
+    public ResponseEntity<CJ> createCJ(@PathVariable Long productId, @RequestBody CJDto cj) {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
