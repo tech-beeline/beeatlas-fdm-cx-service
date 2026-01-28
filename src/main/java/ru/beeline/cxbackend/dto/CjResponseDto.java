@@ -22,14 +22,11 @@ public class CjResponseDto {
     private String userPortrait;
 
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    @JsonProperty("last_modified_date")
     private Date lastModifiedDate;
 
-    @JsonProperty("deleted_date")
     private Date deletedDate;
 
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
-    @JsonProperty("created_date")
     private Date createdDate;
 
     @JsonProperty("draft")
