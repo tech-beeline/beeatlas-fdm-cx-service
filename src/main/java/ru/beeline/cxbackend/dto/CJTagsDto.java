@@ -9,7 +9,7 @@ import java.util.List;
 
 @Data
 @Getter
-public class CJPostDto {
+public class CJTagsDto {
 
     private String name;
     @JsonProperty("user_portrait")

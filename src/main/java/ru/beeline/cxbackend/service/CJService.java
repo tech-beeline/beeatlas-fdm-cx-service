@@ -70,7 +70,7 @@ public class CJService {
     }
 
     @Transactional
-    public CjResponseDto createNewCJ(CJPostDto cj, Long productId) {
+    public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
 
@@ -99,7 +99,7 @@ public class CJService {
                 });
     }
 
-    private void validateBody(CJPostDto cj) {
+    private void validateBody(CJTagsDto cj) {
         if (!getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             throw new ForbiddenException("Недостаточно прав для создания CJ");
         }
@@ -112,7 +112,7 @@ public class CJService {
         }
     }
 
-    public CJ createCJ(CJPostDto cj, Long productId, Long userId) {
+    public CJ createCJ(CJTagsDto cj, Long productId, Long userId) {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
@@ -138,7 +138,7 @@ public class CJService {
                 padded.substring(6, 8);
     }
 
-    public CjResponseDto updateCJ(CJ cj, CJDto cjDto) {
+    public CjResponseDto updateCJ(CJ cj, CJTagsDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
             throw new RuntimeException("Не допускается обработка CJ. Обработка возможна, только в статусе черновика");
         }
@@ -150,7 +150,10 @@ public class CJService {
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
         if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
             cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-            cjRepository.save(cj);
+            cj = cjRepository.save(cj);
+        }
+        if (cj.getTags() != null && !cj.getTags().isEmpty()) {
+            processTags(cj, cjDto.getTags());
         }
         return modelMapper.map(cj, CjResponseDto.class);
     }

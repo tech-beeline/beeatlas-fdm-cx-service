@@ -83,7 +83,7 @@ public class CJController {
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId, @RequestBody CJPostDto cj) {
+    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId, @RequestBody CJTagsDto cj) {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
@@ -91,7 +91,7 @@ public class CJController {
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody CJTagsDto cjDto) {
         String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
@@ -120,16 +120,12 @@ public class CJController {
     @PatchMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CjResponseDto> updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CjResponseDto> updateCJById(@PathVariable Long id, @RequestBody CJTagsDto cjDto) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
         validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
-        CJ cjByName = cjService.findByName(cjDto.getName());
-        if (cjDto.getName() != null && cjByName != null && !cjByName.getId().equals(id)) {
-            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
-        }
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
