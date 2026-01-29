@@ -24,9 +24,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getHeaders;
-import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
-import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
@@ -77,15 +75,14 @@ public class CJService {
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
 
         processTags(newCJ, cj.getTags());
-
+        cjRepository.save(newCJ);
         log.info("New cj created: " + newCJ);
         return modelMapper.map(newCJ, CjResponseDto.class);
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
-        if(tagNames == null || tagNames.isEmpty()){
-            cj.getTags().clear();
-        } else {
+        cj.getTags().clear();
+        if (tagNames != null && !tagNames.isEmpty()) {
             for (String tagName : tagNames) {
                 CJTag tag = findOrCreateTag(tagName);
                 cj.getTags().clear();
