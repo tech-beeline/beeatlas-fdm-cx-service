@@ -85,9 +85,14 @@ public class CJService {
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
-        for (String tagName : tagNames) {
-            CJTag tag = findOrCreateTag(tagName);
-            cj.getTags().add(tag);
+        if(tagNames.isEmpty()){
+            cj.getTags().clear();
+        } else {
+            for (String tagName : tagNames) {
+                CJTag tag = findOrCreateTag(tagName);
+                cj.getTags().clear();
+                cj.getTags().add(tag);
+            }
         }
     }
 
@@ -138,6 +143,7 @@ public class CJService {
                 padded.substring(6, 8);
     }
 
+    @Transactional
     public CjResponseDto updateCJ(CJ cj, CJTagsDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
             throw new RuntimeException("Не допускается обработка CJ. Обработка возможна, только в статусе черновика");
@@ -148,13 +154,14 @@ public class CJService {
         Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
         Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
+        if (cjDto.getTags() != null) {
+            processTags(cj, cjDto.getTags());
+        }
         if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
             cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
             cj = cjRepository.save(cj);
         }
-        if (cj.getTags() != null && !cj.getTags().isEmpty()) {
-            processTags(cj, cjDto.getTags());
-        }
+
         return modelMapper.map(cj, CjResponseDto.class);
     }
 
