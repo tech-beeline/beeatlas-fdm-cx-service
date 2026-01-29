@@ -76,16 +76,14 @@ public class CJService {
 
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
 
-        if (cj.getTags() != null && !cj.getTags().isEmpty()) {
-            processTags(newCJ, cj.getTags());
-        }
+        processTags(newCJ, cj.getTags());
 
         log.info("New cj created: " + newCJ);
         return modelMapper.map(newCJ, CjResponseDto.class);
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
-        if(tagNames.isEmpty()){
+        if(tagNames == null && tagNames.isEmpty()){
             cj.getTags().clear();
         } else {
             for (String tagName : tagNames) {
@@ -154,9 +152,7 @@ public class CJService {
         Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
         Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
-        if (cjDto.getTags() != null) {
-            processTags(cj, cjDto.getTags());
-        }
+        processTags(cj, cjDto.getTags());
         if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
             cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
             cj = cjRepository.save(cj);
