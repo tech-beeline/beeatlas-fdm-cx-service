@@ -12,17 +12,7 @@ import ru.beeline.cxbackend.domain.bi.*;
 import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
-import ru.beeline.cxbackend.dto.AuthorDto;
-import ru.beeline.cxbackend.dto.BIDto;
-import ru.beeline.cxbackend.dto.BIEditabilityDto;
-import ru.beeline.cxbackend.dto.BILinkDto;
-import ru.beeline.cxbackend.dto.BIPostDto;
-import ru.beeline.cxbackend.dto.BIV2Dto;
-import ru.beeline.cxbackend.dto.BiByCjStepDto;
-import ru.beeline.cxbackend.dto.ParticipantDto;
-import ru.beeline.cxbackend.dto.PatchRelationStepDto;
-import ru.beeline.cxbackend.dto.PatchStepDto;
-import ru.beeline.cxbackend.dto.UserProfileDto;
+import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
@@ -84,6 +74,9 @@ public class BusinessInteractionService {
 
     @Autowired
     BiStepRelationRepository biStepRelationRepository;
+
+    @Autowired
+    ModelMapper modelMapper;
 
     public List<BIDto> getBI(Long idProduct) {
         List<BI> biList = businessInteractionRepository
@@ -399,10 +392,19 @@ public class BusinessInteractionService {
         businessInteractionRepository.save(bi);
     }
 
-    public List<CJ> getCJByBIID(Long id) {
-        List<Long> cjStepIds = biInCJStepRepository.findBIInCJStepsByBiId(id).stream().map(BIInCJStep::getCjStepId).collect(Collectors.toList());
-        List<Long> cjIds = cjStepRepository.findAllById(cjStepIds).stream().map(CJStep::getCjId).collect(Collectors.toList());
-        return cjRepository.findAllByIdIn(cjIds);
+    public List<CjResponseDto> getCJByBIID(Long id) {
+        List<Long> cjStepIds = biInCJStepRepository.findBIInCJStepsByBiId(id)
+                .stream()
+                .map(BIInCJStep::getCjStepId)
+                .collect(Collectors.toList());
+        List<Long> cjIds = cjStepRepository.findAllById(cjStepIds)
+                .stream()
+                .map(CJStep::getCjId)
+                .collect(Collectors.toList());
+        return cjRepository.findAllByIdIn(cjIds)
+                .stream()
+                .map(cj -> modelMapper.map(cj, CjResponseDto.class))
+                .collect(Collectors.toList());
     }
 
     @Transactional
