@@ -83,7 +83,7 @@ public class CJService {
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
-        if(tagNames == null && tagNames.isEmpty()){
+        if(tagNames == null || tagNames.isEmpty()){
             cj.getTags().clear();
         } else {
             for (String tagName : tagNames) {
