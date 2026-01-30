@@ -85,7 +85,6 @@ public class CJService {
         if (tagNames != null && !tagNames.isEmpty()) {
             for (String tagName : tagNames) {
                 CJTag tag = findOrCreateTag(tagName);
-                cj.getTags().clear();
                 cj.getTags().add(tag);
             }
         }
