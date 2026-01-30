@@ -14,8 +14,18 @@ public class CJTagsDto {
     private String name;
     @JsonProperty("user_portrait")
     private String userPortrait;
+    private boolean userPortraitProvided = false;
     @JsonProperty("draft")
     private Boolean bDraft;
     private List<String> tags;
 
+    @JsonProperty("user_portrait")
+    public void setUserPortrait(String userPortrait) {
+        this.userPortrait = userPortrait;
+        this.userPortraitProvided = true;
+    }
+
+    public boolean isUserPortraitProvided() {
+        return userPortraitProvided;
+    }
 }

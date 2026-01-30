@@ -86,6 +86,7 @@ public class CJService {
             for (String tagName : tagNames) {
                 CJTag tag = findOrCreateTag(tagName);
                 cj.getTags().add(tag);
+                cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
             }
         }
     }
@@ -146,7 +147,9 @@ public class CJService {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
         Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
-        Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
+        if (cjDto.isUserPortraitProvided()) {
+            cj.setUserPortrait(cjDto.getUserPortrait());
+        }
         Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
         processTags(cj, cjDto.getTags());
         if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
