@@ -92,7 +92,6 @@ public class CJController {
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
     public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody CJTagsDto cjDto) {
-        String errors = "";
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             String message = "CJ с id = " + id + " не найден";
@@ -100,10 +99,6 @@ public class CJController {
         }
         validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
-            CJ cjByName = cjService.findByName(cjDto.getName());
-            if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
-                throw new UnprocessedEntityException("Указанное имя CJ уже существует");
-            }
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.status(HttpStatus.OK)
                         .header("content-type", MediaType.APPLICATION_JSON_VALUE)
