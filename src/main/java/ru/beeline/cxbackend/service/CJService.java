@@ -146,16 +146,43 @@ public class CJService {
         if (Objects.nonNull(cjDto.getBDraft()) && !cjDto.getBDraft() && isCjHaveDraftBI(cj)) {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
-        Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
+
+        boolean changed = false;
+
+        if (cjDto.getName() != null && !cjDto.getName().equals(cj.getName())) {
+            cj.setName(cjDto.getName());
+            changed = true;
+        }
+
         if (cjDto.isUserPortraitProvided()) {
-            cj.setUserPortrait(cjDto.getUserPortrait());
+            if (!Objects.equals(cjDto.getUserPortrait(), cj.getUserPortrait())) {
+                cj.setUserPortrait(cjDto.getUserPortrait());
+                changed = true;
+            }
         }
-        Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
-        processTags(cj, cjDto.getTags());
-        if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
-            cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-            cj = cjRepository.save(cj);
+
+        if (cjDto.getBDraft() != null && !cjDto.getBDraft().equals(cj.isBDraft())) {
+            cj.setBDraft(cjDto.getBDraft());
+            changed = true;
         }
+
+        if (cjDto.getTags() != null) {
+            Set<String> incoming = new HashSet<>(cjDto.getTags());
+            Set<String> existing = cj.getTags().stream()
+                    .map(tag -> tag.getName())
+                    .collect(Collectors.toSet());
+            if (!incoming.equals(existing)) {
+                processTags(cj, cjDto.getTags());
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            return modelMapper.map(cj, CjResponseDto.class);
+        }
+
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cj = cjRepository.save(cj);
 
         return modelMapper.map(cj, CjResponseDto.class);
     }
