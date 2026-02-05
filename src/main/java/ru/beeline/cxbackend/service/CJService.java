@@ -139,7 +139,30 @@ public class CJService {
     }
 
     @Transactional
-    public CjResponseDto updateCJ(CJ cj, CJTagsDto cjDto) {
+    public CjResponseDto replaceCJ(CJ cj, CJTagsDto cjDto) {
+
+        if (cjDto.getName() == null || cjDto.getName().trim().isEmpty()) {
+            throw new ConflictException("Поле name обязательно для редактирования CJ");
+        }
+        if (cjDto.getBDraft() == null) {
+            throw new ConflictException("Поле bDraft обязательно для редактирования CJ");
+        }
+
+        if (!cj.isBDraft()) {
+            throw new RuntimeException("Замена CJ возможна только в статусе черновика");
+        }
+
+        cj.setName(cjDto.getName());
+        cj.setBDraft(cjDto.getBDraft());
+        cj.setUserPortrait(null);
+        processTags(cj, cjDto.getTags());
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cj = cjRepository.save(cj);
+
+        return modelMapper.map(cj, CjResponseDto.class);
+    }
+    @Transactional
+    public CjResponseDto patchCJ(CJ cj, CJTagsDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
             throw new RuntimeException("Не допускается обработка CJ. Обработка возможна, только в статусе черновика");
         }

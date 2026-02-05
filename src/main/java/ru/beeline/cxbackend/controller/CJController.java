@@ -15,7 +15,6 @@ import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
-import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
@@ -102,7 +101,7 @@ public class CJController {
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.status(HttpStatus.OK)
                         .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                        .body(cjService.updateCJ(currentCJ, cjDto));
+                        .body(cjService.replaceCJ(currentCJ, cjDto));
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
             }
@@ -123,7 +122,7 @@ public class CJController {
         validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
+                return ResponseEntity.ok(cjService.patchCJ(currentCJ, cjDto));
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
             }
