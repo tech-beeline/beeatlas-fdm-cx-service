@@ -11,7 +11,10 @@ import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
-import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.dto.CJFullDto;
+import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.dto.CJTagsDto;
+import ru.beeline.cxbackend.dto.CjResponseDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -90,7 +93,10 @@ public class CJController {
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody CJTagsDto cjDto) {
+    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody(required = false) CJTagsDto cjDto) {
+        if (cjDto == null) {
+            return ResponseEntity.ok().build();
+        }
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             String message = "CJ с id = " + id + " не найден";

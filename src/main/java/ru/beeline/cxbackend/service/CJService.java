@@ -141,20 +141,14 @@ public class CJService {
     @Transactional
     public CjResponseDto replaceCJ(CJ cj, CJTagsDto cjDto) {
 
-        if (cjDto.getName() == null || cjDto.getName().trim().isEmpty()) {
-            throw new ConflictException("Поле name обязательно для редактирования CJ");
-        }
+
         if (cjDto.getBDraft() == null) {
             throw new ConflictException("Поле bDraft обязательно для редактирования CJ");
         }
 
-        if (!cj.isBDraft()) {
-            throw new RuntimeException("Замена CJ возможна только в статусе черновика");
-        }
-
         cj.setName(cjDto.getName());
         cj.setBDraft(cjDto.getBDraft());
-        cj.setUserPortrait(null);
+        cj.setUserPortrait(cjDto.getUserPortrait());
         processTags(cj, cjDto.getTags());
         cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
         cj = cjRepository.save(cj);
