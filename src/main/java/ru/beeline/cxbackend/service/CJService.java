@@ -2,6 +2,7 @@ package ru.beeline.cxbackend.service;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,6 +62,19 @@ public class CJService {
     public void initModelMapperMapping() {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
                 .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
+        Converter<Set<CJTag>, List<String>> tagsConverter = ctx -> {
+            Set<CJTag> src = ctx.getSource();
+            if (src == null) {
+                return null;
+            }
+            return src.stream()
+                    .map(CJTag::getName)
+                    .collect(Collectors.toList());
+        };
+
+        modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
+                .addMappings(mapper -> mapper.using(tagsConverter)
+                        .map(CJ::getTags, CJFullDtoV2::setTags));
     }
 
     public CJ findByName(String name) {
@@ -247,8 +261,10 @@ public class CJService {
     }
 
     public CJFullDtoV2 getFullDtoByIdV2(Long id) {
-        CJ cj = getAndValidateCJ(id);
-        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
+        CJ cj = getById(id);
+        if (cj.getDeletedDate() != null) {
+            throw new NotFoundException("CJ with id " + id + " does not exist");
+        }
         UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
         AuthorDto authorDto = AuthorDto.builder()
                 .id(userProfileDto.getId())
