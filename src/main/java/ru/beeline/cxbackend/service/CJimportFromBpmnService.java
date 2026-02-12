@@ -59,6 +59,9 @@ public class CJimportFromBpmnService {
     private ModelMapper modelMapper;
 
     @Autowired
+    private BiStepRelationRepository biStepRelationRepository;
+
+    @Autowired
     private BiStepTypeEnumRepository biStepTypeEnumRepository;
 
     @Autowired
@@ -196,7 +199,7 @@ public class CJimportFromBpmnService {
                     if (biOptional == null) {
                         biOptional = saveSubProcess(bi, cj);
                     }
-                        log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
+                    log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                     BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(), biOptional.getId());
                     biInCJStep = biInCJStep != null ? biInCJStep : saveBIInCJStep(cjStep, biOptional, biIter);
                 }
@@ -275,6 +278,10 @@ public class CJimportFromBpmnService {
                         .map(ru.beeline.cxbackend.domain.bi.BiStep::getId)
                         .collect(Collectors.toSet());
                 allBiSteps.removeIf(item -> idsToRemove.contains(item.getId()));
+                log.info("delete BiSteps");
+                if (!allBiSteps.isEmpty()) {
+                    biStepRelationRepository.deleteAllByBiStepIn(allBiSteps);
+                }
                 biStepRepository.deleteAll(allBiSteps);
             }
             biInCJStepRepository.deleteAll(biInCJStepMap.values());
@@ -308,6 +315,7 @@ public class CJimportFromBpmnService {
 
     private void stepProcess(BIElement bi, BI biOptional, List<BiStepTypeEnum> biStepTypeEnums,
                              List<ru.beeline.cxbackend.domain.bi.BiStep> biStepIsPresent) {
+        log.info("start step process method");
         for (int stepsIter = 0; stepsIter < bi.getBiSteps().size(); stepsIter++) {
             BiStep step = bi.getBiSteps().get(stepsIter);
             Optional<BiStepTypeEnum> biStepTypeEnum = biStepTypeEnums.stream()
@@ -331,6 +339,7 @@ public class CJimportFromBpmnService {
                 }
             }
         }
+        log.info("step process method complete");
     }
 
     private void findBiElements(Element parent, List<BIElement> biElements) {
