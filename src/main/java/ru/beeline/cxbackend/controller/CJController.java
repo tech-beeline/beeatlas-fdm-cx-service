@@ -15,6 +15,7 @@ import ru.beeline.cxbackend.dto.CJFullDto;
 import ru.beeline.cxbackend.dto.CJFullDtoV2;
 import ru.beeline.cxbackend.dto.CJTagsDto;
 import ru.beeline.cxbackend.dto.CjResponseDto;
+import ru.beeline.cxbackend.dto.DashboardLinkDTO;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -156,6 +157,15 @@ public class CJController {
         } else {
             throw new ForbiddenException("Недостаточно прав для удаления CJ");
         }
+    }
+
+    @PatchMapping("/api/v1/cj/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Cохранения ссылки на дашборд мониторинга CJ")
+    public ResponseEntity<Void> savingLinkCJ(@PathVariable Long id,
+                                             @RequestBody DashboardLinkDTO dashboardLinkDTO) {
+        cjService.savingLink(id, dashboardLinkDTO);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
 

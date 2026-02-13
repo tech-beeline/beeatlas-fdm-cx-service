@@ -23,7 +23,8 @@ public class HeaderInterceptor implements HandlerInterceptor {
                     || request.getRequestURI().contains("/swagger")
                     || request.getRequestURI().contains("/error")
                     || request.getRequestURI().contains("/v2/product/cj")
-                    || request.getRequestURI().contains("/api-docs"))
+                    || request.getRequestURI().contains("/api-docs")
+                    || request.getRequestURI().contains("/api/v1/cj/"))
             {
                 return true;
             }

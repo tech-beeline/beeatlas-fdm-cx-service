@@ -15,6 +15,7 @@ import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.domain.cj.CJTag;
 import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -169,6 +170,7 @@ public class CJService {
 
         return modelMapper.map(cj, CjResponseDto.class);
     }
+
     @Transactional
     public CjResponseDto patchCJ(CJ cj, CJTagsDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
@@ -326,7 +328,9 @@ public class CJService {
         }
         return result.stream()
                 .filter(cj -> cj.getDeletedDate() == null)
-                .map(cj -> {return modelMapper.map(cj, CjResponseDto.class);})
+                .map(cj -> {
+                    return modelMapper.map(cj, CjResponseDto.class);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -359,5 +363,15 @@ public class CJService {
 
     private boolean isCjHaveDraftBI(CJ cj) {
         return cjStepRepository.countByBiIdAndDraft(cj.getId()) > 0L;
+    }
+
+    public void savingLink(Long id, DashboardLinkDTO dashboardLinkDTO) {
+        if(dashboardLinkDTO.getDashboardLink()==null || dashboardLinkDTO.getDashboardLink().isEmpty()){
+            throw new BadRequestException("The dashboardLink field cannot be empty.");
+        }
+        CJ cj =  cjRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
+        cj.setDashboardLink(dashboardLinkDTO.getDashboardLink());
+        cjRepository.save(cj);
     }
 }
