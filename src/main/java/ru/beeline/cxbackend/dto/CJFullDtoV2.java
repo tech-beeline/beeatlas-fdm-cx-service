@@ -31,6 +31,8 @@ public class CJFullDtoV2 {
 
     private Long productId;
 
+    private String dashboardLink;
+
     private List<StepDtoV2> steps;
 
     private String userPortrait;
@@ -43,4 +45,6 @@ public class CJFullDtoV2 {
     private String uniqueIdent;
 
     private Boolean bpmn;
+
+    private List<String> tags;
 }

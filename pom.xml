@@ -8,7 +8,7 @@
         <version>2.7.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>ri.beeline</groupId>
+    <groupId>ru.beeline</groupId>
     <artifactId>cx-backend</artifactId>
     <version>1.1.1</version>
     <name>cx-backend</name>

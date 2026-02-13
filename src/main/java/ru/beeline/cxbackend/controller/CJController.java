@@ -56,7 +56,6 @@ public class CJController {
     }
 
     @ApiErrorCodes({400, 401, 403, 404, 500})
-    @CustomHeaders
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
     public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {

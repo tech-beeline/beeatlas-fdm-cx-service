@@ -61,6 +61,10 @@ public class CJ {
     @Column(name = "unique_ident")
     private String uniqueIdent;
 
+    @Column(name = "dashboard_link")
+    @JsonProperty("dashboard_link")
+    private String dashboardLink;
+
     @Column(name = "bpmn")
     private Boolean bpmn;
 
