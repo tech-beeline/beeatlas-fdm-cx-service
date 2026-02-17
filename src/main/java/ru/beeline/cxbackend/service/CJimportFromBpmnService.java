@@ -243,6 +243,7 @@ public class CJimportFromBpmnService {
         cleanCjSteps(processCJ, id);
         for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
             CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
+            log.info("Обработка collapsedSubProcesses: {}", stage.name);
             CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
             cjStep = cjStep != null ? updateCjStep(cjStep, stage.name, stageIter) : saveCjStep(stageIter, stage, id);
             List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(cjStep.getId());
@@ -353,6 +354,7 @@ public class CJimportFromBpmnService {
                             .bpmnId(step.getId())
                             .build());
                 } else {
+                    log.info("Обновляем bi step");
                     ru.beeline.cxbackend.domain.bi.BiStep biStep = stepOptional.get();
                     if (!biStep.getName().equals(step.getName())) {
                         biStep.setName(step.getName());
