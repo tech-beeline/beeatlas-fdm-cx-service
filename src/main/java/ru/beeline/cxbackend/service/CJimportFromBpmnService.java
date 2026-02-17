@@ -360,8 +360,10 @@ public class CJimportFromBpmnService {
                         biStep.setName(step.getName());
                         biStepRepository.save(biStep);
                     }
-                        biStepIsPresent.add(stepOptional.get());
+                    biStepIsPresent.add(stepOptional.get());
                 }
+            } else {
+                log.info("bi step type: {} не соотвествует списку допустимых типов", step.getType() != null ? step.getType() : "null");
             }
         }
         log.info("step process method complete");
