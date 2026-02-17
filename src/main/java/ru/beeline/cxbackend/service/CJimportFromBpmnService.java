@@ -98,6 +98,7 @@ public class CJimportFromBpmnService {
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {
+        log.info("checkFileExtension");
         String contentDisposition = document.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
 
         String filename = null;
@@ -136,13 +137,16 @@ public class CJimportFromBpmnService {
     }
 
     private CJStep updateCjStep(CJStep cjStep, String name, Integer order) {
+        log.info("найден cj step с именем: " + cjStep.getName());
         if (!Objects.equals(cjStep.getName(), name)) {
             cjStep.setName(name);
+            log.info("Обновление cj step name: {}", name);
         }
         if (!Objects.equals(cjStep.getOrder(), order)) {
             cjStep.setOrder(order);
         }
         cjStepRepository.save(cjStep);
+        log.info("Сохранение обновленого cj step");
         return cjStep;
     }
 
@@ -160,6 +164,7 @@ public class CJimportFromBpmnService {
     }
 
     private CJStep saveCjStep(int stageIter, CollapsedSubProcess stage, long id) {
+        log.info("Создание нового cj step с name: {}", stage.name);
         return cjStepRepository.save(CJStep.builder()
                 .order(stageIter)
                 .name(stage.name)
@@ -233,13 +238,13 @@ public class CJimportFromBpmnService {
     }
 
     private void saveOrUpdateElements(ProcessCJ processCJ, long id, CJ cj) {
+        log.info("start method saveOrUpdateElements");
         List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
         cleanCjSteps(processCJ, id);
         for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
             CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
             CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
             cjStep = cjStep != null ? updateCjStep(cjStep, stage.name, stageIter) : saveCjStep(stageIter, stage, id);
-            log.info("name = " + cjStep.getName());
             List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(cjStep.getId());
             Map<Long, BIInCJStep> biInCJStepMap = biInCJStepList.stream().collect(Collectors.toMap(
                     BIInCJStep::getBiId,
@@ -247,9 +252,11 @@ public class CJimportFromBpmnService {
                     (existing, replacement) -> existing
             ));
             for (Integer biIter = 0; biIter < stage.getBiElements().size(); biIter++) {
+                log.info("Создание, обновление bi , cj: {}", stage.name);
                 BIElement bi = stage.getBiElements().get(biIter);
                 BI biOptional = null;
                 if ("callActivity".equals(bi.type)) {
+                    log.info("bi.type: callActivity");
                     biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
                     if (biOptional != null) {
                         callActivityProcess(biOptional, cjStep, biIter, biInCJStepMap);
@@ -257,10 +264,14 @@ public class CJimportFromBpmnService {
                         continue;
                     }
                 } else if ("subProcess".equals(bi.type)) {
-                    log.info("bi.type: subProcess");
+                    log.info("bi.type: subProcess. Поиск bi с id: {}", bi.getId());
                     biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
+                    log.info("Найден bi с bpmnId: {}", bi.getId());
                     if (biOptional == null) {
+                        log.info("bi не найден сохранение нового bi");
                         biOptional = saveSubProcess(bi, cj);
+                    } else {
+                        updateBi(biOptional, bi);
                     }
                     log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                     BIInCJStep biInCJStep = biInCJStepMap.get(biOptional.getId());
@@ -285,6 +296,15 @@ public class CJimportFromBpmnService {
                 biStepRepository.deleteAll(allBiSteps);
             }
             biInCJStepRepository.deleteAll(biInCJStepMap.values());
+        }
+    }
+
+    private void updateBi(BI biOptional, BIElement bi) {
+        if (!biOptional.getName().equals(bi.name)) {
+            log.info("bi найден, Обновляем bi");
+            biOptional.setName(bi.name);
+            biOptional.setLastModifiedDate(new java.sql.Date((new Date()).getTime()));
+            biRepository.save(biOptional);
         }
     }
 
@@ -323,9 +343,7 @@ public class CJimportFromBpmnService {
                     .findFirst();
             if (biStepTypeEnum.isPresent()) {
                 Optional<ru.beeline.cxbackend.domain.bi.BiStep> stepOptional = biStepRepository.findByBiAndBpmnIdAndStepType(
-                        biOptional,
-                        step.getId(),
-                        biStepTypeEnum.get());
+                        biOptional, step.getId(), biStepTypeEnum.get());
                 if (stepOptional.isEmpty()) {
                     log.info("add STEP name = " + step.getName());
                     biStepRepository.save(ru.beeline.cxbackend.domain.bi.BiStep.builder()
@@ -335,7 +353,12 @@ public class CJimportFromBpmnService {
                             .bpmnId(step.getId())
                             .build());
                 } else {
-                    biStepIsPresent.add(stepOptional.get());
+                    ru.beeline.cxbackend.domain.bi.BiStep biStep = stepOptional.get();
+                    if (!biStep.getName().equals(step.getName())) {
+                        biStep.setName(step.getName());
+                        biStepRepository.save(biStep);
+                    }
+                        biStepIsPresent.add(stepOptional.get());
                 }
             }
         }
