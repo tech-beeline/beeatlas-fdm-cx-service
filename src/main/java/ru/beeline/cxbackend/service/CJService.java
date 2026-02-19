@@ -64,7 +64,6 @@ public class CJService {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
                 .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
 
-        //  Set<CJTag> → List<String> (для CJFullDtoV2)
         Converter<Set<CJTag>, List<String>> tagsListConverter = ctx -> {
             Set<CJTag> src = ctx.getSource();
             if (src == null) {
@@ -79,12 +78,10 @@ public class CJService {
                 .addMappings(mapper -> mapper.using(tagsListConverter)
                         .map(CJ::getTags, CJFullDtoV2::setTags));
 
-        // ------------------- CJ → CjResponseDtoV2 -------------------
         modelMapper.typeMap(CJ.class, CjResponseDtoV2.class)
                 .addMapping(CJ::getIdProductExt, CjResponseDtoV2::setIdProductExt)
                 .addMapping(CJ::getDashboardLink, CjResponseDtoV2::setDashboardLink);
 
-        //  Set<CJTag> → Set<String> (для CjResponseDtoV2)
         Converter<Set<CJTag>, Set<String>> tagsSetConverter = ctx -> {
             Set<CJTag> src = ctx.getSource();
             if (src == null) {

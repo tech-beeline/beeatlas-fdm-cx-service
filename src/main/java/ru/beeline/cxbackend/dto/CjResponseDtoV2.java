@@ -33,9 +33,6 @@ public class CjResponseDtoV2 {
     @JsonProperty("draft")
     private Boolean bDraft;
 
-    @JsonProperty("id_user_profile")
-    private Long authorId;
-
     @JsonProperty("productId")
     private Long idProductExt;
 
