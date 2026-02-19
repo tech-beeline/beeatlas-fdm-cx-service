@@ -63,19 +63,28 @@ public class CJService {
     public void initModelMapperMapping() {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
                 .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
-        Converter<Set<CJTag>, List<String>> tagsConverter = ctx -> {
+
+        Converter<Set<CJTag>, Set<String>> tagsSetConverter = ctx -> {
             Set<CJTag> src = ctx.getSource();
             if (src == null) {
                 return null;
             }
             return src.stream()
                     .map(CJTag::getName)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toSet());
         };
 
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
-                .addMappings(mapper -> mapper.using(tagsConverter)
+                .addMappings(mapper -> mapper.using(tagsSetConverter)
                         .map(CJ::getTags, CJFullDtoV2::setTags));
+
+        modelMapper.typeMap(CJ.class, CjResponseDtoV2.class)
+                .addMapping(CJ::getIdProductExt, CjResponseDtoV2::setIdProductExt)
+                .addMapping(CJ::getDashboardLink, CjResponseDtoV2::setDashboardLink);
+
+        modelMapper.typeMap(CJ.class, CjResponseDtoV2.class)
+                .addMappings(mapper -> mapper.using(tagsSetConverter)
+                        .map(CJ::getTags, CjResponseDtoV2::setTags));
     }
 
     public CJ findByName(String name) {
@@ -330,6 +339,29 @@ public class CJService {
                 .filter(cj -> cj.getDeletedDate() == null)
                 .map(cj -> {
                     return modelMapper.map(cj, CjResponseDto.class);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<CjResponseDtoV2> getAllv2(Long idProduct, String sample, String search) {
+        List<CJ> result;
+        switch (sample) {
+            case "PUBLIC":
+                result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
+                break;
+            case "DRAFT":
+                result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(CJ::isBDraft).collect(Collectors.toList());
+                break;
+            default:
+                result = cjRepository.findAllByNameContainsIgnoreCase(search);
+        }
+        if (idProduct != null) {
+            result = result.stream().filter(cj -> Objects.equals(cj.getIdProductExt(), idProduct)).collect(Collectors.toList());
+        }
+        return result.stream()
+                .filter(cj -> cj.getDeletedDate() == null)
+                .map(cj -> {
+                    return modelMapper.map(cj, CjResponseDtoV2.class);
                 })
                 .collect(Collectors.toList());
     }

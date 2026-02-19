@@ -11,11 +11,7 @@ import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
-import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.dto.CJFullDtoV2;
-import ru.beeline.cxbackend.dto.CJTagsDto;
-import ru.beeline.cxbackend.dto.CjResponseDto;
-import ru.beeline.cxbackend.dto.DashboardLinkDTO;
+import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -54,6 +50,14 @@ public class CJController {
                                      @RequestParam(required = false, defaultValue = "ALL") String sample,
                                      @RequestParam(required = false, defaultValue = "") String search) {
         return cjService.getAll(idProduct, sample, search);
+    }
+
+    @GetMapping("/api/cx/v2/product/cj")
+    @ApiOperation(value = "Получение списка CJ", response = List.class)
+    public List<CjResponseDtoV2> getCJv2(@RequestParam(name  = "product-id", required = false) Long idProduct,
+                                         @RequestParam(required = false, defaultValue = "ALL") String sample,
+                                         @RequestParam(required = false, defaultValue = "") String search) {
+        return cjService.getAllv2(idProduct, sample, search);
     }
 
     @ApiErrorCodes({400, 401, 403, 404, 500})
