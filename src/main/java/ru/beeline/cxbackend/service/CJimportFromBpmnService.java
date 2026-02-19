@@ -246,12 +246,15 @@ public class CJimportFromBpmnService {
             log.info("Обработка collapsedSubProcesses: {}", stage.name);
             CJStep cjStep = cjStepRepository.findFirstByCjIdAndIdBpmn(id, stage.id);
             cjStep = cjStep != null ? updateCjStep(cjStep, stage.name, stageIter) : saveCjStep(stageIter, stage, id);
+            log.info("cjStep id = {}", cjStep.getId());
             List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(cjStep.getId());
+            log.info("BIInCJStepList size = {}", biInCJStepList.size());
             Map<Long, BIInCJStep> biInCJStepMap = biInCJStepList.stream().collect(Collectors.toMap(
                     BIInCJStep::getBiId,
                     biInCJStep -> biInCJStep,
                     (existing, replacement) -> existing
             ));
+            log.info("Количество BiElements в CollapsedSubProcess = {}", stage.getBiElements().size());
             for (Integer biIter = 0; biIter < stage.getBiElements().size(); biIter++) {
                 log.info("Создание, обновление bi , cj: {}", stage.name);
                 BIElement bi = stage.getBiElements().get(biIter);
