@@ -31,11 +31,8 @@ public class ProductClient {
 
     public List<GetProductsByIdsDTO> getProductsByIds(List<Integer> ids) {
         try {
+            log.info("response from Product ServerUrl: " + productServerUrl + "/api/v1/product/by-ids?ids=");
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
-            headers.set(USER_PERMISSION_HEADER, RequestContext.getUserPermissions().toString());
-            headers.set(USER_PRODUCTS_IDS_HEADER, RequestContext.getUserProducts().toString());
-            headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             headers.setContentType(MediaType.APPLICATION_JSON);
             String idsParam = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
             ResponseEntity<List<GetProductsByIdsDTO>> response =

@@ -110,6 +110,10 @@ public class BIMapper {
             return new ArrayList<>();
         } else {
             List<GetProductsByIdsDTO> allProducts = allProductsById(biStepRelations);
+            if (allProducts == null) {
+                log.info("Product Client response is null");
+                allProducts = new ArrayList<>();
+            }
             Map<Integer, GetProductsByIdsDTO> productsIdsMap = allProducts.stream().collect(Collectors.toMap(
                     GetProductsByIdsDTO::getId,
                     product -> product));
