@@ -11,13 +11,10 @@ import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
-import ru.beeline.cxbackend.dto.CJDto;
-import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.dto.CJFullDtoV2;
+import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
-import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
@@ -49,14 +46,21 @@ public class CJController {
     @CustomHeaders
     @GetMapping("/api/cx/v1/product/cj")
     @ApiOperation(value = "Получение списка CJ", response = List.class)
-    public List<CJ> getCJ(@RequestParam(required = false) Long idProduct,
-                          @RequestParam(required = false, defaultValue = "ALL") String sample,
-                          @RequestParam(required = false, defaultValue = "") String search) {
+    public List<CjResponseDto> getCJ(@RequestParam(required = false) Long idProduct,
+                                     @RequestParam(required = false, defaultValue = "ALL") String sample,
+                                     @RequestParam(required = false, defaultValue = "") String search) {
         return cjService.getAll(idProduct, sample, search);
     }
 
+    @GetMapping("/api/cx/v2/product/cj")
+    @ApiOperation(value = "Получение списка CJ", response = List.class)
+    public List<CjResponseDtoV2> getCJv2(@RequestParam(name  = "product-id", required = false) Long idProduct,
+                                         @RequestParam(required = false, defaultValue = "ALL") String sample,
+                                         @RequestParam(required = false, defaultValue = "") String search) {
+        return cjService.getAllv2(idProduct, sample, search);
+    }
+
     @ApiErrorCodes({400, 401, 403, 404, 500})
-    @CustomHeaders
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
     public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
@@ -85,7 +89,7 @@ public class CJController {
     @PostMapping("/api/cx/v1/product/{productId}/cj")
     @ResponseBody
     @ApiOperation(value = "Создание CJ продукта")
-    public ResponseEntity<CJ> createCJ(@PathVariable Long productId, @RequestBody CJDto cj) {
+    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId, @RequestBody CJTagsDto cj) {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
     }
 
@@ -93,8 +97,10 @@ public class CJController {
     @PutMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CJ> editCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
-        String errors = "";
+    public ResponseEntity<CjResponseDto> editCJById(@PathVariable Long id, @RequestBody(required = false) CJTagsDto cjDto) {
+        if (cjDto == null) {
+            return ResponseEntity.ok().build();
+        }
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             String message = "CJ с id = " + id + " не найден";
@@ -102,14 +108,10 @@ public class CJController {
         }
         validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
-            CJ cjByName = cjService.findByName(cjDto.getName());
-            if (cjByName != null && !cjByName.getId().equals(currentCJ.getId())) {
-                throw new UnprocessedEntityException("Указанное имя CJ уже существует");
-            }
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
                 return ResponseEntity.status(HttpStatus.OK)
                         .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                        .body(cjService.updateCJ(currentCJ, cjDto));
+                        .body(cjService.replaceCJ(currentCJ, cjDto));
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
             }
@@ -122,19 +124,15 @@ public class CJController {
     @PatchMapping("/api/cx/v1/product/cj/{id}")
     @ResponseBody
     @ApiOperation(value = "Изменение CJ продукта")
-    public ResponseEntity<CJ> updateCJById(@PathVariable Long id, @RequestBody CJDto cjDto) {
+    public ResponseEntity<CjResponseDto> updateCJById(@PathVariable Long id, @RequestBody CJTagsDto cjDto) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
         validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
-        CJ cjByName = cjService.findByName(cjDto.getName());
-        if (cjDto.getName() != null && cjByName != null && !cjByName.getId().equals(id)) {
-            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
-        }
         if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
             if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                return ResponseEntity.ok(cjService.updateCJ(currentCJ, cjDto));
+                return ResponseEntity.ok(cjService.patchCJ(currentCJ, cjDto));
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
             }
@@ -164,5 +162,15 @@ public class CJController {
             throw new ForbiddenException("Недостаточно прав для удаления CJ");
         }
     }
+
+    @PatchMapping("/api/v1/cj/{id}")
+    @ResponseBody
+    @ApiOperation(value = "Cохранения ссылки на дашборд мониторинга CJ")
+    public ResponseEntity<Void> savingLinkCJ(@PathVariable Long id,
+                                             @RequestBody DashboardLinkDTO dashboardLinkDTO) {
+        cjService.savingLink(id, dashboardLinkDTO);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }
+
 

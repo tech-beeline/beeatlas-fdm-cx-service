@@ -2,6 +2,7 @@ package ru.beeline.cxbackend.service;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,34 +13,20 @@ import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
-import ru.beeline.cxbackend.dto.AuthorDto;
-import ru.beeline.cxbackend.dto.CJDto;
-import ru.beeline.cxbackend.dto.CJFullDto;
-import ru.beeline.cxbackend.dto.CJFullDtoV2;
-import ru.beeline.cxbackend.dto.StepDto;
-import ru.beeline.cxbackend.dto.StepDtoV2;
-import ru.beeline.cxbackend.dto.UserProfileDto;
+import ru.beeline.cxbackend.domain.cj.CJTag;
+import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
-import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
-import ru.beeline.cxbackend.repository.BIInCJStepRepository;
-import ru.beeline.cxbackend.repository.BusinessInteractionRepository;
-import ru.beeline.cxbackend.repository.CJRepository;
-import ru.beeline.cxbackend.repository.CJStepRepository;
+import ru.beeline.cxbackend.repository.*;
 
 import javax.annotation.PostConstruct;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getHeaders;
-import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
-import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
+import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
@@ -61,6 +48,9 @@ public class CJService {
     private BIInCJStepRepository biInCJStepRepository;
 
     @Autowired
+    private CJTagRepository cjTagRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
@@ -73,41 +63,90 @@ public class CJService {
     public void initModelMapperMapping() {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
                 .addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
+
+        Converter<Set<CJTag>, List<String>> tagsListConverter = ctx -> {
+            Set<CJTag> src = ctx.getSource();
+            if (src == null) {
+                return null;
+            }
+            return src.stream()
+                    .map(CJTag::getName)
+                    .collect(Collectors.toList());
+        };
+
+        modelMapper.typeMap(CJ.class, CJFullDtoV2.class)
+                .addMappings(mapper -> mapper.using(tagsListConverter)
+                        .map(CJ::getTags, CJFullDtoV2::setTags));
+
+        modelMapper.typeMap(CJ.class, CjResponseDtoV2.class)
+                .addMapping(CJ::getIdProductExt, CjResponseDtoV2::setIdProductExt)
+                .addMapping(CJ::getDashboardLink, CjResponseDtoV2::setDashboardLink);
+
+        Converter<Set<CJTag>, Set<String>> tagsSetConverter = ctx -> {
+            Set<CJTag> src = ctx.getSource();
+            if (src == null) {
+                return null;
+            }
+            return src.stream()
+                    .map(CJTag::getName)
+                    .collect(Collectors.toSet());
+        };
+
+        modelMapper.typeMap(CJ.class, CjResponseDtoV2.class)
+                .addMappings(mapper -> mapper.using(tagsSetConverter)
+                        .map(CJ::getTags, CjResponseDtoV2::setTags));
     }
 
     public CJ findByName(String name) {
         return cjRepository.findByName(name);
     }
 
-    public CJ createNewCJ(CJDto cj, Long productId) {
+    @Transactional
+    public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
-        CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
-        log.info("New cj created: " + newCJ);
-        return newCJ;
 
+        CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+
+        processTags(newCJ, cj.getTags());
+        cjRepository.save(newCJ);
+        log.info("New cj created: " + newCJ);
+        return modelMapper.map(newCJ, CjResponseDto.class);
     }
 
-    private void validateBody(CJDto cj) {
+    private void processTags(CJ cj, List<String> tagNames) {
+        cj.getTags().clear();
+        if (tagNames != null && !tagNames.isEmpty()) {
+            for (String tagName : tagNames) {
+                CJTag tag = findOrCreateTag(tagName);
+                cj.getTags().add(tag);
+                cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+            }
+        }
+    }
+
+    private CJTag findOrCreateTag(String tagName) {
+        return cjTagRepository.findByName(tagName)
+                .orElseGet(() -> {
+                    CJTag newTag = CJTag.builder().name(tagName).build();
+                    return cjTagRepository.save(newTag);
+                });
+    }
+
+    private void validateBody(CJTagsDto cj) {
         if (!getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             throw new ForbiddenException("Недостаточно прав для создания CJ");
-        }
-        if (findByName(cj.getName()) != null) {
-            throw new UnprocessedEntityException("Указанное имя CJ уже существует");
         }
         String errors = "";
         if (cj.getName() == null || cj.getName().trim().isEmpty()) {
             errors += "Поле name не может быть пустым.\n";
-        }
-        if (cj.getUserPortrait() == null || cj.getUserPortrait().trim().isEmpty()) {
-            errors += "Поле user_portrait не может быть пустым.\n";
         }
         if (!errors.isEmpty()) {
             throw new ConflictException(errors);
         }
     }
 
-    public CJ createCJ(CJDto cj, Long productId, Long userId) {
+    public CJ createCJ(CJTagsDto cj, Long productId, Long userId) {
         CJ newCJ = CJ.builder()
                 .name(cj.getName())
                 .userPortrait(cj.getUserPortrait())
@@ -117,6 +156,7 @@ public class CJService {
                 .idProductExt(productId)
                 .bDraft(true)
                 .uniqueIdent("temporary")
+                .tags(new HashSet<>())
                 .build();
         cjRepository.saveAndFlush(newCJ);
         newCJ.setUniqueIdent(generateUniqueIdent(newCJ.getId()));
@@ -132,21 +172,71 @@ public class CJService {
                 padded.substring(6, 8);
     }
 
-    public CJ updateCJ(CJ cj, CJDto cjDto) {
+    @Transactional
+    public CjResponseDto replaceCJ(CJ cj, CJTagsDto cjDto) {
+
+
+        if (cjDto.getBDraft() == null) {
+            throw new ConflictException("Поле bDraft обязательно для редактирования CJ");
+        }
+
+        cj.setName(cjDto.getName());
+        cj.setBDraft(cjDto.getBDraft());
+        cj.setUserPortrait(cjDto.getUserPortrait());
+        processTags(cj, cjDto.getTags());
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cj = cjRepository.save(cj);
+
+        return modelMapper.map(cj, CjResponseDto.class);
+    }
+
+    @Transactional
+    public CjResponseDto patchCJ(CJ cj, CJTagsDto cjDto) {
         if (!(cj.isBDraft() || cjDto.getBDraft())) {
             throw new RuntimeException("Не допускается обработка CJ. Обработка возможна, только в статусе черновика");
         }
         if (Objects.nonNull(cjDto.getBDraft()) && !cjDto.getBDraft() && isCjHaveDraftBI(cj)) {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
-        Optional.ofNullable(cjDto.getName()).ifPresent(cj::setName);
-        Optional.ofNullable(cjDto.getUserPortrait()).ifPresent(cj::setUserPortrait);
-        Optional.ofNullable(cjDto.getBDraft()).ifPresent(cj::setBDraft);
-        if (cjDto.getBDraft() != null || cjDto.getName() != null || cjDto.getUserPortrait() != null) {
-            cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-            cjRepository.save(cj);
+
+        boolean changed = false;
+
+        if (cjDto.getName() != null && !cjDto.getName().equals(cj.getName())) {
+            cj.setName(cjDto.getName());
+            changed = true;
         }
-        return cj;
+
+        if (cjDto.isUserPortraitProvided()) {
+            if (!Objects.equals(cjDto.getUserPortrait(), cj.getUserPortrait())) {
+                cj.setUserPortrait(cjDto.getUserPortrait());
+                changed = true;
+            }
+        }
+
+        if (cjDto.getBDraft() != null && !cjDto.getBDraft().equals(cj.isBDraft())) {
+            cj.setBDraft(cjDto.getBDraft());
+            changed = true;
+        }
+
+        if (cjDto.getTags() != null) {
+            Set<String> incoming = new HashSet<>(cjDto.getTags());
+            Set<String> existing = cj.getTags().stream()
+                    .map(tag -> tag.getName())
+                    .collect(Collectors.toSet());
+            if (!incoming.equals(existing)) {
+                processTags(cj, cjDto.getTags());
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            return modelMapper.map(cj, CjResponseDto.class);
+        }
+
+        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+        cj = cjRepository.save(cj);
+
+        return modelMapper.map(cj, CjResponseDto.class);
     }
 
     @Transactional
@@ -192,8 +282,10 @@ public class CJService {
     }
 
     public CJFullDtoV2 getFullDtoByIdV2(Long id) {
-        CJ cj = getAndValidateCJ(id);
-        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
+        CJ cj = getById(id);
+        if (cj.getDeletedDate() != null) {
+            throw new NotFoundException("CJ with id " + id + " does not exist");
+        }
         UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
         AuthorDto authorDto = AuthorDto.builder()
                 .id(userProfileDto.getId())
@@ -238,7 +330,7 @@ public class CJService {
         return stepDtoV2;
     }
 
-    public List<CJ> getAll(Long idProduct, String sample, String search) {
+    public List<CjResponseDto> getAll(Long idProduct, String sample, String search) {
         List<CJ> result;
         switch (sample) {
             case "PUBLIC":
@@ -255,6 +347,32 @@ public class CJService {
         }
         return result.stream()
                 .filter(cj -> cj.getDeletedDate() == null)
+                .map(cj -> {
+                    return modelMapper.map(cj, CjResponseDto.class);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<CjResponseDtoV2> getAllv2(Long idProduct, String sample, String search) {
+        List<CJ> result;
+        switch (sample) {
+            case "PUBLIC":
+                result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
+                break;
+            case "DRAFT":
+                result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(CJ::isBDraft).collect(Collectors.toList());
+                break;
+            default:
+                result = cjRepository.findAllByNameContainsIgnoreCase(search);
+        }
+        if (idProduct != null) {
+            result = result.stream().filter(cj -> Objects.equals(cj.getIdProductExt(), idProduct)).collect(Collectors.toList());
+        }
+        return result.stream()
+                .filter(cj -> cj.getDeletedDate() == null)
+                .map(cj -> {
+                    return modelMapper.map(cj, CjResponseDtoV2.class);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -287,5 +405,15 @@ public class CJService {
 
     private boolean isCjHaveDraftBI(CJ cj) {
         return cjStepRepository.countByBiIdAndDraft(cj.getId()) > 0L;
+    }
+
+    public void savingLink(Long id, DashboardLinkDTO dashboardLinkDTO) {
+        if(dashboardLinkDTO.getDashboardLink()==null || dashboardLinkDTO.getDashboardLink().isEmpty()){
+            throw new BadRequestException("The dashboardLink field cannot be empty.");
+        }
+        CJ cj =  cjRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("CJ with id " + id + " does not exist"));
+        cj.setDashboardLink(dashboardLinkDTO.getDashboardLink());
+        cjRepository.save(cj);
     }
 }

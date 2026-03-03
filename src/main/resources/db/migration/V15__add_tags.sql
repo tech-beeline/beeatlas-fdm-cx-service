@@ -1,0 +1,12 @@
+alter table cx.cj drop constraint if exists uniq;
+alter table cx.cj add constraint uniq unique (unique_ident);
+drop table if exists cx.cj_tags_relations cascade;
+drop table if exists cx.cj_tags cascade;
+drop sequence if exists cx.cj_tag_id_seq ;
+create sequence cx.cj_tag_id_seq	increment by 1	minvalue 1	maxvalue 9223372036854775807	start 1	cache 1	no cycle;
+drop sequence if exists cx.cj_tag_relation_id_seq ;
+create sequence cx.cj_tag_relation_id_seq	increment by 1	minvalue 1	maxvalue 9223372036854775807	start 1	cache 1	no cycle;
+create table cx.cj_tags (	id int4 default nextval('cx.cj_tag_id_seq') not null,	"name" varchar(50) not null,	constraint pk_cj_tag primary key (id));
+create table cx.cj_tags_relations (	id int4 default nextval('cx.cj_tag_relation_id_seq') not null,	id_tag int4 not null,	id_cj int4 not null,	constraint pk_cj_tags_relation primary key (id));
+alter table cx.cj_tags_relations add constraint fk_cj_tag_id foreign key (id_cj) references cx.cj(id);
+alter table cx.cj_tags_relations add constraint fk_cj_tag_relation_id foreign key (id_tag) references cx.cj_tags(id);

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BiByCjStepDto;
+import ru.beeline.cxbackend.dto.CjResponseDto;
 import ru.beeline.cxbackend.service.BusinessInteractionService;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class BICJStepController {
 
     @GetMapping("/product/cj/step/bi/{id}")
     @ApiOperation(value = "Получение коллекции CJ по используемому в них BI", response = List.class)
-    public ResponseEntity<List<CJ>> getCJsByBiId(@PathVariable(value = "id") Long id) {
+    public ResponseEntity<List<CjResponseDto>> getCJsByBiId(@PathVariable(value = "id") Long id) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(businessInteractionService.getCJByBIID(id));
