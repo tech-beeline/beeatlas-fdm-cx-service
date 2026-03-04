@@ -84,6 +84,15 @@ public class BusinessInteractionService {
         return biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
     }
 
+    public List<BIDto> getProductBIByFilter(String text, Long idProduct, Long idStatus, Boolean isDraft) {
+        if (idStatus != null) {
+            return getStatusById(idStatus)
+                    .map(biStatus -> getBIByFilter(text, idProduct, biStatus, isDraft))
+                    .orElseThrow(() -> new NotFoundException("id_status " + idStatus + " is not found"));
+        }
+        return getBIByFilter(text, idProduct, null, isDraft);
+    }
+
     public List<BIDto> getBIByFilter(String text, Long idProduct, BIStatus idStatus, Boolean isDraft) {
         Specification<BI> spec = Specification
                 .where(BiSpecification.hasProductId(idProduct))
@@ -93,7 +102,22 @@ public class BusinessInteractionService {
                 .and(BiSpecification.isDraft(isDraft));
         List<BI> biList = businessInteractionRepository
                 .findAll(spec);
-        List<BIDto> result = biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
+        List<BiStep> biSteps = biStepRepository.findByBiIn(biList);
+        Map<BI, List<BiStep>> biStepsMap = biSteps.stream()
+                .collect(Collectors.groupingBy(BiStep::getBi));
+        List<BiStepRelation> biStepRelations = biStepRelationRepository.findByBiStepIn(biSteps);
+        List<GetProductsByIdsDTO> allProducts = biMapper.allProductsById(biStepRelations);
+        if (allProducts == null) {
+            log.info("Product Client response is null");
+            allProducts = new ArrayList<>();
+        }
+        Map<Integer, GetProductsByIdsDTO> productsIdsMap = allProducts.stream().collect(Collectors.toMap(
+                GetProductsByIdsDTO::getId,
+                product -> product));
+        Map<String, List<ProductInterfaceDTO>> interfacesByAlias =  biMapper.loadInterfacesByAlias(allProducts);
+        Map<Integer, TcDTO> tcDTOMap = biMapper.createTcDTOMap(biStepRelations);
+        List<BIDto> result = biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
+                productsIdsMap,interfacesByAlias, tcDTOMap)).toList();
         if (!getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
             result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId()) || !biDto.isDraft()).collect(Collectors.toList());
         }

@@ -10,6 +10,7 @@ import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.GetProductsByIdsDTO;
 import ru.beeline.cxbackend.dto.ProductInterfaceDTO;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,9 @@ public class ProductClient {
 
     public List<GetProductsByIdsDTO> getProductsByIds(List<Integer> ids) {
         try {
+            if (ids.isEmpty()) {
+                return new ArrayList<>();
+            }
             log.info("response from Product ServerUrl: " + productServerUrl + "/api/v1/product/by-ids?ids=");
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -41,7 +45,6 @@ public class ProductClient {
                             new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() {
                             });
-            log.info("response from Product ServerUrl: " + response.getBody());
             return response.getBody();
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());
@@ -63,7 +66,7 @@ public class ProductClient {
                             new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() {
                             });
-            log.info("response from Product ServerUrl: " + response.getBody());
+            log.info("response from Product ServerUrl: " + productServerUrl + "/api/v1/product/" + cmdb + "/interface/arch");
             return response.getBody();
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());
