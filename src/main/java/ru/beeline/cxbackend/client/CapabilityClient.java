@@ -31,7 +31,7 @@ public class CapabilityClient {
     public List<TcDTO> getTcs(List<Integer> tcIds) {
         List<Integer> filteredIds = tcIds.stream().filter(Objects::nonNull).toList();
         if (tcIds == null || tcIds.isEmpty() || filteredIds.isEmpty()) {
-            log.debug("Список tcIds пустой — возврат пустого списка");
+            log.info("Список tcIds пустой — возврат пустого списка");
             return new ArrayList<>();
         }
         try {

@@ -12,4 +12,6 @@ public interface BiStepRepository extends JpaRepository<BiStep, Integer> {
     Optional<BiStep> findByBiAndBpmnIdAndStepType(BI bi, String bpmnId, BiStepTypeEnum biStepTypeEnum);
 
     List<BiStep> findByBi(BI bi);
+
+    List<BiStep> findByBiIn(List<BI> bi);
 }
