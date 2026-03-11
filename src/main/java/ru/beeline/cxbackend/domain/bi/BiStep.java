@@ -39,6 +39,9 @@ public class BiStep {
     @Column(name = "id_bpmn", length = 50, nullable = false)
     private String bpmnId;
 
+    @Column(name = "unique_ident", length = 50, nullable = false)
+    private String uniqueIdent;
+
     private Float latency;
 
     @Column(name = "error_rate")
