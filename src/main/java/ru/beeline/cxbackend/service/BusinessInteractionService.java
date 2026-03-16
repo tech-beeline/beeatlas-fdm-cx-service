@@ -246,7 +246,7 @@ public class BusinessInteractionService {
         List<BIChannelEnum> channels = biPostDto.getChannel() != null ? biPostDto.getChannel() : null;
         saveBI.setChannel(channels);
         biLinkRepository.flush();
-        saveBI.setUniqueIdent(Utils.createUniqueIdent("Bi", saveBI.getId()));
+        saveBI.setUniqueIdent(Utils.createUniqueIdent("BI", saveBI.getId()));
         saveBI.setDocument(docs);
         saveBI.setFlowLink(scenarios);
         saveBI.setMockupLink(mockupLink);
