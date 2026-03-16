@@ -76,4 +76,12 @@ public class CJ {
             inverseJoinColumns = @JoinColumn(name = "id_tag")
     )
     private Set<CJTag> tags = new HashSet<>();
+
+    @OneToMany(
+            mappedBy = "cj",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private Set<CJLink> links = new HashSet<>();
 }

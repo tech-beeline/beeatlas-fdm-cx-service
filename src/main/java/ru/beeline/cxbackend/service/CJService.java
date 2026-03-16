@@ -295,6 +295,10 @@ public class CJService {
         CJFullDtoV2 cjFullDtoV2 = modelMapper.map(cj, CJFullDtoV2.class);
         cjFullDtoV2.setAuthor(authorDto);
         cjFullDtoV2.setSteps(getAndConvertSteps(cjFullDtoV2.getId()));
+        cjFullDtoV2.setLink(cj.getLinks()
+                                    .stream()
+                                    .map(link -> LinkDTO.builder().descr(link.getDescr()).url(link.getUrl()).build())
+                                    .collect(Collectors.toList()));
         return cjFullDtoV2;
     }
 

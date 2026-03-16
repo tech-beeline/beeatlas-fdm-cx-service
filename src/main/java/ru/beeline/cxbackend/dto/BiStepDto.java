@@ -16,6 +16,8 @@ public class BiStepDto {
     private Integer id;
     private String name;
     private Float latency;
+    private String uniqueIdent;
+    private String type;
     private Float errorRate;
     private Float rps;
     private List<RelationDto> relations;

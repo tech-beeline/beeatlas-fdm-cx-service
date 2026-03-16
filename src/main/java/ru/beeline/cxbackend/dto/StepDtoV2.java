@@ -1,7 +1,9 @@
 package ru.beeline.cxbackend.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ public class StepDtoV2 {
     private Integer order;
 
     private String name;
+    private String uni;
 
     private String description;
 }

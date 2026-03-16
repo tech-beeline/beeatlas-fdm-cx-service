@@ -47,4 +47,6 @@ public class CJFullDtoV2 {
     private Boolean bpmn;
 
     private List<String> tags;
+
+    private List<LinkDTO> link;
 }

@@ -171,6 +171,8 @@ public class BIMapper {
                     .latency(biStep.getLatency())
                     .errorRate(biStep.getErrorRate())
                     .rps(biStep.getRps())
+                    .uniqueIdent(biStep.getUniqueIdent())
+                    .type(biStep.getStepType().getName())
                     .relations(createRelations(biStep.getId()))
                     .build();
             result.add(build);
