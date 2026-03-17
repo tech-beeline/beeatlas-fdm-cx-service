@@ -23,7 +23,6 @@ public class StepDtoV2 {
     private Integer order;
 
     private String name;
-    private String uni;
 
     private String description;
 }
