@@ -11,11 +11,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BiStepDto {
+public class BiStepDtoV3 {
 
     private Integer id;
     private String name;
     private Float latency;
+    private String uniqueIdent;
+    private String type;
     private Float errorRate;
     private Float rps;
     private List<RelationDto> relations;

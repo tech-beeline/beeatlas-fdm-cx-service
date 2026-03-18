@@ -63,7 +63,7 @@ public class CJController {
     @ApiErrorCodes({400, 401, 403, 404, 500})
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
-    public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
+    public CJFullDtoV3 getCJByIdV2(@PathVariable Long id) {
         return cjService.getFullDtoByIdV2(id);
     }
 

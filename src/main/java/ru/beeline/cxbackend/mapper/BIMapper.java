@@ -47,6 +47,15 @@ public class BIMapper {
         }
     }
 
+
+    public List<BIDtoV3> biToBIDtoV3(List<BI> biList) {
+        if (biList != null) {
+            return biList.stream().map(this::biToBIDtoV3).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
     public BIDto biToBIDto(BI bi) {
         BIDto biDto = modelMapper.map(bi, BIDto.class);
         List<BiStep> biSteps = biStepRepository.findByBi(bi);
@@ -54,6 +63,24 @@ public class BIMapper {
             biDto.setBiSteps(new ArrayList<>());
         } else {
             biDto.setBiSteps(createBiStep(biSteps));
+        }
+        biDto.setParticipants(mapBIParticipants(bi.getParticipants()));
+        if (bi.getFeeling() != null) {
+            biDto.setFeelings(modelMapper.map(bi.getFeeling(), BIFeelingDto.class));
+        }
+        if (bi.getStatus() != null) {
+            biDto.setStatus(modelMapper.map(bi.getStatus(), BIStatusDto.class));
+        }
+        return biDto;
+    }
+
+    public BIDtoV3 biToBIDtoV3(BI bi) {
+        BIDtoV3 biDto = modelMapper.map(bi, BIDtoV3.class);
+        List<BiStep> biSteps = biStepRepository.findByBi(bi);
+        if (biSteps.isEmpty()) {
+            biDto.setBiSteps(new ArrayList<>());
+        } else {
+            biDto.setBiSteps(createBiStepDtoV3(biSteps));
         }
         biDto.setParticipants(mapBIParticipants(bi.getParticipants()));
         if (bi.getFeeling() != null) {
@@ -166,6 +193,22 @@ public class BIMapper {
         List<BiStepDto> result = new ArrayList<>();
         biSteps.forEach(biStep -> {
             BiStepDto build = BiStepDto.builder()
+                    .id(biStep.getId())
+                    .name(biStep.getName())
+                    .latency(biStep.getLatency())
+                    .errorRate(biStep.getErrorRate())
+                    .rps(biStep.getRps())
+                    .relations(createRelations(biStep.getId()))
+                    .build();
+            result.add(build);
+        });
+        return result;
+    }
+
+    private List<BiStepDtoV3> createBiStepDtoV3(List<BiStep> biSteps) {
+        List<BiStepDtoV3> result = new ArrayList<>();
+        biSteps.forEach(biStep -> {
+            BiStepDtoV3 build = BiStepDtoV3.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
                     .latency(biStep.getLatency())

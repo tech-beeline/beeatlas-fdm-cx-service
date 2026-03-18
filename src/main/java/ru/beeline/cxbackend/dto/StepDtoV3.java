@@ -5,18 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BiStepDto {
+public class StepDtoV3 {
 
-    private Integer id;
+    private List<BIDtoV3> bi = new ArrayList<>();
+
+    private Long id;
+
+    private Long cjId;
+
+    private Integer order;
+
     private String name;
-    private Float latency;
-    private Float errorRate;
-    private Float rps;
-    private List<RelationDto> relations;
+
+    private String description;
 }
