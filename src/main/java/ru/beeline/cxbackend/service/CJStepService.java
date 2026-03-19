@@ -1,18 +1,19 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.beeline.cxbackend.domain.bi.BiStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
 import ru.beeline.cxbackend.dto.CjStepFullDto;
-import ru.beeline.cxbackend.dto.PatchStepDto;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.mapper.CjStepMapper;
 import ru.beeline.cxbackend.repository.BIInCJStepRepository;
-import ru.beeline.cxbackend.repository.BiStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
 

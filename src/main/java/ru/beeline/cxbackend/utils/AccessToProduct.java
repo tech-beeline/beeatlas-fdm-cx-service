@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.utils;
 
 import ru.beeline.cxbackend.domain.Permission;
