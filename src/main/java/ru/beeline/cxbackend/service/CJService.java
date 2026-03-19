@@ -281,7 +281,7 @@ public class CJService {
         return cjFullDto;
     }
 
-    public CJFullDtoV3 getFullDtoByIdV2(Long id) {
+    public CJFullDtoV3 getFullDtoByIdV3(Long id) {
         CJ cj = getById(id);
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
@@ -295,6 +295,7 @@ public class CJService {
         CJFullDtoV3 cjFullDtoV3 = modelMapper.map(cj, CJFullDtoV3.class);
         cjFullDtoV3.setAuthor(authorDto);
         cjFullDtoV3.setSteps(getAndConvertSteps(cjFullDtoV3.getId()));
+        cjFullDtoV3.setProductId(cj.getIdProductExt());
         cjFullDtoV3.setLink(cj.getLinks()
                                     .stream()
                                     .map(link -> LinkDTO.builder().descr(link.getDescr()).url(link.getUrl()).build())
