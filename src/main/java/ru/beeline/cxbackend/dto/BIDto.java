@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
