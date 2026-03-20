@@ -23,7 +23,6 @@ import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping
 @Api(value = "CX API", tags = "CJ Step")
