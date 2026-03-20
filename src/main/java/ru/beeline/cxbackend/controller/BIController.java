@@ -25,7 +25,6 @@ import java.util.List;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx")
 @Api(value = "CX API", tags = "BI Library")

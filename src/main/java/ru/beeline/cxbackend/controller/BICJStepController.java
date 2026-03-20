@@ -14,7 +14,6 @@ import ru.beeline.cxbackend.service.BusinessInteractionService;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx/v1")
 
