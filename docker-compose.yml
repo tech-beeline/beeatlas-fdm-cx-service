@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${CX_POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${CX_POSTGRES_PASSWORD:-postgres}
     ports:
-      - "${CX_SERVICE_POSTGRES_NODEPORT:-5432}:5432"
+      - "${CX_SERVICE_POSTGRES_NODEPORT:-5433}:5432"
     volumes:
       - cx-service-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
     container_name: cx-service
     depends_on:
-      products-service-postgres:
+      cx-service-postgres:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${CX_POSTGRES_HOST:-cx-service-postgres}:5432/${CX_POSTGRES_DB:-cx_service}
