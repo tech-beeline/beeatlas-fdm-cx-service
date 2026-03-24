@@ -209,7 +209,7 @@
                 <version>5.5.0.6356</version>
             </plugin>
         </plugins>
-        <finalName>fdm-gateway-${project.version}</finalName>
+        <finalName>cx-backend-${project.version}</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
