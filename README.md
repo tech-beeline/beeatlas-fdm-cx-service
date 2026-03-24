@@ -1,1 +1,3 @@
-# beeatlas-fdm-cx-service
+# cx-backend
+
+## Getting started
