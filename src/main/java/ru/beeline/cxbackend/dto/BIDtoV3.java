@@ -1,15 +1,7 @@
-/*
- * Copyright (c) 2024 PJSC VimpelCom
- */
-
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import ru.beeline.cxbackend.domain.bi.BIChannelEnum;
 import ru.beeline.cxbackend.domain.bi.BILink;
 
@@ -24,7 +16,7 @@ import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BIDto {
+public class BIDtoV3 {
     private Long id;
     private String uniqueIdent;
     private String name;
@@ -51,5 +43,5 @@ public class BIDto {
     private List<BILink> flowLink;
     private List<BILink> document;
     private List<BILink> mockupLink;
-    private List<BiStepDto> biSteps;
+    private List<BiStepDtoV3> biSteps;
 }

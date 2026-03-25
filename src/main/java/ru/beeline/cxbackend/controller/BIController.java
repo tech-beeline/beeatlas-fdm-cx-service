@@ -49,15 +49,9 @@ public class BIController {
                                                      @RequestParam(value = "id_product", required = false) Long idProduct,
                                                      @RequestParam(value = "id_status", required = false) Long idStatus,
                                                      @RequestParam(value = "draft", required = false) Boolean isDraft) {
-        if (idStatus != null) {
-            return businessInteractionService.getStatusById(idStatus)
-                    .map(biStatus -> ResponseEntity.status(HttpStatus.OK)
-                            .body(businessInteractionService.getBIByFilter(text, idProduct, biStatus, isDraft))
-                    )
-                    .orElseThrow(() -> new NotFoundException("id_status " + idStatus + " is not found"));
-        }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(businessInteractionService.getBIByFilter(text, idProduct, null, isDraft));
+
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getProductBIByFilter(text, idProduct, idStatus, isDraft));
+
     }
 
     @GetMapping("/v1/library/business-interactions/{id}")

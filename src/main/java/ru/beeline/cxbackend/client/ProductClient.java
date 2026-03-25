@@ -14,6 +14,7 @@ import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.GetProductsByIdsDTO;
 import ru.beeline.cxbackend.dto.ProductInterfaceDTO;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,11 +36,11 @@ public class ProductClient {
 
     public List<GetProductsByIdsDTO> getProductsByIds(List<Integer> ids) {
         try {
+            if (ids.isEmpty()) {
+                return new ArrayList<>();
+            }
+            log.info("response from Product ServerUrl: " + productServerUrl + "/api/v1/product/by-ids?ids=");
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
-            headers.set(USER_PERMISSION_HEADER, RequestContext.getUserPermissions().toString());
-            headers.set(USER_PRODUCTS_IDS_HEADER, RequestContext.getUserProducts().toString());
-            headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             headers.setContentType(MediaType.APPLICATION_JSON);
             String idsParam = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
             ResponseEntity<List<GetProductsByIdsDTO>> response =
@@ -48,7 +49,6 @@ public class ProductClient {
                             new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() {
                             });
-            log.info("response from Product ServerUrl: " + response.getBody());
             return response.getBody();
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());
@@ -70,7 +70,7 @@ public class ProductClient {
                             new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() {
                             });
-            log.info("response from Product ServerUrl: " + response.getBody());
+            log.info("response from Product ServerUrl: " + productServerUrl + "/api/v1/product/" + cmdb + "/interface/arch");
             return response.getBody();
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());

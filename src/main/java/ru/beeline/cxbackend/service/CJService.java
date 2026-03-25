@@ -285,7 +285,7 @@ public class CJService {
         return cjFullDto;
     }
 
-    public CJFullDtoV2 getFullDtoByIdV2(Long id) {
+    public CJFullDtoV3 getFullDtoByIdV3(Long id) {
         CJ cj = getById(id);
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
@@ -296,10 +296,15 @@ public class CJService {
                 .Email(userProfileDto.getEmail())
                 .fullName(userProfileDto.getFullName())
                 .build();
-        CJFullDtoV2 cjFullDtoV2 = modelMapper.map(cj, CJFullDtoV2.class);
-        cjFullDtoV2.setAuthor(authorDto);
-        cjFullDtoV2.setSteps(getAndConvertSteps(cjFullDtoV2.getId()));
-        return cjFullDtoV2;
+        CJFullDtoV3 cjFullDtoV3 = modelMapper.map(cj, CJFullDtoV3.class);
+        cjFullDtoV3.setAuthor(authorDto);
+        cjFullDtoV3.setSteps(getAndConvertSteps(cjFullDtoV3.getId()));
+        cjFullDtoV3.setProductId(cj.getIdProductExt());
+        cjFullDtoV3.setLink(cj.getLinks()
+                                    .stream()
+                                    .map(link -> LinkDTO.builder().descr(link.getDescr()).url(link.getUrl()).build())
+                                    .collect(Collectors.toList()));
+        return cjFullDtoV3;
     }
 
     private CJ getAndValidateCJ(Long id) {
@@ -311,17 +316,17 @@ public class CJService {
         return cj;
     }
 
-    private List<StepDtoV2> getAndConvertSteps(Long cjId) {
+    private List<StepDtoV3> getAndConvertSteps(Long cjId) {
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjId);
         return cjStepList.stream()
                 .map(this::convertToStepDto)
-                .sorted(Comparator.comparing(StepDtoV2::getOrder))
+                .sorted(Comparator.comparing(StepDtoV3::getOrder))
                 .collect(Collectors.toList());
     }
 
-    private StepDtoV2 convertToStepDto(CJStep cjStep) {
-        StepDtoV2 stepDtoV2 = modelMapper.map(cjStep, StepDtoV2.class);
-        List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDtoV2.getId());
+    private StepDtoV3 convertToStepDto(CJStep cjStep) {
+        StepDtoV3 stepDtoV3 = modelMapper.map(cjStep, StepDtoV3.class);
+        List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDtoV3.getId());
         if (!biInCJStepList.isEmpty()) {
             List<Long> biIds = biInCJStepList.stream()
                     .map(BIInCJStep::getBiId)
@@ -329,9 +334,9 @@ public class CJService {
             List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biIds).stream()
                     .distinct()
                     .collect(Collectors.toList());
-            stepDtoV2.setBi(biMapper.biToBIDto(biList));
+            stepDtoV3.setBi(biMapper.biToBIDtoV3(biList));
         }
-        return stepDtoV2;
+        return stepDtoV3;
     }
 
     public List<CjResponseDto> getAll(Long idProduct, String sample, String search) {

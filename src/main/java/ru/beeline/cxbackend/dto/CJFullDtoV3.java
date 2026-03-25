@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 PJSC VimpelCom
- */
-
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -21,7 +17,7 @@ import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CJFullDtoV2 {
+public class CJFullDtoV3 {
 
     private Long id;
 
@@ -37,7 +33,7 @@ public class CJFullDtoV2 {
 
     private String dashboardLink;
 
-    private List<StepDtoV2> steps;
+    private List<StepDtoV3> steps;
 
     private String userPortrait;
 

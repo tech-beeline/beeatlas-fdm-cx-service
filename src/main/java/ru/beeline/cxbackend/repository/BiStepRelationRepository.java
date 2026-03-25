@@ -15,6 +15,8 @@ public interface BiStepRelationRepository extends JpaRepository<BiStepRelation, 
 
     List<BiStepRelation> findByBiStepId(Integer biStepId);
 
+    List<BiStepRelation> findByBiStepIn(List<BiStep> biSteps);
+
     void deleteByBiStepIdAndIdIn(Integer biStepId, Set<Integer> ids);
 
     void deleteAllByBiStepIn(List<BiStep> biSteps);
