@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.7.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>ru.beeline</groupId>
     <artifactId>cx-backend</artifactId>
@@ -14,7 +14,6 @@
     <name>cx-backend</name>
     <description>cx-backend</description>
     <properties>
-        <!-- Sonar -->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <sonar.jacoco.reportPath>${project.basedir}/target/jacoco_analysis/jacoco.exec</sonar.jacoco.reportPath>

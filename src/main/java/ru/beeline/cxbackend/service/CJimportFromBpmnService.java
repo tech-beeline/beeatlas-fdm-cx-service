@@ -230,12 +230,15 @@ public class CJimportFromBpmnService {
                         biStepTypeEnum.get());
                 if (stepOptional.isEmpty()) {
                     log.info("add STEP name = " + step.getName());
-                    biStepRepository.save(ru.beeline.cxbackend.domain.bi.BiStep.builder()
+                    ru.beeline.cxbackend.domain.bi.BiStep biStep = biStepRepository.saveAndFlush(ru.beeline.cxbackend.domain.bi.BiStep.builder()
                             .name(step.getName())
                             .bi(biOptional)
+                            .uniqueIdent("temp")
                             .stepType(biStepTypeEnum.get())
                             .bpmnId(step.getId())
                             .build());
+                    biStep.setUniqueIdent(Utils.createUniqueIdent("Step", biStep.getId().longValue()));
+                    biStepRepository.saveAndFlush(biStep);
                 }
             }
         }
@@ -336,7 +339,7 @@ public class CJimportFromBpmnService {
                 .idBpmn(bi.getId())
                 .build());
         log.info("add BI name = " + biOptional.getName());
-        biOptional.setUniqueIdent(Utils.createUniqueIdent(biOptional.getId()));
+        biOptional.setUniqueIdent(Utils.createUniqueIdent("BI", biOptional.getId()));
         biOptional = biRepository.save(biOptional);
         return biOptional;
     }
@@ -354,12 +357,16 @@ public class CJimportFromBpmnService {
                         biOptional, step.getId(), biStepTypeEnum.get());
                 if (stepOptional.isEmpty()) {
                     log.info("add STEP name = " + step.getName());
-                    biStepRepository.save(ru.beeline.cxbackend.domain.bi.BiStep.builder()
+                    ru.beeline.cxbackend.domain.bi.BiStep biStep =
+                            biStepRepository.saveAndFlush(ru.beeline.cxbackend.domain.bi.BiStep.builder()
                             .name(step.getName())
                             .bi(biOptional)
                             .stepType(biStepTypeEnum.get())
+                            .uniqueIdent("temp")
                             .bpmnId(step.getId())
                             .build());
+                    biStep.setUniqueIdent(Utils.createUniqueIdent("Step", biStep.getId().longValue()));
+                    biStepRepository.saveAndFlush(biStep);
                 } else {
                     log.info("Обновляем bi step");
                     ru.beeline.cxbackend.domain.bi.BiStep biStep = stepOptional.get();

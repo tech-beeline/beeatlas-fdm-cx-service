@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2024 PJSC VimpelCom
- */
-
 package ru.beeline.cxbackend.dto;
 
 import lombok.AllArgsConstructor;
@@ -16,9 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StepDtoV2 {
+public class StepDtoV3 {
 
-    private List<BIDto> bi = new ArrayList<>();
+    private List<BIDtoV3> bi = new ArrayList<>();
 
     private Long id;
 
