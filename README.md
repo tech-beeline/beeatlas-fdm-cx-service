@@ -71,34 +71,6 @@ java -jar target/cx-backend-*.jar
 - убедитесь, что порт `CX_SERVICE_PORT` проброшен и не занят;
 - откройте логи контейнера: `podman logs cx-service`.
 
-## Частые проблемы
-
-### 1) `no such file or directory` на шаге `COPY ... cx-backend-*.jar`
-
-Проверьте, что в `pom.xml` задан корректный `finalName`:
-
-```xml
-<finalName>cx-backend-${project.version}</finalName>
-```
-
-### 2) `container name is already in use`
-
-Удалите конфликтующие контейнеры:
-
-```bash
-podman rm -f cx-service-postgres cx-service
-```
-
-И перезапустите:
-
-```bash
-podman compose up --build
-```
-
-### 3) `requested access to the resource is denied` для `cx-service:latest`
-
-Это следствие неуспешной локальной сборки. Сначала устраните ошибку сборки образа, затем повторите `podman compose up --build`.
-
 ## Структура
 
 - `src/` — исходный код сервиса
