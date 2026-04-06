@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.service;
 
 import org.springframework.data.jpa.domain.Specification;

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.client;
 
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +35,7 @@ public class CapabilityClient {
     public List<TcDTO> getTcs(List<Integer> tcIds) {
         List<Integer> filteredIds = tcIds.stream().filter(Objects::nonNull).toList();
         if (tcIds == null || tcIds.isEmpty() || filteredIds.isEmpty()) {
-            log.debug("Список tcIds пустой — возврат пустого списка");
+            log.info("Список tcIds пустой — возврат пустого списка");
             return new ArrayList<>();
         }
         try {

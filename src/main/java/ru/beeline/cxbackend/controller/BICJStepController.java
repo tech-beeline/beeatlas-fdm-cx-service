@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
@@ -14,7 +18,6 @@ import ru.beeline.cxbackend.service.BusinessInteractionService;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx/v1")
 

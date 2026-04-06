@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.domain.cj;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -76,4 +80,12 @@ public class CJ {
             inverseJoinColumns = @JoinColumn(name = "id_tag")
     )
     private Set<CJTag> tags = new HashSet<>();
+
+    @OneToMany(
+            mappedBy = "cj",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private Set<CJLink> links = new HashSet<>();
 }

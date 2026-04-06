@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
@@ -18,7 +22,6 @@ import ru.beeline.cxbackend.service.BIReferenceService;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx/v1/references")
 @Api(value = "CX API", tags = "BI References")

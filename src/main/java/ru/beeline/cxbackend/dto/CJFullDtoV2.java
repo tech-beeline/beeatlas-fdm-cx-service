@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -47,4 +51,6 @@ public class CJFullDtoV2 {
     private Boolean bpmn;
 
     private List<String> tags;
+
+    private List<LinkDTO> link;
 }

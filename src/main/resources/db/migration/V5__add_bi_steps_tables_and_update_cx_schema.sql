@@ -2,8 +2,19 @@ DROP TABLE IF EXISTS bi_steps CASCADE;
 DROP TABLE IF EXISTS bi_steps_type_enum CASCADE;
 DROP TABLE IF EXISTS bi_steps_relations CASCADE;
 
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_type = 'PRIMARY KEY'
+        AND table_schema = 'cx'
+        AND table_name = 'business_iteraction'
+    ) THEN
 ALTER TABLE cx.business_iteraction
     ADD CONSTRAINT pk_business_iteraction PRIMARY KEY (id);
+END IF;
+END $$;
 
 CREATE TABLE bi_steps
 (

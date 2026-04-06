@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +16,6 @@ public interface BiStepRepository extends JpaRepository<BiStep, Integer> {
     Optional<BiStep> findByBiAndBpmnIdAndStepType(BI bi, String bpmnId, BiStepTypeEnum biStepTypeEnum);
 
     List<BiStep> findByBi(BI bi);
+
+    List<BiStep> findByBiIn(List<BI> bi);
 }

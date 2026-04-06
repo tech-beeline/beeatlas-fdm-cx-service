@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
@@ -25,7 +29,6 @@ import java.util.List;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api/cx")
 @Api(value = "CX API", tags = "BI Library")
@@ -46,15 +49,9 @@ public class BIController {
                                                      @RequestParam(value = "id_product", required = false) Long idProduct,
                                                      @RequestParam(value = "id_status", required = false) Long idStatus,
                                                      @RequestParam(value = "draft", required = false) Boolean isDraft) {
-        if (idStatus != null) {
-            return businessInteractionService.getStatusById(idStatus)
-                    .map(biStatus -> ResponseEntity.status(HttpStatus.OK)
-                            .body(businessInteractionService.getBIByFilter(text, idProduct, biStatus, isDraft))
-                    )
-                    .orElseThrow(() -> new NotFoundException("id_status " + idStatus + " is not found"));
-        }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(businessInteractionService.getBIByFilter(text, idProduct, null, isDraft));
+
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getProductBIByFilter(text, idProduct, idStatus, isDraft));
+
     }
 
     @GetMapping("/v1/library/business-interactions/{id}")

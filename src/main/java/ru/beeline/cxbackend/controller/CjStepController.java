@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
@@ -19,7 +23,6 @@ import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping
 @Api(value = "CX API", tags = "CJ Step")

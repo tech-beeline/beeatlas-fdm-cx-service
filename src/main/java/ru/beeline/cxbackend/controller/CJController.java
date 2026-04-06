@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024 PJSC VimpelCom
+ */
+
 package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
@@ -24,7 +28,6 @@ import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping
 @Api(value = "CX API", tags = "CJ")
@@ -63,8 +66,8 @@ public class CJController {
     @ApiErrorCodes({400, 401, 403, 404, 500})
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
-    public CJFullDtoV2 getCJByIdV2(@PathVariable Long id) {
-        return cjService.getFullDtoByIdV2(id);
+    public CJFullDtoV3 getCJByIdV3(@PathVariable Long id) {
+        return cjService.getFullDtoByIdV3(id);
     }
 
     @CustomHeaders
