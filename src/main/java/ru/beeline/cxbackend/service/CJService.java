@@ -18,6 +18,7 @@ import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.domain.cj.CJTag;
+import ru.beeline.cxbackend.domain.cj.CJTechOwner;
 import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.ConflictException;
@@ -53,6 +54,9 @@ public class CJService {
 
     @Autowired
     private CJTagRepository cjTagRepository;
+
+    @Autowired
+    private CJTechOwnerRepository cjTechOwnerRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -114,8 +118,34 @@ public class CJService {
 
         processTags(newCJ, cj.getTags());
         cjRepository.save(newCJ);
+
+        List<Long> techOwners = persistTechOwnersIfProvided(newCJ, cj.getTechOwners());
+
         log.info("New cj created: " + newCJ);
-        return modelMapper.map(newCJ, CjResponseDto.class);
+        CjResponseDto response = modelMapper.map(newCJ, CjResponseDto.class);
+        response.setBusinessOwner(newCJ.getIdBusinessOwner());
+        response.setTechOwners(techOwners);
+        return response;
+    }
+
+    private List<Long> persistTechOwnersIfProvided(CJ cj, List<Long> techOwners) {
+        if (techOwners == null || techOwners.isEmpty()) {
+            return techOwners;
+        }
+
+        List<Long> uniqueOwners = new ArrayList<>(new LinkedHashSet<>(techOwners));
+        List<CJTechOwner> rows = uniqueOwners.stream()
+                .filter(Objects::nonNull)
+                .map(ownerId -> CJTechOwner.builder()
+                        .cj(cj)
+                        .idUserProfile(ownerId)
+                        .build())
+                .collect(Collectors.toList());
+
+        if (!rows.isEmpty()) {
+            cjTechOwnerRepository.saveAll(rows);
+        }
+        return uniqueOwners;
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
@@ -160,6 +190,7 @@ public class CJService {
                 .idProductExt(productId)
                 .bDraft(true)
                 .uniqueIdent("temporary")
+                .idBusinessOwner(cj.getBusinessOwner())
                 .tags(new HashSet<>())
                 .build();
         cjRepository.saveAndFlush(newCJ);
@@ -204,6 +235,7 @@ public class CJService {
         }
 
         boolean changed = false;
+        boolean ownersChanged = false;
 
         if (cjDto.getName() != null && !cjDto.getName().equals(cj.getName())) {
             cj.setName(cjDto.getName());
@@ -233,14 +265,79 @@ public class CJService {
             }
         }
 
-        if (!changed) {
-            return modelMapper.map(cj, CjResponseDto.class);
+        if (cjDto.isBusinessOwnerProvided()) {
+            if (!Objects.equals(cj.getIdBusinessOwner(), cjDto.getBusinessOwner())) {
+                cj.setIdBusinessOwner(cjDto.getBusinessOwner());
+                changed = true;
+            }
         }
 
-        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-        cj = cjRepository.save(cj);
+        if (cjDto.isTechOwnersProvided()) {
+            syncTechOwners(cj.getId(), cjDto.getTechOwners());
+            ownersChanged = true;
+        }
 
-        return modelMapper.map(cj, CjResponseDto.class);
+        if (!changed && !ownersChanged) {
+            return buildCjResponseWithOwners(cj);
+        }
+
+        if (changed) {
+            cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+            cj = cjRepository.save(cj);
+        }
+
+        return buildCjResponseWithOwners(cj);
+    }
+
+    private void syncTechOwners(Long cjId, List<Long> techOwners) {
+        if (techOwners == null) {
+            return;
+        }
+
+        List<Long> desired = new ArrayList<>(new LinkedHashSet<>(techOwners)).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (desired.isEmpty()) {
+            cjTechOwnerRepository.deleteAllByCj_Id(cjId);
+            return;
+        }
+
+        List<CJTechOwner> existing = cjTechOwnerRepository.findAllByCj_Id(cjId);
+        Set<Long> existingIds = existing.stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<CJTechOwner> toDelete = existing.stream()
+                .filter(row -> row.getIdUserProfile() == null || !desired.contains(row.getIdUserProfile()))
+                .collect(Collectors.toList());
+        if (!toDelete.isEmpty()) {
+            cjTechOwnerRepository.deleteAll(toDelete);
+        }
+
+        List<CJTechOwner> toAdd = desired.stream()
+                .filter(id -> !existingIds.contains(id))
+                .map(id -> CJTechOwner.builder()
+                        .cj(CJ.builder().id(cjId).build())
+                        .idUserProfile(id)
+                        .build())
+                .collect(Collectors.toList());
+        if (!toAdd.isEmpty()) {
+            cjTechOwnerRepository.saveAll(toAdd);
+        }
+    }
+
+    private CjResponseDto buildCjResponseWithOwners(CJ cj) {
+        CjResponseDto dto = modelMapper.map(cj, CjResponseDto.class);
+        dto.setBusinessOwner(cj.getIdBusinessOwner());
+        List<Long> techOwners = cjTechOwnerRepository.findAllByCj_Id(cj.getId()).stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        dto.setTechOwners(techOwners);
+        return dto;
     }
 
     @Transactional
