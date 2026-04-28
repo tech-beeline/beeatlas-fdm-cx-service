@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import ru.beeline.cxbackend.dto.owners.ErrorMessageDto;
 import ru.beeline.cxbackend.exception.*;
 
 @ControllerAdvice
@@ -22,7 +23,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(BadRequestException.class)
@@ -31,7 +32,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(ForbiddenException.class)
@@ -40,7 +41,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(UnprocessedEntityException.class)
@@ -49,7 +50,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(ConflictException.class)
@@ -58,7 +59,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -67,7 +68,7 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body(e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -76,6 +77,6 @@ public class CustomExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .body("400 Bad Request : " + e.getMessage());
+                .body(ErrorMessageDto.builder().errorMessage("400 Bad Request : " + e.getMessage()).build());
     }
 }

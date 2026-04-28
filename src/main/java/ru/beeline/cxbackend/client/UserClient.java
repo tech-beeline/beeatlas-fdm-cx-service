@@ -46,4 +46,23 @@ public class UserClient {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
+
+    public boolean userExists(Long id) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            restTemplate.exchange(userServerUrl + "/api/v1/user/" + id,
+                    HttpMethod.GET, entity, new ParameterizedTypeReference<UserProfileDto>() {
+                    });
+            return true;
+        } catch (HttpClientErrorException.NotFound e) {
+            return false;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
 }
