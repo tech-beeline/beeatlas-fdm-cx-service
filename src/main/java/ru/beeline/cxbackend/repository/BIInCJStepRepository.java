@@ -22,6 +22,8 @@ public interface BIInCJStepRepository extends JpaRepository<BIInCJStep, Long> {
 
     List<BIInCJStep> findAllByCjStepId(Long cjStepId);
 
+    List<BIInCJStep> findAllByCjStepIdIn(List<Long> cjStepIds);
+
     List<BIInCJStep> findBIInCJStepsByBiId(Long biId);
 
     BIInCJStep findByCjStepIdAndBiId(Long cjStepId, Long biId);
