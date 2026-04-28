@@ -31,6 +31,8 @@ public interface BusinessInteractionRepository extends
             "ORDER BY cx.bi_in_cj_step.order", nativeQuery = true)
     List<BI> findAllByIdIn(Long cjStepId, List<Long> ids);
 
+    List<BI> findAllByIdInAndDeletedDateIsNull(List<Long> ids);
+
     Optional<BI> findByIdAndDeletedDateIsNull(Long id);
 
     BI findByIdBpmnAndDeletedDateIsNull(String id);

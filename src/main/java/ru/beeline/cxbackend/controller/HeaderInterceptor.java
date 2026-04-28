@@ -28,6 +28,7 @@ public class HeaderInterceptor implements HandlerInterceptor {
                     || request.getRequestURI().contains("/error")
                     || request.getRequestURI().contains("/v2/product/cj")
                     || request.getRequestURI().contains("/api-docs")
+                    || request.getRequestURI().contains("/api/cx/v1/cj/alerts")
                     || request.getRequestURI().contains("/api/v1/cj/"))
             {
                 return true;

@@ -19,6 +19,8 @@ import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.dto.alerts.CjAlertsDto;
+import ru.beeline.cxbackend.service.CjAlertsService;
 import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
@@ -38,6 +40,15 @@ public class CJController {
 
     @Autowired
     private CJimportFromBpmnService cJimportFromBpmnService;
+
+    @Autowired
+    private CjAlertsService cjAlertsService;
+
+    @GetMapping("/api/cx/v1/cj/alerts")
+    @ApiOperation(value = "Получение списка CJ с BI и шагами BI для алертов", response = List.class)
+    public List<CjAlertsDto> getCjAlerts() {
+        return cjAlertsService.getCjAlerts();
+    }
 
     @CustomHeaders
     @GetMapping("/api/cx/v1/product/cj/{id}")
