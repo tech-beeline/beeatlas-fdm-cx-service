@@ -21,23 +21,23 @@ public interface CJRepository extends JpaRepository<CJ, Long> {
 
     @Query(value = """
             SELECT
-                cj.id              AS cj_id,
-                cj.name            AS cj_name,
-                cj.unique_ident    AS cj_unique_ident,
-                cj.dashboard_link  AS cj_dashboard_link,
+                cj.id              AS "cjId",
+                cj.name            AS "cjName",
+                cj.unique_ident    AS "cjUniqueIdent",
+                cj.dashboard_link  AS "cjDashboardLink",
 
-                bi.id              AS bi_id,
-                bi.unique_ident    AS bi_unique_ident,
-                bi.name            AS bi_name,
-                bi.descr           AS bi_descr,
+                bi.id              AS "biId",
+                bi.unique_ident    AS "biUniqueIdent",
+                bi.name            AS "biName",
+                bi.descr           AS "biDescr",
 
-                bs.id_step_type    AS bs_id_step_type,
-                bs.unique_ident    AS bs_unique_ident,
-                bs.name            AS bs_name,
-                bs.latency         AS bs_latency,
-                bs.rps             AS bs_rps,
-                bs.error_rate      AS bs_error_rate,
-                bs.id              AS bs_id
+                bs.id_step_type    AS "bsIdStepType",
+                bs.unique_ident    AS "bsUniqueIdent",
+                bs.name            AS "bsName",
+                bs.latency         AS "bsLatency",
+                bs.rps             AS "bsRps",
+                bs.error_rate      AS "bsErrorRate",
+                bs.id              AS "bsId"
             FROM cx.cj cj
             LEFT JOIN cx.cj_steps cs
                    ON cs.id_cj = cj.id
