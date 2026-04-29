@@ -23,13 +23,41 @@ public class CJTagsDto {
     private Boolean bDraft;
     private List<String> tags;
 
+    private Long businessOwner;
+
+    private List<Long> techOwners;
+
+    private boolean businessOwnerProvided = false;
+
+    private boolean techOwnersProvided = false;
+
     @JsonProperty("user_portrait")
     public void setUserPortrait(String userPortrait) {
         this.userPortrait = userPortrait;
         this.userPortraitProvided = true;
     }
 
+    @JsonProperty("businessOwner")
+    public void setBusinessOwner(Long businessOwner) {
+        this.businessOwner = businessOwner;
+        this.businessOwnerProvided = true;
+    }
+
+    @JsonProperty("techOwners")
+    public void setTechOwners(List<Long> techOwners) {
+        this.techOwners = techOwners;
+        this.techOwnersProvided = true;
+    }
+
     public boolean isUserPortraitProvided() {
         return userPortraitProvided;
+    }
+
+    public boolean isBusinessOwnerProvided() {
+        return businessOwnerProvided;
+    }
+
+    public boolean isTechOwnersProvided() {
+        return techOwnersProvided;
     }
 }
