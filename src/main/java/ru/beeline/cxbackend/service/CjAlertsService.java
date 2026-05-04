@@ -11,9 +11,7 @@ import ru.beeline.cxbackend.dto.alerts.acc.CjAcc;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.projection.CjAlertsFlatRow;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +25,7 @@ public class CjAlertsService {
         if (rows.isEmpty()) {
             return List.of();
         }
+        Set<String> uniqueIds = new HashSet<>();
 
         Map<Long, CjAcc> cjAcc = new LinkedHashMap<>();
         for (CjAlertsFlatRow r : rows) {
@@ -58,15 +57,17 @@ public class CjAlertsService {
             if (idStepType == null) {
                 continue;
             }
-
-            biAcc.steps.add(BiStepAlertDto.builder()
-                    .idStepType(idStepType)
-                    .uniqueIdent(r.getBsUniqueIdent())
-                    .name(r.getBsName())
-                    .latency(r.getBsLatency())
-                    .rps(r.getBsRps())
-                    .errorRate(r.getBsErrorRate())
-                    .build());
+            if(!uniqueIds.contains(r.getBsUniqueIdent())) {
+                uniqueIds.add(r.getBsUniqueIdent());
+                biAcc.steps.add(BiStepAlertDto.builder()
+                                        .idStepType(idStepType)
+                                        .uniqueIdent(r.getBsUniqueIdent())
+                                        .name(r.getBsName())
+                                        .latency(r.getBsLatency())
+                                        .rps(r.getBsRps())
+                                        .errorRate(r.getBsErrorRate())
+                                        .build());
+            }
         }
 
         return cjAcc.values().stream()
