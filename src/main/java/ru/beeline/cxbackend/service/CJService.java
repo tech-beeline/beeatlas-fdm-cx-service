@@ -20,6 +20,7 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.domain.cj.CJTag;
 import ru.beeline.cxbackend.domain.cj.CJTechOwner;
 import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.exception.AuthServiceException;
 import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
@@ -387,14 +388,59 @@ public class CJService {
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
         }
-        UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
-        AuthorDto authorDto = AuthorDto.builder()
-                .id(userProfileDto.getId())
-                .Email(userProfileDto.getEmail())
-                .fullName(userProfileDto.getFullName())
-                .build();
+
+        Long authorId = cj.getAuthorId();
+        Long businessOwnerId = cj.getIdBusinessOwner();
+        List<Long> techOwnerIds = cjTechOwnerRepository.findAllByCj_Id(id).stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Long> idsToFetch = new ArrayList<>();
+        if (authorId != null) {
+            idsToFetch.add(authorId);
+        }
+        if (businessOwnerId != null) {
+            idsToFetch.add(businessOwnerId);
+        }
+        idsToFetch.addAll(techOwnerIds);
+        idsToFetch = idsToFetch.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Long, UserShortDto> usersById = new HashMap<>();
+        if (!idsToFetch.isEmpty()) {
+            try {
+                List<AuthUserDto> users = userClient.getUsersByIds(idsToFetch);
+                if (users != null) {
+                    usersById = users.stream()
+                            .filter(Objects::nonNull)
+                            .filter(u -> u.getId() != null)
+                            .collect(Collectors.toMap(
+                                    AuthUserDto::getId,
+                                    u -> UserShortDto.builder()
+                                            .id(u.getId())
+                                            .fullName(u.getFullName())
+                                            .email(u.getEmail())
+                                            .build(),
+                                    (a, b) -> a
+                            ));
+                }
+            } catch (Exception e) {
+                String msg = "Ошибка сервиса авторизации:" + (e.getMessage() == null ? "" : e.getMessage());
+                throw new AuthServiceException(msg, e);
+            }
+        }
+
+        UserShortDto authorDto = authorId == null ? null : usersById.get(authorId);
+        UserShortDto businessOwnerDto = businessOwnerId == null ? null : usersById.get(businessOwnerId);
+        List<UserShortDto> techOwnerDtos = techOwnerIds.stream()
+                .map(usersById::get) // может быть null (пользователь не найден) — по требованию оставляем null
+                .collect(Collectors.toList());
+
         CJFullDtoV3 cjFullDtoV3 = modelMapper.map(cj, CJFullDtoV3.class);
         cjFullDtoV3.setAuthor(authorDto);
+        cjFullDtoV3.setBusinessOwner(businessOwnerDto);
+        cjFullDtoV3.setTechOwners(techOwnerDtos);
         cjFullDtoV3.setSteps(getAndConvertSteps(cjFullDtoV3.getId()));
         cjFullDtoV3.setProductId(cj.getIdProductExt());
         cjFullDtoV3.setLink(cj.getLinks()

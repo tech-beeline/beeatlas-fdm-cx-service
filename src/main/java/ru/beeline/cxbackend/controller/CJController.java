@@ -6,6 +6,7 @@ package ru.beeline.cxbackend.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +26,7 @@ import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 
 import java.util.List;
+import java.util.Objects;
 
 import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
@@ -33,6 +35,7 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 @RestController
 @RequestMapping
 @Api(value = "CX API", tags = "CJ")
+@Slf4j
 public class CJController {
 
     @Autowired
@@ -46,8 +49,10 @@ public class CJController {
 
     @GetMapping("/api/cx/v1/cj/alerts")
     @ApiOperation(value = "Получение списка CJ с BI и шагами BI для алертов", response = List.class)
-    public List<CjAlertsDto> getCjAlerts() {
-        return cjAlertsService.getCjAlerts();
+    public ResponseEntity<List<CjAlertsDto>> getCjAlerts() {
+        List<CjAlertsDto> alerts = Objects.requireNonNullElseGet(cjAlertsService.getCjAlerts(), List::of);
+        log.debug("Built cj alerts response, cjCount={}", alerts.size());
+        return ResponseEntity.ok(alerts);
     }
 
     @CustomHeaders
@@ -74,7 +79,7 @@ public class CJController {
         return cjService.getAllv2(idProduct, sample, search);
     }
 
-    @ApiErrorCodes({400, 401, 403, 404, 500})
+    @ApiErrorCodes({400, 401, 403, 404, 409, 422, 500, 503})
     @GetMapping("api/cx/v2/product/cj/{id}")
     @ApiOperation(value = "получение CJ продукта по id v2", response = List.class)
     public CJFullDtoV3 getCJByIdV3(@PathVariable Long id) {

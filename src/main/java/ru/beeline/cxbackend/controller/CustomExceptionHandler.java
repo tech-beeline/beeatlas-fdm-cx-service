@@ -11,11 +11,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import ru.beeline.cxbackend.dto.owners.ErrorMessageDto;
+import ru.beeline.cxbackend.exception.AuthServiceException;
 import ru.beeline.cxbackend.exception.*;
 
 @ControllerAdvice
 @Slf4j
 public class CustomExceptionHandler {
+
+    @ExceptionHandler(AuthServiceException.class)
+    public ResponseEntity<Object> handleException(AuthServiceException e) {
+        log.error(e.getMessage(), e);
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                .body(ErrorMessageDto.builder().errorMessage(e.getMessage()).build());
+    }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleException(NotFoundException e) {
