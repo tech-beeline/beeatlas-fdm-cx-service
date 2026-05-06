@@ -51,6 +51,8 @@ public class ErrorCodesPlugin implements OperationBuilderPlugin {
                 return "Конфликт данных";
             case 500:
                 return "Внутренняя ошибка сервера";
+            case 503:
+                return "Сервис недоступен";
             default:
                 return "Error " + code;
         }
