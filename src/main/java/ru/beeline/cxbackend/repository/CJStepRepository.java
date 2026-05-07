@@ -17,6 +17,8 @@ import java.util.List;
 public interface CJStepRepository extends JpaRepository<CJStep, Long> {
     List<CJStep> findAllByCjId(Long cjId);
 
+    List<CJStep> findAllByCjIdIn(List<Long> cjIds);
+
     CJStep findByCjIdAndOrder(Long cjId, Integer order);
 
     void deleteAllByCjId(Long cjId);
