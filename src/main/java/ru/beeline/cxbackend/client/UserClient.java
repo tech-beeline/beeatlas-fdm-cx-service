@@ -14,6 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.cxbackend.dto.AuthUserDto;
+import ru.beeline.cxbackend.dto.UserInfoDto;
 import ru.beeline.cxbackend.dto.UserProfileDto;
 import ru.beeline.cxbackend.exception.NotFoundException;
 
@@ -86,6 +87,23 @@ public class UserClient {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
+        }
+    }
+
+    public UserInfoDto getUserInfo(Long userId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            return restTemplate.exchange(
+                    userServerUrl + "/api/admin/v1/user/" + userId + "/user-info",
+                    HttpMethod.GET, entity, new ParameterizedTypeReference<UserInfoDto>() {}
+            ).getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new NotFoundException(e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

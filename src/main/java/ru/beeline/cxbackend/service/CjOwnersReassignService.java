@@ -9,20 +9,15 @@ import ru.beeline.cxbackend.dto.owners.AffectedCjDto;
 import ru.beeline.cxbackend.dto.owners.CjOwnersReassignRequestDto;
 import ru.beeline.cxbackend.dto.owners.CjOwnersReassignResponseDto;
 import ru.beeline.cxbackend.exception.BadRequestException;
-import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.repository.CjOwnersReassignRepository;
 
 import java.util.List;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getUserRole;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CjOwnersReassignService {
-    private static final String ADMINISTRATOR_ROLE = "ADMINISTRATOR";
-
     private final UserClient userClient;
     private final CjOwnersReassignRepository reassignRepository;
 
@@ -61,12 +56,6 @@ public class CjOwnersReassignService {
     }
 
     private void validateAndParse(CjOwnersReassignRequestDto body) {
-        List<String> roles = getUserRole();
-        if (roles == null || !roles.contains(ADMINISTRATOR_ROLE)) {
-            log.warn("cj owners reassign forbidden: roles={}", roles);
-            throw new ForbiddenException("Пользователь не является администратором");
-        }
-
         if (body == null || !body.isCurrentUserIdProvided() || !body.isNewUserIdProvided()) {
             log.warn("cj owners reassign bad request: missing attributes. body={}", body);
             throw new BadRequestException("Не переданы необходимые атрибуты");
