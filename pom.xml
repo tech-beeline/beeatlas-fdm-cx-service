@@ -10,7 +10,7 @@
     </parent>
     <groupId>ru.beeline</groupId>
     <artifactId>cx-backend</artifactId>
-    <version>1.1.10</version>
+    <version>1.1.11</version>
     <name>cx-backend</name>
     <description>cx-backend</description>
     <properties>
@@ -90,14 +90,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-boot-starter</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>3.0.0</version>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.8.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -201,11 +196,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>5.5.0.6356</version>
             </plugin>
         </plugins>
         <finalName>cx-backend-${project.version}</finalName>

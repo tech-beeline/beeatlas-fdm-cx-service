@@ -18,8 +18,7 @@ podman compose up --build
 
 - API: `http://localhost:8081`
 - Health: `http://localhost:8081/actuator/health`
-- Swagger UI: `http://localhost:8081/swagger-ui/`
-- OpenAPI JSON: `http://localhost:8081/v2/api-docs`
+- Swagger UI: `http://localhost:8081/swagger-ui/index.html`
 
 Остановка:
 
@@ -60,10 +59,10 @@ java -jar target/cx-backend-*.jar
 
 ## Swagger
 
-В сервисе подключен `springfox` (`springfox-boot-starter`), поэтому документация доступна после запуска приложения.
+В сервисе подключен `springdoc-openapi`, поэтому документация доступна после запуска приложения.
 
-- Swagger UI: `http://localhost:${CX_SERVICE_PORT:-8081}/swagger-ui/`
-- OpenAPI JSON: `http://localhost:${CX_SERVICE_PORT:-8081}/v2/api-docs`
+- Swagger UI: `http://localhost:${CX_SERVICE_PORT:-8081}/swagger-ui/index.html`
+- OpenAPI JSON: `http://localhost:${CX_SERVICE_PORT:-8081}/v3/api-docs`
 
 В Swagger настроена схема **Bearer** для заголовка `Authorization` — это нужно для удобства в UI (кнопка **Authorize**). В самом сервисе отдельной проверки JWT/OAuth по этому заголовку нет: доступ к бизнес-API завязан на пользовательские заголовки ниже.
 
