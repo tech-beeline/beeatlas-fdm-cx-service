@@ -167,7 +167,9 @@ public class BusinessInteractionService {
         Long idProductExt = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("cj не найдено")).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
                 getUserProducts(), idProductExt);
-
+        if (bi.getOrder() == null) {
+            throw new RuntimeException("Не допускается отсуствие значения, поля order");
+        }
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
         }
