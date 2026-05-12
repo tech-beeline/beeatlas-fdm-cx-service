@@ -20,11 +20,7 @@ import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.domain.cj.CJTag;
 import ru.beeline.cxbackend.domain.cj.CJTechOwner;
 import ru.beeline.cxbackend.dto.*;
-import ru.beeline.cxbackend.exception.AuthServiceException;
-import ru.beeline.cxbackend.exception.BadRequestException;
-import ru.beeline.cxbackend.exception.ConflictException;
-import ru.beeline.cxbackend.exception.ForbiddenException;
-import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.*;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -234,6 +230,16 @@ public class CJService {
         if (Objects.nonNull(cjDto.getBDraft()) && !cjDto.getBDraft() && isCjHaveDraftBI(cj)) {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
+        if (!userClient.userExists(cjDto.getBusinessOwner())) {
+            log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
+            throw new NotFoundException("Указанный бизнес ответственный, не найден");
+        }
+        cjDto.getTechOwners().forEach(techOwner -> {
+            if (!userClient.userExists(techOwner)) {
+                log.warn("cj technical owners not found. Id={}", techOwner);
+                throw new NotFoundException("Указанный технический ответственный, не найден");
+            }
+        });
 
         boolean changed = false;
         boolean ownersChanged = false;
