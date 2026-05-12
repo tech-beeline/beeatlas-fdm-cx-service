@@ -7,7 +7,6 @@ package ru.beeline.cxbackend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.repository.projection.CjAlertsFlatRow;
 
@@ -25,12 +24,12 @@ public interface CJRepository extends JpaRepository<CJ, Long> {
                 cj.name            AS "cjName",
                 cj.unique_ident    AS "cjUniqueIdent",
                 cj.dashboard_link  AS "cjDashboardLink",
-
+            
                 bi.id              AS "biId",
                 bi.unique_ident    AS "biUniqueIdent",
                 bi.name            AS "biName",
                 bi.descr           AS "biDescr",
-
+            
                 bs.id_step_type    AS "bsIdStepType",
                 bs.unique_ident    AS "bsUniqueIdent",
                 bs.name            AS "bsName",
@@ -54,6 +53,7 @@ public interface CJRepository extends JpaRepository<CJ, Long> {
     List<CjAlertsFlatRow> findCjAlertsFlat();
 
     List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIn(String search, List<Long> idProducts);
+
     List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtIsNull(String search);
 
     List<CJ> findAllByNameContainsIgnoreCase(String search);

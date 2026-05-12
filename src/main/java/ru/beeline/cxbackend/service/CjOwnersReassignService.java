@@ -30,7 +30,6 @@ public class CjOwnersReassignService {
     public CjOwnersReassignResponseDto reassignOwners(CjOwnersReassignRequestDto body) {
         validateAndParse(body);
 
-        List<AffectedCjDto> affected = reassignRepository.findAffectedCj(body.getCurrentUserId(), body.getNewUserId());
 
         boolean currentExists = userClient.userExists(body.getCurrentUserId());
         if (!currentExists) {
@@ -44,7 +43,10 @@ public class CjOwnersReassignService {
             throw new NotFoundException("Указанный новый ответственный, не найден");
         }
 
+        List<AffectedCjDto> affected = reassignRepository.findAffectedCj(body.getCurrentUserId());
+
         int businessUpdated = reassignRepository.reassignBusinessOwner(body.getCurrentUserId(), body.getNewUserId());
+        int techDeleted = reassignRepository.deleteDuplicateTechOwnersForReassign(body.getCurrentUserId(), body.getNewUserId());
         int techUpdated = reassignRepository.reassignTechOwner(body.getCurrentUserId(), body.getNewUserId());
 
         CjOwnersReassignResponseDto response = CjOwnersReassignResponseDto.builder()
@@ -53,8 +55,8 @@ public class CjOwnersReassignService {
                 .affectedCj(affected)
                 .build();
 
-        log.info("cj owners reassigned. currentUserId={}, newUserId={}, businessUpdated={}, techUpdated={}, response={}",
-                body.getCurrentUserId(), body.getNewUserId(), businessUpdated, techUpdated, response);
+        log.info("cj owners reassigned. currentUserId={}, newUserId={}, businessUpdated={}, techDeleted={}, techUpdated={}, response={}",
+                body.getCurrentUserId(), body.getNewUserId(), businessUpdated, techDeleted, techUpdated, response);
         return response;
     }
 

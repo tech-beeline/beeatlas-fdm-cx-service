@@ -17,7 +17,7 @@ public class CjOwnersReassignRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public List<AffectedCjDto> findAffectedCj(Long currentUserId, Long newUserId) {
+    public List<AffectedCjDto> findAffectedCj(Long currentUserId) {
         Query q = entityManager.createNativeQuery("""
                 SELECT
                     cj.id   AS cj_id,
@@ -25,33 +25,17 @@ public class CjOwnersReassignRepository {
                 FROM cx.cj cj
                 WHERE cj.deleted_date IS NULL
                   AND (
-                      -- business owner will be updated
                       cj.id_business_owner = :currentUserId
-
-                      OR
-
-                      (
-                          EXISTS (
-                              SELECT 1
-                              FROM cx.cj_tech_owners cto
-                              WHERE cto.id_cj = cj.id
-                                AND cto.id_user_profile = :currentUserId
-                          )
-                          AND (
-                              :newUserId IS NULL
-                              OR NOT EXISTS (
-                                  SELECT 1
-                                  FROM cx.cj_tech_owners cto2
-                                  WHERE cto2.id_cj = cj.id
-                                    AND cto2.id_user_profile = :newUserId
-                              )
-                          )
+                      OR EXISTS (
+                          SELECT 1
+                          FROM cx.cj_tech_owners cto
+                          WHERE cto.id_cj = cj.id
+                            AND cto.id_user_profile = :currentUserId
                       )
                   )
                 ORDER BY cj.id
                 """);
         q.setParameter("currentUserId", currentUserId);
-        q.setParameter("newUserId", newUserId);
 
         @SuppressWarnings("unchecked")
         List<Object[]> rows = q.getResultList();
@@ -69,6 +53,26 @@ public class CjOwnersReassignRepository {
                 SET id_business_owner = :newUserId
                 WHERE deleted_date IS NULL
                   AND id_business_owner = :currentUserId
+                """);
+        q.setParameter("currentUserId", currentUserId);
+        q.setParameter("newUserId", newUserId);
+        return q.executeUpdate();
+    }
+
+    public int deleteDuplicateTechOwnersForReassign(Long currentUserId, Long newUserId) {
+        Query q = entityManager.createNativeQuery("""
+                DELETE FROM cx.cj_tech_owners cto
+                USING cx.cj cj
+                WHERE cto.id_cj = cj.id
+                  AND cj.deleted_date IS NULL
+                  AND cto.id_user_profile = :currentUserId
+                  AND :newUserId IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1
+                      FROM cx.cj_tech_owners cto2
+                      WHERE cto2.id_cj = cto.id_cj
+                        AND cto2.id_user_profile = :newUserId
+                  )
                 """);
         q.setParameter("currentUserId", currentUserId);
         q.setParameter("newUserId", newUserId);
