@@ -5,7 +5,7 @@
 package ru.beeline.cxbackend.dto;
 
 import com.sun.istack.NotNull;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 
@@ -13,6 +13,6 @@ import lombok.Data;
 public class BIEditabilityDto {
 
     @NotNull
-    @ApiModelProperty(required = true)
+    @Schema(required = true)
     private Boolean editability;
 }
