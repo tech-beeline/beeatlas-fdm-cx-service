@@ -110,7 +110,12 @@ public class CJService {
     public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
-
+        List<Long> ids = new ArrayList<>();
+        ids.add(cj.getBusinessOwner());
+        ids.addAll(cj.getTechOwners());
+        if(ids.size() == userClient.getUsersByIds(ids).size()){
+            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес/тех. ответственный");
+        }
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
 
         processTags(newCJ, cj.getTags());
