@@ -239,12 +239,14 @@ public class CJService {
             log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
             throw new NotFoundException("Указанный бизнес ответственный, не найден");
         }
-        cjDto.getTechOwners().forEach(techOwner -> {
-            if (Objects.nonNull(techOwner) && !userClient.userExists(techOwner)) {
-                log.warn("cj technical owners not found. Id={}", techOwner);
-                throw new NotFoundException("Указанный технический ответственный, не найден");
-            }
-        });
+        if (Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
+            cjDto.getTechOwners().forEach(techOwner -> {
+                if (!userClient.userExists(techOwner)) {
+                    log.warn("cj technical owners not found. Id={}", techOwner);
+                    throw new NotFoundException("Указанный технический ответственный, не найден");
+                }
+            });
+        }
 
         boolean changed = false;
         boolean ownersChanged = false;
