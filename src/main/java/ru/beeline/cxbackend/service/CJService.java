@@ -113,7 +113,7 @@ public class CJService {
         List<Long> ids = new ArrayList<>();
         ids.add(cj.getBusinessOwner());
         ids.addAll(cj.getTechOwners());
-        if(ids.size() == userClient.getUsersByIds(ids).size()){
+        if(ids.size() != userClient.getUsersByIds(ids).size()){
             throw new BadRequestException("Указан несуществующий пользователь в поле бизнес/тех. ответственный");
         }
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
