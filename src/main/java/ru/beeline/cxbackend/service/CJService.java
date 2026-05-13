@@ -235,12 +235,12 @@ public class CJService {
         if (Objects.nonNull(cjDto.getBDraft()) && !cjDto.getBDraft() && isCjHaveDraftBI(cj)) {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
-        if (!userClient.userExists(cjDto.getBusinessOwner())) {
+        if (Objects.nonNull(cjDto.getBusinessOwner()) && !userClient.userExists(cjDto.getBusinessOwner())) {
             log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
             throw new NotFoundException("Указанный бизнес ответственный, не найден");
         }
         cjDto.getTechOwners().forEach(techOwner -> {
-            if (!userClient.userExists(techOwner)) {
+            if (Objects.nonNull(techOwner) && !userClient.userExists(techOwner)) {
                 log.warn("cj technical owners not found. Id={}", techOwner);
                 throw new NotFoundException("Указанный технический ответственный, не найден");
             }
