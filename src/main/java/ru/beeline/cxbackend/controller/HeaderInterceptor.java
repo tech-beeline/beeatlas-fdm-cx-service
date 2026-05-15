@@ -23,14 +23,14 @@ public class HeaderInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
-            if(request.getRequestURI().contains("/actuator/prometheus")
+            if (request.getRequestURI().contains("/actuator/prometheus")
                     || request.getRequestURI().contains("/swagger")
                     || request.getRequestURI().contains("/error")
                     || request.getRequestURI().contains("/v2/product/cj")
                     || request.getRequestURI().contains("/api-docs")
                     || request.getRequestURI().contains("/api/cx/v1/cj/alerts")
-                    || request.getRequestURI().contains("/api/v1/cj/"))
-            {
+                    || request.getRequestURI().contains("/api/v1/cj/")
+                    || request.getRequestURI().contains("/api/cx/v1/tech-capability/")) {
                 return true;
             }
             Map<String, Object> headers = new HashMap<>();

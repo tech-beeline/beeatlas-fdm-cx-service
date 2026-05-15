@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.repository.projection.CjAlertsFlatRow;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +62,8 @@ public interface CJRepository extends JpaRepository<CJ, Long> {
     List<CJ> findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(String search, List<Long> idProducts);
 
     List<CJ> findAllByIdIn(List<Long> ids);
+
+    List<CJ> findAllByIdInAndDeletedDateIsNull(Collection<Long> ids);
 
     Optional<CJ> findByIdAndDeletedDateIsNull(Long id);
 

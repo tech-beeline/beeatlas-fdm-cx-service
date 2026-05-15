@@ -26,7 +26,8 @@ import org.springframework.context.annotation.Configuration;
                 @Tag(name = "CJ Step", description = "Шаги Customer Journey (CJ): список шагов, получение шага, добавление/изменение/удаление."),
                 @Tag(name = "BI Library", description = "Библиотека Business Interaction (BI): поиск/получение/создание/редактирование/удаление BI и редактирование шагов BI и их связей."),
                 @Tag(name = "BI by CjStep", description = "Привязка BI к шагам CJ: BI по шагу CJ, CJ по BI, привязка/отвязка BI."),
-                @Tag(name = "BI References", description = "Справочники BI: чувства, статусы, каналы, участники.")
+                @Tag(name = "BI References", description = "Справочники BI: чувства, статусы, каналы, участники."),
+                @Tag(name = "Tech Capability", description = "Связь технических возможностей (TC) с CJ через операции продукта и шаги BI/CJ.")
         }
 )
 public class OpenApiConfig {

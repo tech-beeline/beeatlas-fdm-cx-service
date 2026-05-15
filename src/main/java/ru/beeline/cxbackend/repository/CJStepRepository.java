@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -41,4 +42,6 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
                                     @Param("ids") List<String> ids);
 
     void deleteByCjId(long cjId);
+
+    List<CJStep> findAllByIdIn(Collection<Long> cjStepIds);
 }

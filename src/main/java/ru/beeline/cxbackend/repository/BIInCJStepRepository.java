@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -32,5 +33,7 @@ public interface BIInCJStepRepository extends JpaRepository<BIInCJStep, Long> {
             "JOIN cx.cj_steps ON cx.cj.id = cx.cj_steps.id_cj " +
             "WHERE cx.cj_steps.id = :id AND cx.cj.b_draft = false", nativeQuery = true)
     Long countByCjStepIdAndSJisDraftFalse(@Param("id") Long id);
+
+    List<BIInCJStep> findAllByBiIdIn(Collection<Long> biIds);
 
 }
