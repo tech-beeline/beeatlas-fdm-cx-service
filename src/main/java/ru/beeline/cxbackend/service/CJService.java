@@ -109,9 +109,12 @@ public class CJService {
 
         if (Objects.nonNull(cj.getBusinessOwner()) && !userClient.userExists(cj.getBusinessOwner())) {
             log.warn("cj business owners not found. Id={}", cj.getBusinessOwner());
-            throw new NotFoundException("Указан несуществующий пользователь в поле бизнес ответственный");
+            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес ответственный");
         }
         if (Objects.nonNull(cj.getTechOwners()) && !cj.getTechOwners().isEmpty()) {
+            cj.setTechOwners(cj.getTechOwners().stream()
+                                        .distinct()
+                                        .collect(Collectors.toList()));
             if (cj.getTechOwners().size() != userClient.getUsersByIds(cj.getTechOwners()).size()) {
                 throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
             }
@@ -239,9 +242,14 @@ public class CJService {
 
         if (Objects.nonNull(cjDto.getBusinessOwner()) && !userClient.userExists(cjDto.getBusinessOwner())) {
             log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
-            throw new NotFoundException("Указан несуществующий пользователь в поле бизнес ответственный");
+            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес ответственный");
         }
+
+
         if (Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
+            cjDto.setTechOwners(cjDto.getTechOwners().stream()
+                                        .distinct()
+                                        .collect(Collectors.toList()));
             if (cjDto.getTechOwners().size() != userClient.getUsersByIds(cjDto.getTechOwners()).size()) {
                 throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
             }
