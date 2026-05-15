@@ -102,24 +102,19 @@ public class CJService {
                         .map(CJ::getTags, CjResponseDtoV2::setTags));
     }
 
-    public CJ findByName(String name) {
-        return cjRepository.findByName(name);
-    }
-
     @Transactional
     public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
 
-        List<Long> ids = new ArrayList<>();
-        if(Objects.nonNull(cj.getBusinessOwner())) {
-            ids.add(cj.getBusinessOwner());
+        if (Objects.nonNull(cj.getBusinessOwner()) && !userClient.userExists(cj.getBusinessOwner())) {
+            log.warn("cj business owners not found. Id={}", cj.getBusinessOwner());
+            throw new NotFoundException("Указан несуществующий пользователь в поле бизнес ответственный");
         }
-        if(Objects.nonNull(cj.getTechOwners()) && !cj.getTechOwners().isEmpty()) {
-            ids.addAll(cj.getTechOwners());
-        }
-        if(ids.size() != userClient.getUsersByIds(ids).size()){
-            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес/тех. ответственный");
+        if (Objects.nonNull(cj.getTechOwners()) && !cj.getTechOwners().isEmpty()) {
+            if (cj.getTechOwners().size() != userClient.getUsersByIds(cj.getTechOwners()).size()) {
+                throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
+            }
         }
 
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
@@ -242,15 +237,14 @@ public class CJService {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
 
-        List<Long> ids = new ArrayList<>();
-        if(Objects.nonNull(cjDto.getBusinessOwner())) {
-            ids.add(cjDto.getBusinessOwner());
+        if (Objects.nonNull(cjDto.getBusinessOwner()) && !userClient.userExists(cjDto.getBusinessOwner())) {
+            log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
+            throw new NotFoundException("Указан несуществующий пользователь в поле бизнес ответственный");
         }
-        if(Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
-            ids.addAll(cjDto.getTechOwners());
-        }
-        if(ids.size() != userClient.getUsersByIds(ids).size()){
-            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес/тех. ответственный");
+        if (Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
+            if (cjDto.getTechOwners().size() != userClient.getUsersByIds(cjDto.getTechOwners()).size()) {
+                throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
+            }
         }
 
         boolean changed = false;
