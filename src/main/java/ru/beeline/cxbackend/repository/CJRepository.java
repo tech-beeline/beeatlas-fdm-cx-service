@@ -25,12 +25,10 @@ public interface CJRepository extends JpaRepository<CJ, Long> {
                 cj.name            AS "cjName",
                 cj.unique_ident    AS "cjUniqueIdent",
                 cj.dashboard_link  AS "cjDashboardLink",
-            
                 bi.id              AS "biId",
                 bi.unique_ident    AS "biUniqueIdent",
                 bi.name            AS "biName",
                 bi.descr           AS "biDescr",
-            
                 bs.id_step_type    AS "bsIdStepType",
                 bs.unique_ident    AS "bsUniqueIdent",
                 bs.name            AS "bsName",
