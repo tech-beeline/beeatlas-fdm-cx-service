@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class StepDtoV2 {
 
     private Long cjId;
 
-    private Integer order;
+    private BigDecimal order;
 
     private String name;
 

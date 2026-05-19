@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,5 +22,7 @@ public class BIElement {
     public String id;
     public String name;
     public String processId;
+    public BigDecimal order;
     public List<BiStep> biSteps = new ArrayList<>();
+    public List<SequenceFlow> sequenceFlows = new ArrayList<>();
 }

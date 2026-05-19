@@ -10,6 +10,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +20,7 @@ public class CjStepFullDto {
 
     private Long id;
     private String name;
-    private Integer order;
+    private BigDecimal order;
     private String description;
     @JsonProperty("id_cj")
     private Long cjId;

@@ -7,9 +7,11 @@ package ru.beeline.cxbackend.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class BiByCjStepDto {
     @JsonProperty("id_bi")
     private Long idBi;
-    private Long order;
+    private BigDecimal order;
 }
