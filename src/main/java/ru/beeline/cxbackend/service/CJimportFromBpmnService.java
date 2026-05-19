@@ -70,10 +70,6 @@ public class CJimportFromBpmnService {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class).addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
     }
 
-    // -----------------------------------------------------------------------
-    // Public entry points
-    // -----------------------------------------------------------------------
-
     public void importFromBpmnCreate(Long id) {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
@@ -112,16 +108,11 @@ public class CJimportFromBpmnService {
         throw new BadRequestException("File extension is not .bpmn");
     }
 
-    // -----------------------------------------------------------------------
-    // BPMN extraction
-    // -----------------------------------------------------------------------
-
     public ProcessCJ extractModel(byte[] content) {
         Element processElement = prepareExtract(content);
         ProcessCJ processCJ = new ProcessCJ();
         processCJ.id = processElement.getAttribute("id");
 
-        // Direct-child sequenceFlows of the process element define CJ-stage order
         processCJ.sequenceFlows = extractDirectSequenceFlows(processElement);
 
         processCJ.collapsedSubProcesses = new ArrayList<>();
@@ -129,7 +120,6 @@ public class CJimportFromBpmnService {
             CollapsedSubProcess stage = new CollapsedSubProcess();
             stage.id = stageEl.getAttribute("id");
             stage.name = stageEl.getAttribute("name");
-            // Direct-child sequenceFlows within this stage define BI-element order
             stage.sequenceFlows = extractDirectSequenceFlows(stageEl);
             findBiElements(stageEl, stage.biElements);
             processCJ.collapsedSubProcesses.add(stage);
@@ -139,10 +129,6 @@ public class CJimportFromBpmnService {
         return processCJ;
     }
 
-    /**
-     * Populates BI elements (subProcess / callActivity) inside a CJ stage.
-     * Also collects the sequenceFlows within each BI element and resolves bi_step ordering.
-     */
     private void findBiElements(Element stageEl, List<BIElement> biElements) {
         for (int i = 0; i < stageEl.getChildNodes().getLength(); i++) {
             Node node = stageEl.getChildNodes().item(i);
@@ -172,21 +158,14 @@ public class CJimportFromBpmnService {
                 }
             }
 
-            // sequenceFlows within the BI element for future reference
             bi.sequenceFlows = extractDirectSequenceFlows(el);
 
-            // Collect bi_steps with BPMN-based ordering
             findBiSteps(el, bi.biSteps);
 
             biElements.add(bi);
         }
     }
 
-    /**
-     * Recursively collects all steps (task / serviceTask / userTask / subProcess) inside a BI
-     * element. Each direct-child group is ordered by the sequenceFlows of their common parent.
-     * Nested subProcess elements are added first, then their children are appended.
-     */
     private void findBiSteps(Element parent, List<BiStep> steps) {
         List<BiStep> directChildren = new ArrayList<>();
         Map<String, Element> nestedSubProcesses = new LinkedHashMap<>();
@@ -216,7 +195,6 @@ public class CJimportFromBpmnService {
 
         if (directChildren.isEmpty()) return;
 
-        // Compute BPMN order for direct children using this parent's own sequenceFlows
         List<String> ids = directChildren.stream().map(s -> s.id).collect(Collectors.toList());
         List<SequenceFlow> directFlows = extractDirectSequenceFlows(parent);
         Map<String, BigDecimal> orderMap = BpmnOrderCalculator.computeOrders(ids, directFlows);
@@ -229,25 +207,14 @@ public class CJimportFromBpmnService {
         for (BiStep step : directChildren) {
             steps.add(step);
             if (nestedSubProcesses.containsKey(step.id)) {
-                // Recurse: nested subProcess children are added right after their parent
                 findBiSteps(nestedSubProcesses.get(step.id), steps);
             }
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Sorting / order computation
-    // -----------------------------------------------------------------------
-
-    /**
-     * Assigns BigDecimal order values to CJ stages and BI elements using the BPMN sequence-flow
-     * algorithm (linear, branching, and merge-point aware).
-     * BiStep orders are already resolved during {@link #findBiSteps}.
-     */
     private void sortModel(ProcessCJ processCJ) {
         List<CollapsedSubProcess> stages = processCJ.getCollapsedSubProcesses();
 
-        // --- CJ stages ---
         List<String> stageIds = stages.stream().map(s -> s.id).collect(Collectors.toList());
         Map<String, BigDecimal> stageOrders = BpmnOrderCalculator.computeOrders(stageIds, processCJ.sequenceFlows);
         for (CollapsedSubProcess stage : stages) {
@@ -256,7 +223,6 @@ public class CJimportFromBpmnService {
         stages.sort(Comparator.comparing(s -> s.order));
         processCJ.setCollapsedSubProcesses(stages);
 
-        // --- BI elements within each stage ---
         for (CollapsedSubProcess stage : processCJ.getCollapsedSubProcesses()) {
             List<BIElement> biElements = stage.getBiElements();
             List<String> biIds = biElements.stream().map(b -> b.id).collect(Collectors.toList());
@@ -267,10 +233,6 @@ public class CJimportFromBpmnService {
             biElements.sort(Comparator.comparing(b -> b.order));
         }
     }
-
-    // -----------------------------------------------------------------------
-    // Persistence — create
-    // -----------------------------------------------------------------------
 
     private void saveElements(ProcessCJ processCJ, long id, CJ cj) {
         List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
@@ -334,10 +296,6 @@ public class CJimportFromBpmnService {
             }
         }
     }
-
-    // -----------------------------------------------------------------------
-    // Persistence — update
-    // -----------------------------------------------------------------------
 
     private void saveOrUpdateElements(ProcessCJ processCJ, long id, CJ cj) {
         log.info("start method saveOrUpdateElements");
@@ -460,10 +418,6 @@ public class CJimportFromBpmnService {
         log.info("step process method complete");
     }
 
-    // -----------------------------------------------------------------------
-    // Helper — persistence builders
-    // -----------------------------------------------------------------------
-
     private CJStep saveCjStep(BigDecimal order, CollapsedSubProcess stage, long id) {
         log.info("Создание нового cj step с name: {}", stage.name);
         return cjStepRepository.save(CJStep.builder()
@@ -547,10 +501,6 @@ public class CJimportFromBpmnService {
         return biRepository.save(saved);
     }
 
-    // -----------------------------------------------------------------------
-    // Helper — XML utilities
-    // -----------------------------------------------------------------------
-
     private static Element prepareExtract(byte[] content) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -573,7 +523,6 @@ public class CJimportFromBpmnService {
         }
     }
 
-    /** Returns only the DIRECT-CHILD sequenceFlow elements of the given parent. */
     private static List<SequenceFlow> extractDirectSequenceFlows(Element parent) {
         List<SequenceFlow> flows = new ArrayList<>();
         NodeList children = parent.getChildNodes();
@@ -592,7 +541,6 @@ public class CJimportFromBpmnService {
         return flows;
     }
 
-    /** Returns only the DIRECT-CHILD subProcess elements (CJ stages) of the process element. */
     private static List<Element> filterDirectSubProcessChildren(Element processElement) {
         List<Element> result = new ArrayList<>();
         NodeList children = processElement.getChildNodes();
