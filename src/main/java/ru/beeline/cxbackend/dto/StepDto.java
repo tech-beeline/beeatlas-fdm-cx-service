@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class StepDto {
     @JsonProperty("id_cj")
     private Long cjId;
 
-    private Integer order;
+    private BigDecimal order;
 
     private String name;
 
