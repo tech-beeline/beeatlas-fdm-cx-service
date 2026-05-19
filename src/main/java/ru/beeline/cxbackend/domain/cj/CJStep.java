@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Builder
 @Getter
@@ -24,7 +25,7 @@ public class CJStep {
     private Long id;
 
     @Column(name = "\"order\"")
-    private Integer order;
+    private BigDecimal order;
 
     private String name;
 

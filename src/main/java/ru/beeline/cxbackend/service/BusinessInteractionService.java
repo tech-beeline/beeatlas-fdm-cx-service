@@ -24,6 +24,7 @@ import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 import ru.beeline.cxbackend.utils.Utils;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -186,8 +187,8 @@ public class BusinessInteractionService {
         if (currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
             existSteps.forEach(
                     step -> {
-                        if (step.getOrder() >= bi.getOrder()) {
-                            step.setOrder(step.getOrder() + 1);
+                        if (step.getOrder().compareTo(bi.getOrder()) >= 0) {
+                            step.setOrder(step.getOrder().add(BigDecimal.ONE));
                         }
                     }
             );
@@ -197,8 +198,8 @@ public class BusinessInteractionService {
         if (!currentCjByOrder.isPresent() && currentCjByBIid.isPresent()) {
             existSteps.forEach(
                     step -> {
-                        if (step.getOrder() > currentCjByBIid.get().getOrder()) {
-                            step.setOrder(step.getOrder() - 1);
+                        if (step.getOrder().compareTo(currentCjByBIid.get().getOrder()) > 0) {
+                            step.setOrder(step.getOrder().subtract(BigDecimal.ONE));
                         }
                     }
             );
@@ -207,11 +208,11 @@ public class BusinessInteractionService {
         if (currentCjByOrder.isPresent() && currentCjByBIid.isPresent()) {
             existSteps.forEach(
                     step -> {
-                        if (step.getOrder() > currentCjByBIid.get().getOrder()) {
-                            step.setOrder(step.getOrder() - 1);
+                        if (step.getOrder().compareTo(currentCjByBIid.get().getOrder()) > 0) {
+                            step.setOrder(step.getOrder().subtract(BigDecimal.ONE));
                         }
-                        if (step.getOrder() >= bi.getOrder()) {
-                            step.setOrder(step.getOrder() + 1);
+                        if (step.getOrder().compareTo(bi.getOrder()) >= 0) {
+                            step.setOrder(step.getOrder().add(BigDecimal.ONE));
                         }
                     }
             );
@@ -224,13 +225,14 @@ public class BusinessInteractionService {
     }
 
     private static void checkMaxOrder(BiByCjStepDto bi, List<BIInCJStep> existSteps) {
-        Long maxOrder = existSteps.stream()
-                .max(Comparator.comparing(BIInCJStep::getOrder))
+        BigDecimal maxOrder = existSteps.stream()
                 .map(BIInCJStep::getOrder)
-                .orElse(0L);
+                .filter(Objects::nonNull)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
 
-        if (bi.getOrder() > maxOrder) {
-            bi.setOrder(maxOrder + 1);
+        if (bi.getOrder() == null || bi.getOrder().compareTo(maxOrder) > 0) {
+            bi.setOrder(maxOrder.add(BigDecimal.ONE));
         }
     }
 
@@ -454,8 +456,10 @@ public class BusinessInteractionService {
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!existSteps.isEmpty()) {
             existSteps.stream()
-                    .filter(step -> step.getOrder() > biInCjStep.getOrder())
-                    .forEach(step -> step.setOrder(step.getOrder() - 1));
+                    .filter(step -> step.getOrder() != null
+                            && biInCjStep.getOrder() != null
+                            && step.getOrder().compareTo(biInCjStep.getOrder()) > 0)
+                    .forEach(step -> step.setOrder(step.getOrder().subtract(BigDecimal.ONE)));
         }
         biInCJStepRepository.saveAllAndFlush(existSteps);
         biInCJStepRepository.delete(biInCjStep);

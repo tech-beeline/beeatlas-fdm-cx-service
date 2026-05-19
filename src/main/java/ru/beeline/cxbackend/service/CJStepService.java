@@ -17,6 +17,7 @@ import ru.beeline.cxbackend.repository.BIInCJStepRepository;
 import ru.beeline.cxbackend.repository.CJRepository;
 import ru.beeline.cxbackend.repository.CJStepRepository;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Comparator;
 import java.util.List;
@@ -68,8 +69,8 @@ public class CJStepService {
             }
 
             existSteps = existSteps.stream()
-                    .filter(step -> step.getOrder() >= cjStepDto.getOrder())
-                    .peek(step -> step.setOrder(step.getOrder() + 1))
+                    .filter(step -> step.getOrder().compareTo(cjStepDto.getOrder()) >= 0)
+                    .peek(step -> step.setOrder(step.getOrder().add(BigDecimal.ONE)))
                     .collect(Collectors.toList());
         }
         cjStepRepository.saveAllAndFlush(existSteps);
@@ -131,8 +132,8 @@ public class CJStepService {
         List<CJStep> existSteps = cjStepRepository.findAllByCjId(cjStep.getCjId());
         if (!existSteps.isEmpty()) {
             existSteps = existSteps.stream()
-                    .filter(step -> step.getOrder() > cjStep.getOrder())
-                    .peek(step -> step.setOrder(step.getOrder() - 1))
+                    .filter(step -> step.getOrder().compareTo(cjStep.getOrder()) > 0)
+                    .peek(step -> step.setOrder(step.getOrder().subtract(BigDecimal.ONE)))
                     .collect(Collectors.toList());
         }
         cjStepRepository.saveAllAndFlush(existSteps);

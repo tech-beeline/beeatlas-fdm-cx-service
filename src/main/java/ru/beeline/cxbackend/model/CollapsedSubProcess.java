@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,5 +20,7 @@ import java.util.List;
 public class CollapsedSubProcess {
     public String id;
     public String name;
+    public BigDecimal order;
     public List<BIElement> biElements = new ArrayList<>();
+    public List<SequenceFlow> sequenceFlows = new ArrayList<>();
 }

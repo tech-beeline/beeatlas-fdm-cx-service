@@ -7,6 +7,7 @@ package ru.beeline.cxbackend.domain.bi;
 import lombok.*;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 
 @Builder
@@ -52,4 +53,7 @@ public class BiStep {
     private Float errorRate;
 
     private Float rps;
+
+    @Column(name = "\"order\"")
+    private BigDecimal order;
 }
