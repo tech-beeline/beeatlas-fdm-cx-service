@@ -6,7 +6,6 @@ package ru.beeline.cxbackend.model;
 
 import lombok.*;
 
-import java.math.BigDecimal;
 
 @Setter
 @Getter
@@ -17,5 +16,4 @@ public class BiStep {
     public String type;
     public String id;
     public String name;
-    public BigDecimal order;
 }

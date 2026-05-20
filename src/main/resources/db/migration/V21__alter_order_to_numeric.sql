@@ -1,8 +1,0 @@
-ALTER TABLE cx.cj_steps
-    ALTER COLUMN "order" TYPE NUMERIC USING "order"::NUMERIC;
-
-ALTER TABLE cx.bi_in_cj_step
-    ALTER COLUMN "order" TYPE NUMERIC USING "order"::NUMERIC;
-
-ALTER TABLE cx.bi_steps
-    ADD COLUMN IF NOT EXISTS "order" NUMERIC NULL;

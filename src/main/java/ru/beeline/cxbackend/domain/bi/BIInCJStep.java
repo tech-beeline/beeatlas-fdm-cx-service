@@ -7,7 +7,6 @@ package ru.beeline.cxbackend.domain.bi;
 import lombok.*;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 
 @Builder
 @Getter
@@ -32,7 +31,7 @@ public class BIInCJStep {
     private Long cjStepId;
 
     @Column(name = "\"order\"")
-    private BigDecimal order;
+    private Long order;
 
     @Column(name = "id_bi", insertable = false, updatable = false)
     private Long biId;

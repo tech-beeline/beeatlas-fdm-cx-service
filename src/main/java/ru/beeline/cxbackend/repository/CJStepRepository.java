@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 
-import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,7 +20,7 @@ public interface CJStepRepository extends JpaRepository<CJStep, Long> {
 
     List<CJStep> findAllByCjIdIn(List<Long> cjIds);
 
-    CJStep findByCjIdAndOrder(Long cjId, BigDecimal order);
+    CJStep findByCjIdAndOrder(Long cjId, Integer order);
 
     void deleteAllByCjId(Long cjId);
 
