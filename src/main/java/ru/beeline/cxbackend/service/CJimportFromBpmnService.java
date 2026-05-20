@@ -7,6 +7,7 @@ package ru.beeline.cxbackend.service;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -102,20 +103,23 @@ public class CJimportFromBpmnService {
     }
 
     private void checkFileExtension(ResponseEntity<byte[]> document) {
-        log.info("checkFileExtension");
-        String contentDisposition = document.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
 
-        String filename = null;
-        if (contentDisposition != null && contentDisposition.contains("filename=")) {
-            int index = contentDisposition.indexOf("filename=");
-            filename = contentDisposition.substring(index + 9).trim();
-            if (filename.startsWith("\"") && filename.endsWith("\"") && filename.length() > 1) {
-                filename = filename.substring(1, filename.length() - 1);
-                if (filename != null && filename.toLowerCase().endsWith(".bpmn")) {
-                    return;
-                }
-            }
+        String header = document.getHeaders()
+                .getFirst(HttpHeaders.CONTENT_DISPOSITION);
+
+        if (header == null) {
+            throw new BadRequestException("Missing Content-Disposition");
         }
+
+        ContentDisposition disposition = ContentDisposition.parse(header);
+
+        String filename = disposition.getFilename();
+
+        if (filename != null &&
+                filename.toLowerCase().endsWith(".bpmn")) {
+            return;
+        }
+
         throw new BadRequestException("File extension is not .bpmn");
     }
 

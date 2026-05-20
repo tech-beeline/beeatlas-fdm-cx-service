@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.Getter;
 
 import java.sql.Date;
+import java.util.List;
 
 import static ru.beeline.cxbackend.utils.Constant.DATE_FORMAT;
 import static ru.beeline.cxbackend.utils.Constant.DATE_TIMEZONE;
@@ -45,5 +46,9 @@ public class CjResponseDto {
     private String uniqueIdent;
 
     private Boolean bpmn;
+
+    private Long businessOwner;
+
+    private List<Long> techOwners;
 
 }

@@ -18,11 +18,9 @@ import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.domain.cj.CJTag;
+import ru.beeline.cxbackend.domain.cj.CJTechOwner;
 import ru.beeline.cxbackend.dto.*;
-import ru.beeline.cxbackend.exception.BadRequestException;
-import ru.beeline.cxbackend.exception.ConflictException;
-import ru.beeline.cxbackend.exception.ForbiddenException;
-import ru.beeline.cxbackend.exception.NotFoundException;
+import ru.beeline.cxbackend.exception.*;
 import ru.beeline.cxbackend.mapper.BIMapper;
 import ru.beeline.cxbackend.repository.*;
 
@@ -53,6 +51,9 @@ public class CJService {
 
     @Autowired
     private CJTagRepository cjTagRepository;
+
+    @Autowired
+    private CJTechOwnerRepository cjTechOwnerRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -101,21 +102,56 @@ public class CJService {
                         .map(CJ::getTags, CjResponseDtoV2::setTags));
     }
 
-    public CJ findByName(String name) {
-        return cjRepository.findByName(name);
-    }
-
     @Transactional
     public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
         validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
         validateBody(cj);
 
+        if (Objects.nonNull(cj.getBusinessOwner()) && !userClient.userExists(cj.getBusinessOwner())) {
+            log.warn("cj business owners not found. Id={}", cj.getBusinessOwner());
+            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес ответственный");
+        }
+        if (Objects.nonNull(cj.getTechOwners()) && !cj.getTechOwners().isEmpty()) {
+            cj.setTechOwners(cj.getTechOwners().stream()
+                                        .distinct()
+                                        .collect(Collectors.toList()));
+            if (cj.getTechOwners().size() != userClient.getUsersByIds(cj.getTechOwners()).size()) {
+                throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
+            }
+        }
+
         CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
 
         processTags(newCJ, cj.getTags());
         cjRepository.save(newCJ);
+
+        List<Long> techOwners = persistTechOwnersIfProvided(newCJ, cj.getTechOwners());
+
         log.info("New cj created: " + newCJ);
-        return modelMapper.map(newCJ, CjResponseDto.class);
+        CjResponseDto response = modelMapper.map(newCJ, CjResponseDto.class);
+        response.setBusinessOwner(newCJ.getIdBusinessOwner());
+        response.setTechOwners(techOwners);
+        return response;
+    }
+
+    private List<Long> persistTechOwnersIfProvided(CJ cj, List<Long> techOwners) {
+        if (techOwners == null || techOwners.isEmpty()) {
+            return techOwners;
+        }
+
+        List<Long> uniqueOwners = new ArrayList<>(new LinkedHashSet<>(techOwners));
+        List<CJTechOwner> rows = uniqueOwners.stream()
+                .filter(Objects::nonNull)
+                .map(ownerId -> CJTechOwner.builder()
+                        .cj(cj)
+                        .idUserProfile(ownerId)
+                        .build())
+                .collect(Collectors.toList());
+
+        if (!rows.isEmpty()) {
+            cjTechOwnerRepository.saveAll(rows);
+        }
+        return uniqueOwners;
     }
 
     private void processTags(CJ cj, List<String> tagNames) {
@@ -160,6 +196,7 @@ public class CJService {
                 .idProductExt(productId)
                 .bDraft(true)
                 .uniqueIdent("temporary")
+                .idBusinessOwner(cj.getBusinessOwner())
                 .tags(new HashSet<>())
                 .build();
         cjRepository.saveAndFlush(newCJ);
@@ -203,7 +240,23 @@ public class CJService {
             throw new RuntimeException("Не допускается публикация CJ. Публикация возможна, с опубликованными шагами BI");
         }
 
+        if (Objects.nonNull(cjDto.getBusinessOwner()) && !userClient.userExists(cjDto.getBusinessOwner())) {
+            log.warn("cj business owners not found. Id={}", cjDto.getBusinessOwner());
+            throw new BadRequestException("Указан несуществующий пользователь в поле бизнес ответственный");
+        }
+
+
+        if (Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
+            cjDto.setTechOwners(cjDto.getTechOwners().stream()
+                                        .distinct()
+                                        .collect(Collectors.toList()));
+            if (cjDto.getTechOwners().size() != userClient.getUsersByIds(cjDto.getTechOwners()).size()) {
+                throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
+            }
+        }
+
         boolean changed = false;
+        boolean ownersChanged = false;
 
         if (cjDto.getName() != null && !cjDto.getName().equals(cj.getName())) {
             cj.setName(cjDto.getName());
@@ -233,14 +286,79 @@ public class CJService {
             }
         }
 
-        if (!changed) {
-            return modelMapper.map(cj, CjResponseDto.class);
+        if (cjDto.isBusinessOwnerProvided()) {
+            if (!Objects.equals(cj.getIdBusinessOwner(), cjDto.getBusinessOwner())) {
+                cj.setIdBusinessOwner(cjDto.getBusinessOwner());
+                changed = true;
+            }
         }
 
-        cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-        cj = cjRepository.save(cj);
+        if (cjDto.isTechOwnersProvided()) {
+            syncTechOwners(cj.getId(), cjDto.getTechOwners());
+            ownersChanged = true;
+        }
 
-        return modelMapper.map(cj, CjResponseDto.class);
+        if (!changed && !ownersChanged) {
+            return buildCjResponseWithOwners(cj);
+        }
+
+        if (changed) {
+            cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
+            cj = cjRepository.save(cj);
+        }
+
+        return buildCjResponseWithOwners(cj);
+    }
+
+    private void syncTechOwners(Long cjId, List<Long> techOwners) {
+        if (techOwners == null) {
+            return;
+        }
+
+        List<Long> desired = new ArrayList<>(new LinkedHashSet<>(techOwners)).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (desired.isEmpty()) {
+            cjTechOwnerRepository.deleteAllByCj_Id(cjId);
+            return;
+        }
+
+        List<CJTechOwner> existing = cjTechOwnerRepository.findAllByCj_Id(cjId);
+        Set<Long> existingIds = existing.stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<CJTechOwner> toDelete = existing.stream()
+                .filter(row -> row.getIdUserProfile() == null || !desired.contains(row.getIdUserProfile()))
+                .collect(Collectors.toList());
+        if (!toDelete.isEmpty()) {
+            cjTechOwnerRepository.deleteAll(toDelete);
+        }
+
+        List<CJTechOwner> toAdd = desired.stream()
+                .filter(id -> !existingIds.contains(id))
+                .map(id -> CJTechOwner.builder()
+                        .cj(CJ.builder().id(cjId).build())
+                        .idUserProfile(id)
+                        .build())
+                .collect(Collectors.toList());
+        if (!toAdd.isEmpty()) {
+            cjTechOwnerRepository.saveAll(toAdd);
+        }
+    }
+
+    private CjResponseDto buildCjResponseWithOwners(CJ cj) {
+        CjResponseDto dto = modelMapper.map(cj, CjResponseDto.class);
+        dto.setBusinessOwner(cj.getIdBusinessOwner());
+        List<Long> techOwners = cjTechOwnerRepository.findAllByCj_Id(cj.getId()).stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        dto.setTechOwners(techOwners);
+        return dto;
     }
 
     @Transactional
@@ -290,14 +408,59 @@ public class CJService {
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
         }
-        UserProfileDto userProfileDto = userClient.getUserProfile(cj.getAuthorId());
-        AuthorDto authorDto = AuthorDto.builder()
-                .id(userProfileDto.getId())
-                .Email(userProfileDto.getEmail())
-                .fullName(userProfileDto.getFullName())
-                .build();
+
+        Long authorId = cj.getAuthorId();
+        Long businessOwnerId = cj.getIdBusinessOwner();
+        List<Long> techOwnerIds = cjTechOwnerRepository.findAllByCj_Id(id).stream()
+                .map(CJTechOwner::getIdUserProfile)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Long> idsToFetch = new ArrayList<>();
+        if (authorId != null) {
+            idsToFetch.add(authorId);
+        }
+        if (businessOwnerId != null) {
+            idsToFetch.add(businessOwnerId);
+        }
+        idsToFetch.addAll(techOwnerIds);
+        idsToFetch = idsToFetch.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Long, UserShortDto> usersById = new HashMap<>();
+        if (!idsToFetch.isEmpty()) {
+            try {
+                List<AuthUserDto> users = userClient.getUsersByIds(idsToFetch);
+                if (users != null) {
+                    usersById = users.stream()
+                            .filter(Objects::nonNull)
+                            .filter(u -> u.getId() != null)
+                            .collect(Collectors.toMap(
+                                    AuthUserDto::getId,
+                                    u -> UserShortDto.builder()
+                                            .id(u.getId())
+                                            .fullName(u.getFullName())
+                                            .email(u.getEmail())
+                                            .build(),
+                                    (a, b) -> a
+                            ));
+                }
+            } catch (Exception e) {
+                String msg = "Ошибка сервиса авторизации:" + (e.getMessage() == null ? "" : e.getMessage());
+                throw new AuthServiceException(msg, e);
+            }
+        }
+
+        UserShortDto authorDto = authorId == null ? null : usersById.get(authorId);
+        UserShortDto businessOwnerDto = businessOwnerId == null ? null : usersById.get(businessOwnerId);
+        List<UserShortDto> techOwnerDtos = techOwnerIds.stream()
+                .map(usersById::get) // может быть null (пользователь не найден) — по требованию оставляем null
+                .collect(Collectors.toList());
+
         CJFullDtoV3 cjFullDtoV3 = modelMapper.map(cj, CJFullDtoV3.class);
         cjFullDtoV3.setAuthor(authorDto);
+        cjFullDtoV3.setBusinessOwner(businessOwnerDto);
+        cjFullDtoV3.setTechOwners(techOwnerDtos);
         cjFullDtoV3.setSteps(getAndConvertSteps(cjFullDtoV3.getId()));
         cjFullDtoV3.setProductId(cj.getIdProductExt());
         cjFullDtoV3.setLink(cj.getLinks()

@@ -40,7 +40,11 @@ public class CJFullDtoV3 {
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)
     private Date createdDate;
 
-    private AuthorDto author;
+    private UserShortDto author;
+
+    private UserShortDto businessOwner;
+
+    private List<UserShortDto> techOwners;
 
     private String uniqueIdent;
 

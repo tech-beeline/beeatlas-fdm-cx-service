@@ -9,12 +9,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.GetProductsByIdsDTO;
 import ru.beeline.cxbackend.dto.ProductInterfaceDTO;
+import ru.beeline.cxbackend.dto.product.ProductOperationByTcItemDto;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,6 +57,30 @@ public class ProductClient {
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());
             return null;
+        }
+    }
+
+    public List<ProductOperationByTcItemDto> getOperationsByTechCapability(Integer tcId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<List<ProductOperationByTcItemDto>> response = restTemplate.exchange(
+                    productServerUrl + "/api/v1/operation/tech-capability/" + tcId,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<>() {
+                    });
+            List<ProductOperationByTcItemDto> body = response.getBody();
+            return body != null ? body : Collections.emptyList();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.info("Product returned 404 for tech-capability {}: {}", tcId, e.getMessage());
+            return Collections.emptyList();
+        } catch (HttpClientErrorException e) {
+            log.error("Product client error for tech-capability {}: {}", tcId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Product service error", e);
+        } catch (Exception e) {
+            log.error("Product call failed for tech-capability {}: {}", tcId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Product service unavailable", e);
         }
     }
 

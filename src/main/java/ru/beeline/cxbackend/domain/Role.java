@@ -5,7 +5,7 @@
 package ru.beeline.cxbackend.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,12 +47,12 @@ public class Role {
         this.isDefault = isDefault;
     }
 
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
     List<RolePermissions> permissions;
 
     @JsonIgnore
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     @OneToMany(mappedBy = "role")
     List<UserRoles> userRoles;
 

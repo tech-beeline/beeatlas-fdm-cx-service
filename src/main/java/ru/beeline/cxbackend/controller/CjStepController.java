@@ -4,15 +4,22 @@
 
 package ru.beeline.cxbackend.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.ApiStandardErrors;
+import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.CjStepDto;
+import ru.beeline.cxbackend.dto.CjStepFullDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
@@ -25,7 +32,10 @@ import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 
 @RestController
 @RequestMapping
-@Api(value = "CX API", tags = "CJ Step")
+@Tag(
+        name = "CJ Step",
+        description = "Шаги Customer Journey (CJ): получение списка шагов, получение шага, добавление/изменение/удаление шага CJ."
+)
 public class CjStepController {
 
     @Autowired
@@ -36,24 +46,48 @@ public class CjStepController {
 
     @GetMapping("/api/cx/v1/product/cj/{id}/step")
     @ResponseBody
-    @ApiOperation(value = "Получение коллекции шагов CJ")
-    public ResponseEntity getCJSteps(@PathVariable Long id) {
+    @CustomHeaders
+    @ApiStandardErrors
+    @Operation(summary = "Список шагов CJ", description = "Возвращает коллекцию шагов CJ по id CJ.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Список шагов CJ",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CjStepFullDto.class)))
+    )
+    public ResponseEntity<java.util.List<CjStepFullDto>> getCJSteps(@PathVariable Long id) {
         return ResponseEntity.ok(cjStepService.getStepByCJId(id));
     }
 
     @GetMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
-    @ApiOperation(value = "Получение шага CJ по id")
-    public ResponseEntity getCJStepById(@PathVariable Long id) {
+    @CustomHeaders
+    @ApiStandardErrors
+    @Operation(summary = "Шаг CJ по id", description = "Возвращает шаг CJ (расширенное представление) по id шага.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Шаг CJ",
+            content = @Content(schema = @Schema(implementation = CjStepFullDto.class))
+    )
+    public ResponseEntity<CjStepFullDto> getCJStepById(@PathVariable Long id) {
         return ResponseEntity.ok(cjStepService.getStepFullDto(id));
     }
 
 
     @PostMapping("/api/cx/v1/product/cj/{id}/step")
     @ResponseBody
-    @ApiOperation(value = "Добавление шага в коллекцию шагов CJ")
-    public ResponseEntity addCJStep(@PathVariable Long id,
-                                    @RequestBody CjStepDto cjStepDto) {
+    @CustomHeaders
+    @ApiStandardErrors
+    @Operation(
+            summary = "Добавление шага CJ",
+            description = "Добавляет шаг в CJ. Требуется право `CREATE_ARTIFACT`, доступ к продукту и CJ должен быть в черновике."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Созданный шаг CJ",
+            content = @Content(schema = @Schema(implementation = CjStepFullDto.class))
+    )
+    public ResponseEntity<CjStepFullDto> addCJStep(@PathVariable Long id,
+                                                   @RequestBody CjStepDto cjStepDto) {
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
@@ -63,7 +97,7 @@ public class CjStepController {
                 currentCJ.getIdProductExt());
         if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
             if (currentCJ.isBDraft()) {
-                return ResponseEntity.ok(cjStepService.addStep(id, cjStepDto));
+                return ResponseEntity.ok((CjStepFullDto) cjStepService.addStep(id, cjStepDto));
             } else {
                 throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Добавление шага невозможно.");
             }
@@ -74,8 +108,15 @@ public class CjStepController {
 
     @PatchMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
-    @ApiOperation(value = "Изменение шага CJ")
-    public ResponseEntity updateCJStep(@PathVariable Long id, @RequestBody CjStepDto cjStepDto) {
+    @CustomHeaders
+    @ApiStandardErrors
+    @Operation(summary = "Изменение шага CJ", description = "Обновляет данные шага CJ. Требуется право `EDIT_ARTIFACT` и доступ к продукту.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Обновлённый шаг CJ",
+            content = @Content(schema = @Schema(implementation = CjStepFullDto.class))
+    )
+    public ResponseEntity<CjStepFullDto> updateCJStep(@PathVariable Long id, @RequestBody CjStepDto cjStepDto) {
         CJStep cjStep = cjStepService.getStepById(id);
         Long idProductExt = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),
@@ -91,8 +132,11 @@ public class CjStepController {
 
     @DeleteMapping("/api/cx/v1/product/cj/step/{id}")
     @ResponseBody
-    @ApiOperation(value = "Удаление шага CJ")
-    public ResponseEntity deleteCJStep(@PathVariable Long id) {
+    @CustomHeaders
+    @ApiStandardErrors
+    @Operation(summary = "Удаление шага CJ", description = "Удаляет шаг CJ. Требуется право `DELETE_ARTIFACT` и доступ к продукту.")
+    @ApiResponse(responseCode = "200", description = "Шаг удалён")
+    public ResponseEntity<Void> deleteCJStep(@PathVariable Long id) {
         CJStep cjStep = cjStepService.getStepById(id);
         Long idProductExt = cjService.getById(cjStep.getCjId()).getIdProductExt();
         validateAccessProduct(getUserPermissions(),

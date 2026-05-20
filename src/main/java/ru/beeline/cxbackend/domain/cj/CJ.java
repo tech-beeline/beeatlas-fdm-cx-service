@@ -72,6 +72,9 @@ public class CJ {
     @Column(name = "bpmn")
     private Boolean bpmn;
 
+    @Column(name = "id_business_owner")
+    private Long idBusinessOwner;
+
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "cj_tags_relations",
