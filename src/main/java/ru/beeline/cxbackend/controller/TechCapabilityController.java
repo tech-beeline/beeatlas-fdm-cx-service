@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Tag(
-        name = "Tech Capability",
+        name = "Технические возможности",
         description = "Связь технических возможностей (TC) с Customer Journey через операции продукта и шаги BI/CJ."
 )
 @RequestMapping("/api/cx/v1")
