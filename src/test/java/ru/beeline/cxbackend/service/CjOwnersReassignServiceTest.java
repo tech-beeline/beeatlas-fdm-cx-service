@@ -1,7 +1,5 @@
 package ru.beeline.cxbackend.service;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -9,20 +7,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.beeline.cxbackend.client.UserClient;
-import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.owners.AffectedCjDto;
 import ru.beeline.cxbackend.dto.owners.CjOwnersReassignRequestDto;
 import ru.beeline.cxbackend.dto.owners.CjOwnersReassignResponseDto;
 import ru.beeline.cxbackend.repository.CjOwnersReassignRepository;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
-import static ru.beeline.cxbackend.utils.Constant.USER_ROLES_HEADER;
 
 @ExtendWith(MockitoExtension.class)
 class CjOwnersReassignServiceTest {
@@ -34,16 +28,6 @@ class CjOwnersReassignServiceTest {
 
     @InjectMocks
     private CjOwnersReassignService service;
-
-    @BeforeEach
-    void adminRoleInRequestContext() {
-        RequestContext.setHeaders(Map.of(USER_ROLES_HEADER, List.of("ADMINISTRATOR")));
-    }
-
-    @AfterEach
-    void clearRequestContext() {
-        RequestContext.setHeaders(Collections.emptyMap());
-    }
 
     @Test
     void reassignOwners_invokesDeleteDuplicateTechOwnersBeforeTechUpdate() {
