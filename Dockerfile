@@ -17,7 +17,7 @@ WORKDIR /app
 RUN useradd -m -d /app -s /bin/bash -u 1000 appuser && \
     chown -R appuser:appuser /app
 
-COPY --from=build --chown=appuser:appuser /app/target/fdm-products-*.jar app.jar
+COPY --from=build --chown=appuser:appuser /app/target/cx-backend-*.jar app.jar
 USER appuser
 EXPOSE 8080 8090 10260
 ENTRYPOINT ["java", "-jar", "app.jar"]
