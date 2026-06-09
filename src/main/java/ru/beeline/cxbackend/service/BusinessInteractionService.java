@@ -169,7 +169,7 @@ public class BusinessInteractionService {
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
         }
-        BI biEntity = businessInteractionRepository.findById(bi.getIdBi()).orElseThrow(() -> new NotFoundException("cj не найдено"));
+        BI biEntity = businessInteractionRepository.findById(bi.getIdBi()).orElseThrow(() -> new NotFoundException("bi не найдено"));
 
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         checkMaxOrder(bi, existSteps);
