@@ -5,6 +5,8 @@
 package ru.beeline.cxbackend.client;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -46,7 +48,7 @@ public class UserClient {
                     HttpMethod.GET, entity, new ParameterizedTypeReference<UserProfileDto>() {
                     }).getBody();
         } catch (HttpClientErrorException.NotFound e) {
-            String message = e.getResponseBodyAsString();
+            String message = extractErrorMessage(e.getResponseBodyAsString());
             throw new NotFoundException(message);
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -97,10 +99,11 @@ public class UserClient {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             return restTemplate.exchange(
                     userServerUrl + "/api/admin/v1/user/" + userId + "/user-info",
-                    HttpMethod.GET, entity, new ParameterizedTypeReference<UserInfoDto>() {}
+                    HttpMethod.GET, entity, new ParameterizedTypeReference<UserInfoDto>() {
+                    }
             ).getBody();
         } catch (HttpClientErrorException.NotFound e) {
-            throw new NotFoundException(e.getResponseBodyAsString());
+            throw new NotFoundException(extractErrorMessage(e.getResponseBodyAsString()));
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
@@ -124,5 +127,20 @@ public class UserClient {
             log.error(e.getMessage());
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
         }
+    }
+
+    private String extractErrorMessage(String responseBody) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(responseBody);
+            if (node.has("errorMessage")) {
+                return node.get("errorMessage").asText();
+            }
+            if (node.has("message")) {
+                return node.get("message").asText();
+            }
+        } catch (Exception ignored) {
+        }
+        return responseBody;
     }
 }
