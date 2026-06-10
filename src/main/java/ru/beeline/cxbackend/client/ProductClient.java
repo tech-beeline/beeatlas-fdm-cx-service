@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.GetProductsByIdsDTO;
 import ru.beeline.cxbackend.dto.ProductInterfaceDTO;
 import ru.beeline.cxbackend.dto.product.ProductOperationByTcItemDto;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.utils.Constant.*;
 
 
 @Slf4j
@@ -87,10 +85,6 @@ public class ProductClient {
     public List<ProductInterfaceDTO> getProductsFromStructurizr(String cmdb) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
-            headers.set(USER_PERMISSION_HEADER, RequestContext.getUserPermissions().toString());
-            headers.set(USER_PRODUCTS_IDS_HEADER, RequestContext.getUserProducts().toString());
-            headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             headers.setContentType(MediaType.APPLICATION_JSON);
             ResponseEntity<List<ProductInterfaceDTO>> response =
                     restTemplate.exchange(productServerUrl + "/api/v1/product/" + cmdb + "/interface/arch",

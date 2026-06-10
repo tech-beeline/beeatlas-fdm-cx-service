@@ -10,11 +10,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.dto.owners.CjOwnersReassignRequestDto;
 import ru.beeline.cxbackend.service.CjOwnersReassignService;
+
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @RestController
 @Tag(
@@ -37,8 +40,9 @@ public class CjOwnersController {
             description = "Результат операции (список затронутых CJ и входные параметры)",
             content = @Content(schema = @Schema(implementation = Object.class))
     )
-    public ResponseEntity<Object> reassignOwners(@RequestBody(required = false) CjOwnersReassignRequestDto body) {
-        return ResponseEntity.ok(reassignService.reassignOwners(body));
+    public ResponseEntity<Object> reassignOwners(@RequestBody(required = false) CjOwnersReassignRequestDto body,
+                                                 @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return ResponseEntity.ok(reassignService.reassignOwners(body, userId));
     }
 }
 

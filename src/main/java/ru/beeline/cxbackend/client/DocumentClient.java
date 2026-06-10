@@ -14,14 +14,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.dto.DocumentationTypeDTO;
 import ru.beeline.cxbackend.exception.NotFoundException;
 
 import java.util.List;
 
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
-import static ru.beeline.cxbackend.utils.Constant.USER_ROLES_HEADER;
 
 @Slf4j
 @Service
@@ -37,11 +35,10 @@ public class DocumentClient {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<byte[]> getDocument(Long docId, Integer documentationTypeId) {
+    public ResponseEntity<byte[]> getDocument(Long docId, Integer documentationTypeId, Long userId) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
-            headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
+            headers.set(USER_ID_HEADER, userId.toString());
             HttpEntity<String> entity = new HttpEntity<>(headers);
             log.info("get document: /api/v1/documents/" + documentationTypeId + "/" + docId);
             return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/" + documentationTypeId + "/" + docId,
@@ -61,8 +58,6 @@ public class DocumentClient {
     public List<DocumentationTypeDTO> getDocumentationType(String entityType) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, RequestContext.getUserId().toString());
-            headers.set(USER_ROLES_HEADER, RequestContext.getUserRole().toString());
             HttpEntity<String> entity = new HttpEntity<>(headers);
             log.info("get Documentation Type: /api/v1/documentations/" + entityType);
             return restTemplate.exchange(documentServiceUrl + "/api/v1/documentations/" + entityType,

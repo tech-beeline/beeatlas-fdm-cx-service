@@ -17,7 +17,6 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.*;
-import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
@@ -28,9 +27,7 @@ import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
 import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
 @Slf4j
@@ -88,16 +85,16 @@ public class BusinessInteractionService {
         return biList.stream().map(biMapper::biToBIDto).collect(Collectors.toList());
     }
 
-    public List<BIDto> getProductBIByFilter(String text, Long idProduct, Long idStatus, Boolean isDraft) {
+    public List<BIDto> getProductBIByFilter(String text, Long idProduct, Long idStatus, Boolean isDraft, Long userId) {
         if (idStatus != null) {
             return getStatusById(idStatus)
-                    .map(biStatus -> getBIByFilter(text, idProduct, biStatus, isDraft))
+                    .map(biStatus -> getBIByFilter(text, idProduct, biStatus, isDraft, userId))
                     .orElseThrow(() -> new NotFoundException("id_status " + idStatus + " is not found"));
         }
-        return getBIByFilter(text, idProduct, null, isDraft);
+        return getBIByFilter(text, idProduct, null, isDraft, userId);
     }
 
-    public List<BIDto> getBIByFilter(String text, Long idProduct, BIStatus idStatus, Boolean isDraft) {
+    public List<BIDto> getBIByFilter(String text, Long idProduct, BIStatus idStatus, Boolean isDraft, Long userId) {
         Specification<BI> spec = Specification
                 .where(BiSpecification.hasProductId(idProduct))
                 .and(BiSpecification.hasNameContaining(text).or(BiSpecification.hasBINumberContaining(text)))
@@ -122,8 +119,15 @@ public class BusinessInteractionService {
         Map<Integer, TcDTO> tcDTOMap = biMapper.createTcDTOMap(biStepRelations);
         List<BIDto> result = biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
                 productsIdsMap,interfacesByAlias, tcDTOMap)).toList();
-        if (!getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
-            result = result.stream().filter(biDto -> getUserProducts().contains(biDto.getProductId()) || !biDto.isDraft()).collect(Collectors.toList());
+        UserInfoDto userInfo = userClient.getUserInfo(userId);
+        boolean isDesignArtifact = userInfo != null && userInfo.getPermissions() != null
+                && userInfo.getPermissions().contains(DESIGN_ARTIFACT.toString());
+        if (!isDesignArtifact) {
+            List<Long> productIds = userInfo != null && userInfo.getProductsIds() != null
+                    ? userInfo.getProductsIds() : Collections.emptyList();
+            result = result.stream()
+                    .filter(biDto -> productIds.contains(biDto.getProductId()) || !biDto.isDraft())
+                    .collect(Collectors.toList());
         }
         return result;
     }
@@ -131,14 +135,12 @@ public class BusinessInteractionService {
     public BIDto getBIById(Long id) {
         BI bi = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         return biMapper.biToBIDto(bi);
     }
 
     public BIV2Dto getBIByIdV2(Long id) {
         BI bi = businessInteractionRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("BI with id " + id + " not found"));
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi);
         UserProfileDto userProfileDto = userClient.getUserProfile(bi.getAuthorId());
         AuthorDto authorDto = AuthorDto.builder()
                 .id(userProfileDto.getId())
@@ -149,10 +151,6 @@ public class BusinessInteractionService {
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
-        Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("cjStep не найдено")).getCjId();
-        CJ cj = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ не найдено"));
-        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
-
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!biInCJStepList.isEmpty()) {
             List<BI> biList = businessInteractionRepository.findAllByIdIn(idStep, biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
@@ -164,14 +162,14 @@ public class BusinessInteractionService {
     @Transactional
     public void editBIByStepId(Long idStep, BiByCjStepDto bi) {
         Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("cjStep не найдено")).getCjId();
-        Long idProductExt = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("cj не найдено")).getIdProductExt();
-        validateAccessProduct(getUserPermissions(),
-                getUserProducts(), idProductExt);
 
+        if (bi.getOrder() == null) {
+            throw new RuntimeException("Не допускается отсуствие значения, поля order");
+        }
         if (biInCJStepRepository.countByCjStepIdAndSJisDraftFalse(idStep) > 0) {
             throw new RuntimeException("Не допускается редактирование шага, если он используется в опубликованных CJ");
         }
-        BI biEntity = businessInteractionRepository.findById(bi.getIdBi()).orElseThrow(() -> new NotFoundException("cj не найдено"));
+        BI biEntity = businessInteractionRepository.findById(bi.getIdBi()).orElseThrow(() -> new NotFoundException("bi не найдено"));
 
         List<BIInCJStep> existSteps = biInCJStepRepository.findAllByCjStepId(idStep);
         checkMaxOrder(bi, existSteps);
@@ -235,10 +233,9 @@ public class BusinessInteractionService {
     }
 
     @Transactional
-    public BIDto createBI(BIPostDto biPostDto) {
+    public BIDto createBI(BIPostDto biPostDto, Long userId) {
         validateProductId(biPostDto.getProductId());
-        validateAccessProduct(getUserPermissions(), getUserProducts(), biPostDto.getProductId());
-        BI saveBI = buildBI(biPostDto);
+        BI saveBI = buildBI(biPostDto, userId);
         List<BILink> docs = mapLinks(biPostDto.getDocument());
         List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
         List<BILink> scenarios = mapLinks(biPostDto.getFlowLink());
@@ -260,7 +257,7 @@ public class BusinessInteractionService {
         return biMapper.biToBIDto(businessInteractionRepository.findById(saveBI.getId()).orElse(null));
     }
 
-    private BI buildBI(BIPostDto dto) {
+    private BI buildBI(BIPostDto dto, Long userId) {
         BI saveBI = BI.builder()
                 .name(dto.getName())
                 .descr(dto.getDescr())
@@ -276,7 +273,7 @@ public class BusinessInteractionService {
                 .ucsReaction(dto.getUcsReaction())
                 .feeling(dto.getFeeling() != null ? biFeelingRepository.findById(dto.getFeeling().getId()).orElse(null) : null)
                 .status(dto.getStatus() != null ? biStatusRepository.findById(dto.getStatus().getId()).orElse(null) : null)
-                .authorId(getUserId())
+                .authorId(userId)
                 .createdDate(new Date((new java.util.Date()).getTime()))
                 .lastModifiedDate(new Date((new java.util.Date()).getTime()))
                 .uniqueIdent(UUID.randomUUID().toString())
@@ -332,8 +329,7 @@ public class BusinessInteractionService {
 
     //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
-    public BIDto patchBI(Long id, BI bi) {
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
+    public BIDto patchBI(Long id, BI bi, Long userId) {
         if (bi.checkFieldsForNull()) {
             throw new UnprocessedEntityException("Пустой обьект BI");
         }
@@ -341,7 +337,6 @@ public class BusinessInteractionService {
                 .orElseThrow(() -> new NotFoundException("BI не найдено"));
 
         validateUpdate(oldEntity);
-        validateNewProduct(oldEntity.getProductId());
         if (bi.getFlowLink() != null) {
             biLinkRepository.deleteAllByIdBiAndType(oldEntity, new LinkEnum(1L, "Ссылка на флоу"));
             biLinkRepository.saveAll(bi.getFlowLink().stream().peek(doc -> {
@@ -382,17 +377,11 @@ public class BusinessInteractionService {
         }
         oldEntity.setLastModifiedDate(new Date((new java.util.Date()).getTime()));
         oldEntity.setId(id);
-        oldEntity.setAuthorId(getUserId());
+        oldEntity.setAuthorId(userId);
         return biMapper.biToBIDto(businessInteractionRepository.save(oldEntity));
     }
 
-    private void validateNewProduct(Long idProduct) {
-        if (!getUserProducts().contains(idProduct) && !getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
-    }
-
-    public BIEditabilityDto getEditabilityBI(Long id) {
+    public BIEditabilityDto getEditabilityBI(Long id, Long userId) {
         BIEditabilityDto result = new BIEditabilityDto(true);
         Optional<BI> entityOptional = businessInteractionRepository.findById(id);
         if (businessInteractionRepository.countByBiIdAndDraftFalse(id) > 0
@@ -400,8 +389,11 @@ public class BusinessInteractionService {
             result.setEditability(false);
         }
 
-        if (getUserRole().contains("DEFAULT") && !getUserProducts().contains(entityOptional.get().getProductId()))
+        UserInfoDto userInfo = userClient.getUserInfo(userId);
+        if (userInfo != null && userInfo.getRoles() != null && userInfo.getRoles().contains("DEFAULT")
+                && (userInfo.getProductsIds() == null || !userInfo.getProductsIds().contains(entityOptional.get().getProductId()))) {
             result.setEditability(false);
+        }
 
         return result;
     }
@@ -411,7 +403,6 @@ public class BusinessInteractionService {
         BI bi = businessInteractionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("BI с id = " + id + " не найден"));
         validateUpdate(bi);
-        validateAccessProduct(getUserPermissions(), getUserProducts(), bi.getProductId());
         biInCJStepRepository.deleteAllByBiId(id);
         biInCJStepRepository.flush();
         biParticipantsRepository.deleteAllByBuisnessIteraction(bi);
@@ -440,8 +431,6 @@ public class BusinessInteractionService {
         Long cjId = cjStepRepository.findById(idStep).orElseThrow(() -> new NotFoundException("CJ шаг с id = " + idStep + " не найден")).getCjId();
         CJ cj = cjRepository.findById(cjId).orElseThrow(() -> new NotFoundException("CJ с id = " + cjId + " не найден"));
         cj.setLastModifiedDate(new Date(System.currentTimeMillis()));
-        Long idProductExt = cj.getIdProductExt();
-        validateAccessProduct(getUserPermissions(), getUserProducts(), idProductExt);
 
         Optional<BI> biOptional = businessInteractionRepository.findById(idBi);
         BI bi = biOptional.orElseThrow(() -> new NotFoundException("BI с id = " + idBi + " не найден"));

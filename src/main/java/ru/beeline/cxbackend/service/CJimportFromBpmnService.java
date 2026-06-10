@@ -16,7 +16,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import ru.beeline.cxbackend.client.DocumentClient;
-import ru.beeline.cxbackend.controller.RequestContext;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.bi.BiStepTypeEnum;
@@ -77,27 +76,27 @@ public class CJimportFromBpmnService {
         modelMapper.typeMap(CJ.class, CJFullDtoV2.class).addMapping(CJ::getIdProductExt, CJFullDtoV2::setProductId);
     }
 
-    public void importFromBpmnCreate(Long id) {
+    public void importFromBpmnCreate(Long id, Long userId) {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
-        ProcessCJ processCJ = extractModel(importFromBpmn(id));
-        saveElements(processCJ, id, cj);
+        ProcessCJ processCJ = extractModel(importFromBpmn(id, userId));
+        saveElements(processCJ, id, cj, userId);
         cj.setBpmn(true);
         cjRepository.save(cj);
     }
 
-    public void importFromBpmnUpdate(Long id) {
+    public void importFromBpmnUpdate(Long id, Long userId) {
         CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
                 .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
-        ProcessCJ processCJ = extractModel(importFromBpmn(id));
-        saveOrUpdateElements(processCJ, id, cj);
+        ProcessCJ processCJ = extractModel(importFromBpmn(id, userId));
+        saveOrUpdateElements(processCJ, id, cj, userId);
         cj.setBpmn(true);
         cjRepository.save(cj);
     }
 
-    public byte[] importFromBpmn(Long id) {
+    public byte[] importFromBpmn(Long id, Long userId) {
         List<DocumentationTypeDTO> documentationTypeDTO = documentClient.getDocumentationType("CJ");
-        ResponseEntity<byte[]> document = documentClient.getDocument(id, documentationTypeDTO.get(0).getId());
+        ResponseEntity<byte[]> document = documentClient.getDocument(id, documentationTypeDTO.get(0).getId(), userId);
         checkFileExtension(document);
         return document.getBody();
     }
@@ -189,7 +188,7 @@ public class CJimportFromBpmnService {
                 .build());
     }
 
-    private void saveElements(ProcessCJ processCJ, long id, CJ cj) {
+    private void saveElements(ProcessCJ processCJ, long id, CJ cj, Long userId) {
         List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
         for (int stageIter = 0; stageIter < processCJ.getCollapsedSubProcesses().size(); stageIter++) {
             CollapsedSubProcess stage = processCJ.getCollapsedSubProcesses().get(stageIter);
@@ -210,7 +209,7 @@ public class CJimportFromBpmnService {
                 if ("subProcess".equals(bi.type)) {
                     biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
                     if (biOptional == null) {
-                        biOptional = saveSubProcess(bi, cj);
+                        biOptional = saveSubProcess(bi, cj, userId);
                     }
                     log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
                     BIInCJStep biInCJStep = biInCJStepRepository.findByCjStepIdAndBiId(cjStep.getId(), biOptional.getId());
@@ -248,7 +247,7 @@ public class CJimportFromBpmnService {
         }
     }
 
-    private void saveOrUpdateElements(ProcessCJ processCJ, long id, CJ cj) {
+    private void saveOrUpdateElements(ProcessCJ processCJ, long id, CJ cj, Long userId) {
         log.info("start method saveOrUpdateElements");
         List<BiStepTypeEnum> biStepTypeEnums = biStepTypeEnumRepository.findAll();
         cleanCjSteps(processCJ, id);
@@ -284,7 +283,7 @@ public class CJimportFromBpmnService {
                     log.info("Найден bi с bpmnId: {}", bi.getId());
                     if (biOptional == null) {
                         log.info("bi не найден сохранение нового bi");
-                        biOptional = saveSubProcess(bi, cj);
+                        biOptional = saveSubProcess(bi, cj, userId);
                     } else {
                         updateBi(biOptional, bi);
                     }
@@ -331,13 +330,13 @@ public class CJimportFromBpmnService {
                 : saveBIInCJStep(cjStep, biOptional, biIter);
     }
 
-    private BI saveSubProcess(BIElement bi, CJ cj) {
+    private BI saveSubProcess(BIElement bi, CJ cj, Long userId) {
         BI biOptional = biRepository.save(BI.builder()
                 .name(bi.name)
                 .lastModifiedDate(new java.sql.Date((new Date()).getTime()))
                 .createdDate(new java.sql.Date((new Date()).getTime()))
                 .uniqueIdent("1")
-                .authorId(RequestContext.getUserId())
+                .authorId(userId)
                 .status(bIStatusRepository.findById(2L).get())
                 .productId(cj.getIdProductExt())
                 .idBpmn(bi.getId())
