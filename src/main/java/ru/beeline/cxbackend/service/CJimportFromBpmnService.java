@@ -271,12 +271,13 @@ public class CJimportFromBpmnService {
                 BI biOptional = null;
                 if ("callActivity".equals(bi.type)) {
                     log.info("bi.type: callActivity");
-                    biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
-                    if (biOptional != null) {
-                        callActivityProcess(biOptional, cjStep, biIter, biInCJStepMap);
-                    } else {
-                        continue;
+                    if (bi.getProcessId() != null && !bi.getProcessId().isEmpty()) {
+                        biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
+                        if (biOptional != null) {
+                            callActivityProcess(biOptional, cjStep, biIter, biInCJStepMap);
+                        }
                     }
+                    continue;
                 } else if ("subProcess".equals(bi.type)) {
                     log.info("bi.type: subProcess. Поиск bi с id: {}", bi.getId());
                     biOptional = biRepository.findByIdBpmnAndDeletedDateIsNull(bi.getId());
@@ -326,8 +327,12 @@ public class CJimportFromBpmnService {
         log.info("add biInCJStep cjStep.getId() = " + cjStep.getId());
         BIInCJStep biInCJStep = biInCJStepMap.get(biOptional.getId());
         biInCJStepMap.remove(biOptional.getId());
-        biInCJStep = biInCJStep != null ? biInCJStepRepository.save(biInCJStep)
-                : saveBIInCJStep(cjStep, biOptional, biIter);
+        if (biInCJStep != null) {
+            biInCJStep.setOrder(biIter.longValue());
+            biInCJStepRepository.save(biInCJStep);
+        } else {
+            saveBIInCJStep(cjStep, biOptional, biIter);
+        }
     }
 
     private BI saveSubProcess(BIElement bi, CJ cj, Long userId) {
