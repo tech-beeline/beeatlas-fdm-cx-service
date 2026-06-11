@@ -43,7 +43,7 @@ class CjOwnersReassignServiceTest {
         when(reassignRepository.deleteDuplicateTechOwnersForReassign(10L, 20L)).thenReturn(1);
         when(reassignRepository.reassignTechOwner(10L, 20L)).thenReturn(0);
 
-        CjOwnersReassignResponseDto response = service.reassignOwners(body, 0l);
+        CjOwnersReassignResponseDto response = service.reassignOwners(body);
 
         assertThat(response.getCurrentUserId()).isEqualTo(10L);
         assertThat(response.getNewUserId()).isEqualTo(20L);

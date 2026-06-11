@@ -40,9 +40,8 @@ public class CjOwnersController {
             description = "Результат операции (список затронутых CJ и входные параметры)",
             content = @Content(schema = @Schema(implementation = Object.class))
     )
-    public ResponseEntity<Object> reassignOwners(@RequestBody(required = false) CjOwnersReassignRequestDto body,
-                                                 @RequestHeader(value = USER_ID_HEADER) Long userId) {
-        return ResponseEntity.ok(reassignService.reassignOwners(body, userId));
+    public ResponseEntity<Object> reassignOwners(@RequestBody(required = false) CjOwnersReassignRequestDto body) {
+        return ResponseEntity.ok(reassignService.reassignOwners(body));
     }
 }
 

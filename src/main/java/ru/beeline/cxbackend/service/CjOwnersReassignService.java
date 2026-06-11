@@ -26,10 +26,8 @@ public class CjOwnersReassignService {
     private final CjOwnersReassignRepository reassignRepository;
 
     @Transactional
-    public CjOwnersReassignResponseDto reassignOwners(CjOwnersReassignRequestDto body, Long userId) {
-        validateAndParse(body, userId);
-
-
+    public CjOwnersReassignResponseDto reassignOwners(CjOwnersReassignRequestDto body) {
+        validateAndParse(body);
         boolean currentExists = userClient.userExists(body.getCurrentUserId());
         if (!currentExists) {
             log.warn("cj owners reassign: current user not found. currentUserId={}", body.getCurrentUserId());
@@ -59,12 +57,7 @@ public class CjOwnersReassignService {
         return response;
     }
 
-    private void validateAndParse(CjOwnersReassignRequestDto body, Long userId) {
-        List<String> roles = userClient.getUserInfo(userId).getRoles();
-        if (roles == null || !roles.contains(ADMINISTRATOR_ROLE)) {
-            log.warn("cj owners reassign forbidden: roles={}", roles);
-            throw new ForbiddenException("Пользователь не является администратором");
-        }
+    private void validateAndParse(CjOwnersReassignRequestDto body) {
 
         if (body == null || !body.isCurrentUserIdProvided() || !body.isNewUserIdProvided()) {
             log.warn("cj owners reassign bad request: missing attributes. body={}", body);
