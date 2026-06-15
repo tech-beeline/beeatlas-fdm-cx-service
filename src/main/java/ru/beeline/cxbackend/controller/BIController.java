@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
-import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.dto.BIDto;
 import ru.beeline.cxbackend.dto.BIEditabilityDto;
@@ -25,13 +24,10 @@ import ru.beeline.cxbackend.dto.BIPostDto;
 import ru.beeline.cxbackend.dto.BIV2Dto;
 import ru.beeline.cxbackend.dto.PatchRelationStepDto;
 import ru.beeline.cxbackend.dto.PatchStepDto;
-import ru.beeline.cxbackend.exception.ForbiddenException;
-import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.service.BusinessInteractionService;
 
 import java.util.List;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
 import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @RestController
@@ -71,10 +67,9 @@ public class BIController {
     public ResponseEntity<List<BIDto>> getBIByFilter(@RequestParam(required = false) String text,
                                                      @RequestParam(value = "id_product", required = false) Long idProduct,
                                                      @RequestParam(value = "id_status", required = false) Long idStatus,
-                                                     @RequestParam(value = "draft", required = false) Boolean isDraft) {
-
-        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getProductBIByFilter(text, idProduct, idStatus, isDraft));
-
+                                                     @RequestParam(value = "draft", required = false) Boolean isDraft,
+                                                     @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getProductBIByFilter(text, idProduct, idStatus, isDraft, userId));
     }
 
     @GetMapping("/v1/library/business-interactions/{id}")
@@ -100,8 +95,9 @@ public class BIController {
             summary = "Проверка редактируемости BI",
             description = "Возвращает признак возможности редактирования BI для текущего пользователя/контекста."
     )
-    public ResponseEntity<BIEditabilityDto> getEditabilityDtoBI(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getEditabilityBI(id));
+    public ResponseEntity<BIEditabilityDto> getEditabilityDtoBI(@PathVariable Long id,
+                                                                 @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.getEditabilityBI(id, userId));
     }
 
     @PostMapping("/v1/library/business-interactions")
@@ -116,12 +112,9 @@ public class BIController {
             description = "Созданный BI",
             content = @Content(schema = @Schema(implementation = BIDto.class))
     )
-    public ResponseEntity<BIDto> createBI(@RequestBody BIPostDto bi) {
-        if ((getUserPermissions()).contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
-            return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.createBI(bi));
-        } else {
-            throw new ForbiddenException("Недостаточно прав для создания BI");
-        }
+    public ResponseEntity<BIDto> createBI(@RequestBody BIPostDto bi,
+                                          @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.createBI(bi, userId));
     }
 
     @PatchMapping("/v1/library/business-interactions/{id}")
@@ -137,13 +130,9 @@ public class BIController {
             content = @Content(schema = @Schema(implementation = BIDto.class))
     )
     public ResponseEntity<BIDto> patchBI(@RequestBody BI bi,
-                                         @PathVariable Long id
-    ) {
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
-            return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.patchBI(id, bi));
-        } else {
-            throw new ForbiddenException("Недостаточно прав для редактирования BI");
-        }
+                                         @PathVariable Long id,
+                                         @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(businessInteractionService.patchBI(id, bi, userId));
     }
 
     @ApiErrorCodes({401, 403, 404, 400, 500})
@@ -200,11 +189,7 @@ public class BIController {
     )
     @ApiResponse(responseCode = "200", description = "BI удалён")
     public ResponseEntity<Void> deleteBIById(@PathVariable Long id) {
-        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
-            businessInteractionService.deleteBIById(id);
-            return ResponseEntity.status(HttpStatus.OK).build();
-        } else {
-            throw new ForbiddenException("Недостаточно прав для удаления BI");
-        }
+        businessInteractionService.deleteBIById(id);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

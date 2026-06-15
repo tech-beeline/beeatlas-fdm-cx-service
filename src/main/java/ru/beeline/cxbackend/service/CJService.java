@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.beeline.cxbackend.client.UserClient;
-import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.bi.BI;
 import ru.beeline.cxbackend.domain.bi.BIInCJStep;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -28,10 +27,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.controller.RequestContext.*;
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
-import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @Slf4j
 @Service
@@ -103,8 +99,7 @@ public class CJService {
     }
 
     @Transactional
-    public CjResponseDto createNewCJ(CJTagsDto cj, Long productId) {
-        validateAccessProduct(getUserPermissions(), getUserProducts(), productId);
+    public CjResponseDto createNewCJ(CJTagsDto cj, Long productId, Long userId) {
         validateBody(cj);
 
         if (Objects.nonNull(cj.getBusinessOwner()) && !userClient.userExists(cj.getBusinessOwner())) {
@@ -120,7 +115,7 @@ public class CJService {
             }
         }
 
-        CJ newCJ = createCJ(cj, productId, Long.parseLong(getHeaders().get(USER_ID_HEADER).toString()));
+        CJ newCJ = createCJ(cj, productId, userId);
 
         processTags(newCJ, cj.getTags());
         cjRepository.save(newCJ);
@@ -174,15 +169,8 @@ public class CJService {
     }
 
     private void validateBody(CJTagsDto cj) {
-        if (!getUserPermissions().contains(Permission.PermissionType.CREATE_ARTIFACT.toString())) {
-            throw new ForbiddenException("Недостаточно прав для создания CJ");
-        }
-        String errors = "";
         if (cj.getName() == null || cj.getName().trim().isEmpty()) {
-            errors += "Поле name не может быть пустым.\n";
-        }
-        if (!errors.isEmpty()) {
-            throw new ConflictException(errors);
+            throw new ConflictException("Поле name не может быть пустым.");
         }
     }
 
@@ -385,7 +373,6 @@ public class CJService {
 
     public CJFullDto getFullDtoById(Long id) {
         CJ cj = getAndValidateCJ(id);
-        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         CJFullDto cjFullDto = modelMapper.map(cj, CJFullDto.class);
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjFullDto.getId());
         List<StepDto> stepDtos = cjStepList.stream().map(cjStep -> {
@@ -475,7 +462,6 @@ public class CJService {
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
         }
-        validateAccessProduct(getUserPermissions(), getUserProducts(), cj);
         return cj;
     }
 
@@ -502,17 +488,17 @@ public class CJService {
         return stepDtoV3;
     }
 
-    public List<CjResponseDto> getAll(Long idProduct, String sample, String search) {
+    public List<CjResponseDto> getAll(Long idProduct, String sample, String search, Long userId) {
         List<CJ> result;
-        switch (sample) {
-            case "PUBLIC":
-                result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
-                break;
-            case "DRAFT":
-                result = getProducts(search).stream().filter(CJ::isBDraft).collect(Collectors.toList());
-                break;
-            default:
-                result = getMyProductsDefault(search);
+        if ("PUBLIC".equals(sample)) {
+            result = cjRepository.findAllByNameContainsIgnoreCase(search).stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
+        } else {
+            UserInfoDto userInfo = userClient.getUserInfo(userId);
+            if ("DRAFT".equals(sample)) {
+                result = getProducts(search, userInfo).stream().filter(CJ::isBDraft).collect(Collectors.toList());
+            } else {
+                result = getMyProductsDefault(search, userInfo);
+            }
         }
         if (idProduct != null) {
             result = result.stream().filter(cj -> Objects.equals(cj.getIdProductExt(), idProduct)).collect(Collectors.toList());
@@ -548,22 +534,24 @@ public class CJService {
                 .collect(Collectors.toList());
     }
 
-    private List<CJ> getProducts(String search) {
-        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+    private List<CJ> getProducts(String search, UserInfoDto userInfo) {
+        if (userInfo.getPermissions() != null && userInfo.getPermissions().contains(DESIGN_ARTIFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
-        return cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, getUserProducts());
+        List<Long> productIds = userInfo.getProductsIds() != null ? userInfo.getProductsIds() : List.of();
+        return cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, productIds);
     }
 
-    private List<CJ> getMyProductsDefault(String search) {
-        if (getUserPermissions().contains(DESIGN_ARTIFACT.toString())) {
+    private List<CJ> getMyProductsDefault(String search, UserInfoDto userInfo) {
+        if (userInfo.getPermissions() != null && userInfo.getPermissions().contains(DESIGN_ARTIFACT.toString())) {
             return cjRepository.findAllByNameContainsIgnoreCase(search);
         }
 
+        List<Long> productIds = userInfo.getProductsIds() != null ? userInfo.getProductsIds() : List.of();
         List<CJ> userCJs;
         List<CJ> otherCJs;
-        userCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, getUserProducts());
-        otherCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(search, getUserProducts());
+        userCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtIn(search, productIds);
+        otherCJs = cjRepository.findAllByNameContainsIgnoreCaseAndIdProductExtNotIn(search, productIds);
         otherCJs = otherCJs.stream().filter(cj -> !cj.isBDraft()).collect(Collectors.toList());
         if (!otherCJs.isEmpty()) {
             userCJs.addAll(otherCJs);

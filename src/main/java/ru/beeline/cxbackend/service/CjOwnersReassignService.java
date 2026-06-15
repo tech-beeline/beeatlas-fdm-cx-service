@@ -15,7 +15,6 @@ import ru.beeline.cxbackend.repository.CjOwnersReassignRepository;
 
 import java.util.List;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getUserRole;
 
 @Slf4j
 @Service
@@ -29,8 +28,6 @@ public class CjOwnersReassignService {
     @Transactional
     public CjOwnersReassignResponseDto reassignOwners(CjOwnersReassignRequestDto body) {
         validateAndParse(body);
-
-
         boolean currentExists = userClient.userExists(body.getCurrentUserId());
         if (!currentExists) {
             log.warn("cj owners reassign: current user not found. currentUserId={}", body.getCurrentUserId());
@@ -61,11 +58,6 @@ public class CjOwnersReassignService {
     }
 
     private void validateAndParse(CjOwnersReassignRequestDto body) {
-        List<String> roles = getUserRole();
-        if (roles == null || !roles.contains(ADMINISTRATOR_ROLE)) {
-            log.warn("cj owners reassign forbidden: roles={}", roles);
-            throw new ForbiddenException("Пользователь не является администратором");
-        }
 
         if (body == null || !body.isCurrentUserIdProvided() || !body.isNewUserIdProvided()) {
             log.warn("cj owners reassign bad request: missing attributes. body={}", body);

@@ -18,11 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
-import ru.beeline.cxbackend.domain.Permission;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
-import ru.beeline.cxbackend.exception.ForbiddenException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.dto.alerts.CjAlertsDto;
 import ru.beeline.cxbackend.service.CjAlertsService;
@@ -32,9 +30,7 @@ import ru.beeline.cxbackend.service.CJimportFromBpmnService;
 import java.util.List;
 import java.util.Objects;
 
-import static ru.beeline.cxbackend.controller.RequestContext.getUserPermissions;
-import static ru.beeline.cxbackend.controller.RequestContext.getUserProducts;
-import static ru.beeline.cxbackend.utils.AccessToProduct.validateAccessProduct;
+import static ru.beeline.cxbackend.utils.Constant.USER_ID_HEADER;
 
 @RestController
 @RequestMapping
@@ -98,8 +94,9 @@ public class CJController {
     )
     public List<CjResponseDto> getCJ(@RequestParam(required = false) Long idProduct,
                                      @RequestParam(required = false, defaultValue = "ALL") String sample,
-                                     @RequestParam(required = false, defaultValue = "") String search) {
-        return cjService.getAll(idProduct, sample, search);
+                                     @RequestParam(required = false, defaultValue = "") String search,
+                                     @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        return cjService.getAll(idProduct, sample, search, userId);
     }
 
     @GetMapping("/api/cx/v2/product/cj")
@@ -140,8 +137,9 @@ public class CJController {
             description = "Обновляет CJ, подтягивая BPMN из document-service и применяя изменения. Требуется доступ к продукту и право редактирования."
     )
     @ApiResponse(responseCode = "200", description = "CJ обновлён из BPMN")
-    public ResponseEntity<Void> updateCJ(@PathVariable Long id) {
-        cJimportFromBpmnService.importFromBpmnUpdate(id);
+    public ResponseEntity<Void> updateCJ(@PathVariable Long id,
+                                         @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        cJimportFromBpmnService.importFromBpmnUpdate(id, userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
@@ -154,8 +152,9 @@ public class CJController {
             description = "Создаёт CJ для продукта на основании BPMN (document-service). Требуется доступ к продукту."
     )
     @ApiResponse(responseCode = "200", description = "CJ создан из BPMN")
-    public ResponseEntity<Void> createCJ(@PathVariable Long id) {
-        cJimportFromBpmnService.importFromBpmnCreate(id);
+    public ResponseEntity<Void> createCJ(@PathVariable Long id,
+                                         @RequestHeader(value = USER_ID_HEADER) Long userId) {
+        cJimportFromBpmnService.importFromBpmnCreate(id, userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
@@ -172,8 +171,10 @@ public class CJController {
             description = "Созданный CJ",
             content = @Content(schema = @Schema(implementation = CjResponseDto.class))
     )
-    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId, @RequestBody CJTagsDto cj) {
-        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId));
+    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId,
+                                                   @RequestHeader(value = USER_ID_HEADER) Long userId,
+                                                   @RequestBody CJTagsDto cj) {
+        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId, userId));
     }
 
     @CustomHeaders
@@ -195,20 +196,14 @@ public class CJController {
         }
         CJ currentCJ = cjService.getById(id);
         if (currentCJ == null) {
-            String message = "CJ с id = " + id + " не найден";
-            throw new NotFoundException(message);
+            throw new NotFoundException("CJ с id = " + id + " не найден");
         }
-        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
-            if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .header("content-type", MediaType.APPLICATION_JSON_VALUE)
-                        .body(cjService.replaceCJ(currentCJ, cjDto));
-            } else {
-                throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
-            }
+        if (currentCJ.isBDraft() || cjDto.getBDraft()) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                    .body(cjService.replaceCJ(currentCJ, cjDto));
         } else {
-            throw new ForbiddenException("Недостаточно прав для редактирования CJ");
+            throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
         }
     }
 
@@ -230,15 +225,10 @@ public class CJController {
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
-        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
-        if ((getUserPermissions()).contains(Permission.PermissionType.EDIT_ARTIFACT.toString())) {
-            if (currentCJ.isBDraft() || cjDto.getBDraft()) {
-                return ResponseEntity.ok(cjService.patchCJ(currentCJ, cjDto));
-            } else {
-                throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
-            }
+        if (currentCJ.isBDraft() || cjDto.getBDraft()) {
+            return ResponseEntity.ok(cjService.patchCJ(currentCJ, cjDto));
         } else {
-            throw new ForbiddenException("Недостаточно прав для редактирования CJ");
+            throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Редактирование невозможно.");
         }
     }
 
@@ -256,16 +246,11 @@ public class CJController {
         if (currentCJ == null) {
             throw new NotFoundException("CJ с id = " + id + " не найден");
         }
-        validateAccessProduct(getUserPermissions(), getUserProducts(), currentCJ.getIdProductExt());
-        if ((getUserPermissions()).contains(Permission.PermissionType.DELETE_ARTIFACT.toString())) {
-            if (currentCJ.isBDraft()) {
-                cjService.deleteCJbyId(currentCJ);
-                return ResponseEntity.status(HttpStatus.OK).build();
-            } else {
-                throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Удаление невозможно.");
-            }
+        if (currentCJ.isBDraft()) {
+            cjService.deleteCJbyId(currentCJ);
+            return ResponseEntity.status(HttpStatus.OK).build();
         } else {
-            throw new ForbiddenException("Недостаточно прав для удаления CJ");
+            throw new ConflictException("CJ с id = " + id + " находится в статусе Опубликован. Удаление невозможно.");
         }
     }
 

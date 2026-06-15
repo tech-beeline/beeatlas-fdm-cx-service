@@ -13,7 +13,7 @@ import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 
 @RestController
-@Tag(name = "Service", description = "Служебные методы сервиса (health-like/информационные ручки).")
+@Tag(name = "Сервис", description = "Служебные методы сервиса (health-like/информационные ручки).")
 public class ApplicationController {
 
     @Value("${app.version}")
