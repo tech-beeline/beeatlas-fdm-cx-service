@@ -94,6 +94,29 @@ public class CJimportFromBpmnService {
         cjRepository.save(cj);
     }
 
+    /**
+     * Same import pipeline as {@link #importFromBpmnCreate}/{@link #importFromBpmnUpdate}, but
+     * takes the already-parsed {@link ProcessCJ} model directly instead of a BPMN file fetched
+     * from document-service. {@code extractModel} only exists to turn a BPMN XML document into
+     * this model in the first place — a caller that already has the data in its own shape (e.g.
+     * the staging pipeline, building it straight from its canonical model) can skip generating
+     * and re-parsing BPMN XML entirely and just post the model. Dispatches to create vs. update
+     * based on whether this CJ has already been bpmn-imported, mirroring the two REST entry
+     * points above.
+     */
+    public void importFromModel(Long id, ProcessCJ processCJ, Long userId) {
+        CJ cj = cjRepository.findByIdAndDeletedDateIsNull(id)
+                .orElseThrow(() -> new NotFoundException("Сj id " + id + " does not exist"));
+        sortModel(processCJ);
+        if (Boolean.TRUE.equals(cj.getBpmn())) {
+            saveOrUpdateElements(processCJ, id, cj, userId);
+        } else {
+            saveElements(processCJ, id, cj, userId);
+        }
+        cj.setBpmn(true);
+        cjRepository.save(cj);
+    }
+
     public byte[] importFromBpmn(Long id, Long userId) {
         List<DocumentationTypeDTO> documentationTypeDTO = documentClient.getDocumentationType("CJ");
         ResponseEntity<byte[]> document = documentClient.getDocument(id, documentationTypeDTO.get(0).getId(), userId);
