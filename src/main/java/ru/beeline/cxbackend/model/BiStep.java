@@ -16,4 +16,10 @@ public class BiStep {
     public String type;
     public String id;
     public String name;
+    public Integer order;
+    public String orderTree;
+
+    public String sortKey() {
+        return orderTree != null ? orderTree : String.valueOf(order);
+    }
 }

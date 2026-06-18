@@ -26,6 +26,9 @@ public class CJStep {
     @Column(name = "\"order\"")
     private Integer order;
 
+    @Column(name = "order_tree", length = 50)
+    private String orderTree;
+
     private String name;
 
     private String description;

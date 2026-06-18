@@ -19,6 +19,7 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.repository.BiStepRelationRepository;
 import ru.beeline.cxbackend.repository.BiStepRepository;
+import ru.beeline.cxbackend.service.bpmn.BpmnOrderUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -179,7 +180,7 @@ public class BIMapper {
         Map<BiStep, List<BiStepRelation>> biStepListMap = biStepRelations.stream()
                 .collect(Collectors.groupingBy(BiStepRelation::getBiStep));
         List<BiStepDto> result = new ArrayList<>();
-        biSteps.forEach(biStep -> {
+        sortBiSteps(biSteps).forEach(biStep -> {
             BiStepDto build = BiStepDto.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
@@ -195,7 +196,7 @@ public class BIMapper {
 
     private List<BiStepDto> createBiStep(List<BiStep> biSteps) {
         List<BiStepDto> result = new ArrayList<>();
-        biSteps.forEach(biStep -> {
+        sortBiSteps(biSteps).forEach(biStep -> {
             BiStepDto build = BiStepDto.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
@@ -211,7 +212,7 @@ public class BIMapper {
 
     private List<BiStepDtoV3> createBiStepDtoV3(List<BiStep> biSteps) {
         List<BiStepDtoV3> result = new ArrayList<>();
-        biSteps.forEach(biStep -> {
+        sortBiSteps(biSteps).forEach(biStep -> {
             BiStepDtoV3 build = BiStepDtoV3.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
@@ -348,5 +349,12 @@ public class BIMapper {
                 .productName(product != null ? product.getName() : null)
                 .productAlias(product != null ? product.getAlias() : null)
                 .build();
+    }
+
+    private List<BiStep> sortBiSteps(List<BiStep> biSteps) {
+        List<BiStep> sorted = new ArrayList<>(biSteps);
+        sorted.sort(Comparator.comparing(BiStep::getOrderTree, Comparator.nullsLast(BpmnOrderUtils.comparator()))
+                .thenComparing(BiStep::getId));
+        return sorted;
     }
 }

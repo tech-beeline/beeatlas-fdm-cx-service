@@ -33,6 +33,9 @@ public class BIInCJStep {
     @Column(name = "\"order\"")
     private Long order;
 
+    @Column(name = "order_tree", length = 50)
+    private String orderTree;
+
     @Column(name = "id_bi", insertable = false, updatable = false)
     private Long biId;
 
