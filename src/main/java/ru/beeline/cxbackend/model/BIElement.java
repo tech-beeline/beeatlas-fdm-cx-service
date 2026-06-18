@@ -21,5 +21,11 @@ public class BIElement {
     public String id;
     public String name;
     public String processId;
+    public Integer order;
+    public String orderTree;
     public List<BiStep> biSteps = new ArrayList<>();
+
+    public String sortKey() {
+        return orderTree != null ? orderTree : String.valueOf(order);
+    }
 }

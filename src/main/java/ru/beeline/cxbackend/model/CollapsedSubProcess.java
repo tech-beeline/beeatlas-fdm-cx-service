@@ -19,5 +19,11 @@ import java.util.List;
 public class CollapsedSubProcess {
     public String id;
     public String name;
+    public Integer order;
+    public String orderTree;
     public List<BIElement> biElements = new ArrayList<>();
+
+    public String sortKey() {
+        return orderTree != null ? orderTree : String.valueOf(order);
+    }
 }

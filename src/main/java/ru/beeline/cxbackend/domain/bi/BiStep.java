@@ -46,6 +46,9 @@ public class BiStep {
     @Column(name = "unique_ident", length = 50, nullable = false)
     private String uniqueIdent;
 
+    @Column(name = "order_tree", length = 50)
+    private String orderTree;
+
     private Float latency;
 
     @Column(name = "error_rate")

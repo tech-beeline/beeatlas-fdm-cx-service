@@ -178,7 +178,7 @@ public class BusinessInteractionService {
         Optional<BIInCJStep> currentCjByOrder = existSteps.stream().filter(biInCJStep -> biInCJStep.getOrder().equals(bi.getOrder())).findFirst();
 
         if (!currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
-            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), null, bi.getIdBi()));
         }
 
         if (currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
@@ -189,7 +189,7 @@ public class BusinessInteractionService {
                         }
                     }
             );
-            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), null, bi.getIdBi()));
         }
 
         if (!currentCjByOrder.isPresent() && currentCjByBIid.isPresent()) {
