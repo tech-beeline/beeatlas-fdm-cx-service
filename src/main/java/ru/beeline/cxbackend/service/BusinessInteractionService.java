@@ -327,7 +327,6 @@ public class BusinessInteractionService {
         return biParticipantsRepository.saveAll(participants);
     }
 
-    //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
     public BIDto patchBI(Long id, BI bi, Long userId) {
         if (bi.checkFieldsForNull()) {
