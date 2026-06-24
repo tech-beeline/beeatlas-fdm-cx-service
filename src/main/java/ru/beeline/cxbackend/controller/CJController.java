@@ -22,7 +22,6 @@ import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.*;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.NotFoundException;
-import ru.beeline.cxbackend.model.ProcessCJ;
 import ru.beeline.cxbackend.dto.alerts.CjAlertsDto;
 import ru.beeline.cxbackend.service.CjAlertsService;
 import ru.beeline.cxbackend.service.CJService;
@@ -156,27 +155,6 @@ public class CJController {
     public ResponseEntity<Void> createCJ(@PathVariable Long id,
                                          @RequestHeader(value = USER_ID_HEADER) Long userId) {
         cJimportFromBpmnService.importFromBpmnCreate(id, userId);
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @CustomHeaders
-    @PostMapping(value = "/api/cx/v1/product/cj/{id}/import-from-model", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    @ApiStandardErrors
-    @Operation(
-            summary = "Импорт CJ из готовой модели (без BPMN)",
-            description = "Как создание/обновление CJ из BPMN (см. /api/cx/v1/bpmn/cj/{id}), но принимает уже "
-                    + "разобранную модель процесса (ProcessCJ) напрямую как JSON, без генерации/парсинга BPMN XML "
-                    + "и без похода в document-service. Предназначено для автоматизированных вызывающих сторон "
-                    + "(например, staging-пайплайна), у которых данные уже в собственной структуре. Создаёт "
-                    + "CJ-шаги/BI/BiStep при первом вызове, при последующих — обновляет/удаляет по тому же "
-                    + "алгоритму, что и /api/cx/v1/bpmn/cj/{id}."
-    )
-    @ApiResponse(responseCode = "200", description = "CJ импортирован/обновлён из переданной модели")
-    public ResponseEntity<Void> importFromModel(@PathVariable Long id,
-                                                 @RequestBody ProcessCJ processCJ,
-                                                 @RequestHeader(value = USER_ID_HEADER) Long userId) {
-        cJimportFromBpmnService.importFromModel(id, processCJ, userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
