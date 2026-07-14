@@ -151,6 +151,9 @@ public class BusinessInteractionService {
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
+        if (!cjStepRepository.existsById(idStep)) {
+            throw new NotFoundException("CJ шаг с id = " + idStep + " не найден");
+        }
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!biInCJStepList.isEmpty()) {
             List<BI> biList = businessInteractionRepository.findAllByIdIn(idStep, biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
