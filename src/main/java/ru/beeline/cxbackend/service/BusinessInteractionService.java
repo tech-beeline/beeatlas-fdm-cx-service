@@ -151,6 +151,9 @@ public class BusinessInteractionService {
     }
 
     public List<BIDto> getBIByStepId(Long idStep) {
+        if (!cjStepRepository.existsById(idStep)) {
+            throw new NotFoundException("CJ шаг с id = " + idStep + " не найден");
+        }
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(idStep);
         if (!biInCJStepList.isEmpty()) {
             List<BI> biList = businessInteractionRepository.findAllByIdIn(idStep, biInCJStepList.stream().map(BIInCJStep::getBiId).collect(Collectors.toList()));
@@ -178,7 +181,7 @@ public class BusinessInteractionService {
         Optional<BIInCJStep> currentCjByOrder = existSteps.stream().filter(biInCJStep -> biInCJStep.getOrder().equals(bi.getOrder())).findFirst();
 
         if (!currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
-            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), null, bi.getIdBi()));
         }
 
         if (currentCjByOrder.isPresent() && !currentCjByBIid.isPresent()) {
@@ -189,7 +192,7 @@ public class BusinessInteractionService {
                         }
                     }
             );
-            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), bi.getIdBi()));
+            existSteps.add(new BIInCJStep(null, biEntity, idStep, bi.getOrder(), null, bi.getIdBi()));
         }
 
         if (!currentCjByOrder.isPresent() && currentCjByBIid.isPresent()) {
@@ -327,7 +330,6 @@ public class BusinessInteractionService {
         return biParticipantsRepository.saveAll(participants);
     }
 
-    //TODO: Абсолютная Дичь, нужно рефакторить
     @Transactional
     public BIDto patchBI(Long id, BI bi, Long userId) {
         if (bi.checkFieldsForNull()) {

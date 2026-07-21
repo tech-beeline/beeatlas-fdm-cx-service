@@ -41,6 +41,9 @@ public class CJStepService {
     private BIInCJStepRepository biInCJStepRepository;
 
     public List<CjStepFullDto> getStepByCJId(Long id) {
+        if (!cjRepository.existsById(id)) {
+            throw new NotFoundException("CJ with id " + id + " does not exist");
+        }
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(id).stream()
                 .sorted(Comparator.comparing(CJStep::getOrder)).toList();
         return cjStepList.stream().map(cjStep -> cjStepMapper.cjStepToSjStepFullDto(cjStep)).toList();
