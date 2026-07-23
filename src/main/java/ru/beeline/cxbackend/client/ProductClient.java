@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import ru.beeline.cxbackend.dto.GetProductsByIdsDTO;
 import ru.beeline.cxbackend.dto.ProductInterfaceDTO;
+import ru.beeline.cxbackend.dto.product.E2eCardDto;
 import ru.beeline.cxbackend.dto.product.ProductOperationByTcItemDto;
 
 import java.util.ArrayList;
@@ -97,6 +98,29 @@ public class ProductClient {
         } catch (Exception e) {
             log.error("call's Exception " + e.getMessage());
             return null;
+        }
+    }
+
+    public List<E2eCardDto> getE2eWithBiStep() {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String url = productServerUrl + "/api/v1/e2e?filter=with-bi-step";
+            log.info("Запрос e2e в Product: {}", url);
+            ResponseEntity<List<E2eCardDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<>() {
+                    });
+            List<E2eCardDto> body = response.getBody();
+            return body != null ? body : Collections.emptyList();
+        } catch (HttpClientErrorException e) {
+            log.error("Ошибка ответа Product при запросе e2e with-bi-step: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Product service error", e);
+        } catch (Exception e) {
+            log.error("Не удалось вызвать Product для e2e with-bi-step: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Product service unavailable", e);
         }
     }
 }
