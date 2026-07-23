@@ -20,12 +20,14 @@ import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.dto.alerts.CjAlertsDto;
+import ru.beeline.cxbackend.dto.e2e.CjE2eDto;
 import ru.beeline.cxbackend.exception.ConflictException;
 import ru.beeline.cxbackend.exception.NotFoundException;
-import ru.beeline.cxbackend.dto.alerts.CjAlertsDto;
-import ru.beeline.cxbackend.service.CjAlertsService;
 import ru.beeline.cxbackend.service.CJService;
 import ru.beeline.cxbackend.service.CJimportFromBpmnService;
+import ru.beeline.cxbackend.service.CjAlertsService;
+import ru.beeline.cxbackend.service.CjE2eService;
 
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +51,9 @@ public class CJController {
 
     @Autowired
     private CjAlertsService cjAlertsService;
+
+    @Autowired
+    private CjE2eService cjE2eService;
 
     @GetMapping("/api/cx/v1/cj/alerts")
     @ApiStandardErrors
@@ -103,14 +108,14 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Список CJ (v2)",
-            description = "Версия v2 списка CJ. По `HeaderInterceptor` URI содержит `/v2/product/cj`, поэтому заголовки могут не требоваться."
+            description = "Версия v2 списка CJ. По `HeaderInterceptor` URI содержит `/v2/product/cj`."
     )
     @ApiResponse(
             responseCode = "200",
             description = "Список CJ (v2)",
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = CjResponseDtoV2.class)))
     )
-    public List<CjResponseDtoV2> getCJv2(@RequestParam(name  = "product-id", required = false) Long idProduct,
+    public List<CjResponseDtoV2> getCJv2(@RequestParam(name = "product-id", required = false) Long idProduct,
                                          @RequestParam(required = false, defaultValue = "ALL") String sample,
                                          @RequestParam(required = false, defaultValue = "") String search) {
         return cjService.getAllv2(idProduct, sample, search);
@@ -126,6 +131,20 @@ public class CJController {
     )
     public CJFullDtoV3 getCJByIdV3(@PathVariable Long id) {
         return cjService.getFullDtoByIdV3(id);
+    }
+
+    @GetMapping("/api/cx/v1/cj/e2e")
+    @ApiStandardErrors
+    @Operation(
+            summary = "CJ, связанные с e2e",
+            description = "Возвращает дерево CJ → BI → bi_steps для Customer Journey, "
+                    + "связанных с e2e из fdm-products через bi_step.uid = e2e.bi_step_code.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Список CJ с BI и шагами, связанными с e2e",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CjE2eDto.class))))
+    public ResponseEntity<List<CjE2eDto>> getCjLinkedToE2e() {
+        return ResponseEntity.ok(cjE2eService.getCjLinkedToE2e());
     }
 
     @CustomHeaders
@@ -172,8 +191,8 @@ public class CJController {
             content = @Content(schema = @Schema(implementation = CjResponseDto.class))
     )
     public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId,
-                                                   @RequestHeader(value = USER_ID_HEADER) Long userId,
-                                                   @RequestBody CJTagsDto cj) {
+                                                  @RequestHeader(value = USER_ID_HEADER) Long userId,
+                                                  @RequestBody CJTagsDto cj) {
         return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId, userId));
     }
 
