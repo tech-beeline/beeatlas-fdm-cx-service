@@ -108,8 +108,8 @@ public class CJService {
         }
         if (Objects.nonNull(cj.getTechOwners()) && !cj.getTechOwners().isEmpty()) {
             cj.setTechOwners(cj.getTechOwners().stream()
-                                        .distinct()
-                                        .collect(Collectors.toList()));
+                    .distinct()
+                    .collect(Collectors.toList()));
             if (cj.getTechOwners().size() != userClient.getUsersByIds(cj.getTechOwners()).size()) {
                 throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
             }
@@ -236,8 +236,8 @@ public class CJService {
 
         if (Objects.nonNull(cjDto.getTechOwners()) && !cjDto.getTechOwners().isEmpty()) {
             cjDto.setTechOwners(cjDto.getTechOwners().stream()
-                                        .distinct()
-                                        .collect(Collectors.toList()));
+                    .distinct()
+                    .collect(Collectors.toList()));
             if (cjDto.getTechOwners().size() != userClient.getUsersByIds(cjDto.getTechOwners()).size()) {
                 throw new BadRequestException("Указан несуществующий пользователь в поле тех. ответственный");
             }
@@ -391,6 +391,7 @@ public class CJService {
     }
 
     public CJFullDtoV3 getFullDtoByIdV3(Long id) {
+        log.info("getFullDtoByIdV3: начало, cjId={}", id);
         CJ cj = getById(id);
         if (cj.getDeletedDate() != null) {
             throw new NotFoundException("CJ with id " + id + " does not exist");
@@ -402,7 +403,7 @@ public class CJService {
                 .map(CJTechOwner::getIdUserProfile)
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         List<Long> idsToFetch = new ArrayList<>();
         if (authorId != null) {
@@ -416,6 +417,7 @@ public class CJService {
 
         Map<Long, UserShortDto> usersById = new HashMap<>();
         if (!idsToFetch.isEmpty()) {
+            log.info("getFullDtoByIdV3: загрузка пользователей, cjId={}, userIdsCount={}", id, idsToFetch.size());
             try {
                 List<AuthUserDto> users = userClient.getUsersByIds(idsToFetch);
                 if (users != null) {
@@ -433,6 +435,7 @@ public class CJService {
                             ));
                 }
             } catch (Exception e) {
+                log.error("getFullDtoByIdV3: ошибка сервиса авторизации, cjId={}", id, e);
                 String msg = "Ошибка сервиса авторизации:" + (e.getMessage() == null ? "" : e.getMessage());
                 throw new AuthServiceException(msg, e);
             }
@@ -451,9 +454,14 @@ public class CJService {
         cjFullDtoV3.setSteps(getAndConvertSteps(cjFullDtoV3.getId()));
         cjFullDtoV3.setProductId(cj.getIdProductExt());
         cjFullDtoV3.setLink(cj.getLinks()
-                                    .stream()
-                                    .map(link -> LinkDTO.builder().descr(link.getDescr()).url(link.getUrl()).build())
-                                    .collect(Collectors.toList()));
+                .stream()
+                .map(link -> LinkDTO.builder().descr(link.getDescr()).url(link.getUrl()).build())
+                .collect(Collectors.toList()));
+        int biCount = cjFullDtoV3.getSteps() == null ? 0 : cjFullDtoV3.getSteps().stream()
+                .mapToInt(step -> step.getBi() == null ? 0 : step.getBi().size())
+                .sum();
+        log.info("getFullDtoByIdV3: завершён, cjId={}, stepsCount={}, biCount={}",
+                id, cjFullDtoV3.getSteps() == null ? 0 : cjFullDtoV3.getSteps().size(), biCount);
         return cjFullDtoV3;
     }
 
@@ -467,6 +475,7 @@ public class CJService {
 
     private List<StepDtoV3> getAndConvertSteps(Long cjId) {
         List<CJStep> cjStepList = cjStepRepository.findAllByCjId(cjId);
+        log.info("getAndConvertSteps: cjId={}, cjStepsCount={}", cjId, cjStepList.size());
         return cjStepList.stream()
                 .map(this::convertToStepDto)
                 .sorted(Comparator.comparing(StepDtoV3::getOrder))
@@ -475,17 +484,36 @@ public class CJService {
 
     private StepDtoV3 convertToStepDto(CJStep cjStep) {
         StepDtoV3 stepDtoV3 = modelMapper.map(cjStep, StepDtoV3.class);
+        stepDtoV3.setOrderTree(resolveOrderTree(cjStep.getOrderTree(), cjStep.getOrder()));
         List<BIInCJStep> biInCJStepList = biInCJStepRepository.findAllByCjStepId(stepDtoV3.getId());
+        log.info("convertToStepDto: cjStepId={}, orderTree={}, biInCjStepCount={}",
+                cjStep.getId(), stepDtoV3.getOrderTree(), biInCJStepList.size());
         if (!biInCJStepList.isEmpty()) {
             List<Long> biIds = biInCJStepList.stream()
                     .map(BIInCJStep::getBiId)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+            Map<Long, String> orderTreeByBiId = new HashMap<>();
+            for (BIInCJStep link : biInCJStepList) {
+                if (link.getBiId() == null) {
+                    continue;
+                }
+                orderTreeByBiId.putIfAbsent(link.getBiId(),
+                        resolveOrderTree(link.getOrderTree(), link.getOrder()));
+            }
             List<BI> biList = biRepository.findAllByIdIn(cjStep.getId(), biIds).stream()
                     .distinct()
                     .collect(Collectors.toList());
-            stepDtoV3.setBi(biMapper.biToBIDtoV3(biList));
+            stepDtoV3.setBi(biMapper.biToBIDtoV3(biList, orderTreeByBiId));
         }
         return stepDtoV3;
+    }
+
+    private static String resolveOrderTree(String orderTree, Number order) {
+        if (orderTree != null) {
+            return orderTree;
+        }
+        return order != null ? String.valueOf(order) : null;
     }
 
     public List<CjResponseDto> getAll(Long idProduct, String sample, String search, Long userId) {
