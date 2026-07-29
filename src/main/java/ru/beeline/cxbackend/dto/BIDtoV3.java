@@ -29,6 +29,7 @@ public class BIDtoV3 {
     private String eaGuid;
     private Long productId;
     private String ownerRole;
+    private String orderTree;
     private String metrics;
     private Long authorId;
     @JsonFormat(pattern = DATE_FORMAT, timezone = DATE_TIMEZONE)

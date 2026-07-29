@@ -53,22 +53,30 @@ public class BIMapper {
     }
 
 
-    public List<BIDtoV3> biToBIDtoV3(List<BI> biList) {
+    public List<BIDtoV3> biToBIDtoV3(List<BI> biList, Map<Long, String> orderTreeByBiId) {
         if (biList != null) {
-            return biList.stream().map(this::biToBIDtoV3).collect(Collectors.toList());
+            log.info("biToBIDtoV3: biCount={}, withOrderTree={}", biList.size(), orderTreeByBiId != null);
+            return biList.stream()
+                    .map(bi -> biToBIDtoV3(bi, orderTreeByBiId))
+                    .collect(Collectors.toList());
         } else {
             return new ArrayList<>();
         }
     }
 
-    public BIDto biToBIDto(BI bi) {
-        BIDto biDto = modelMapper.map(bi, BIDto.class);
+    private BIDtoV3 biToBIDtoV3(BI bi, Map<Long, String> orderTreeByBiId) {
+        BIDtoV3 biDto = modelMapper.map(bi, BIDtoV3.class);
+        if (orderTreeByBiId != null) {
+            biDto.setOrderTree(orderTreeByBiId.get(bi.getId()));
+        }
         List<BiStep> biSteps = biStepRepository.findByBi(bi);
         if (biSteps.isEmpty()) {
             biDto.setBiSteps(new ArrayList<>());
         } else {
-            biDto.setBiSteps(createBiStep(biSteps));
+            biDto.setBiSteps(createBiStepDtoV3(biSteps));
         }
+        log.info("biToBIDtoV3: biId={}, orderTree={}, biStepsCount={}",
+                bi.getId(), biDto.getOrderTree(), biDto.getBiSteps().size());
         biDto.setParticipants(mapBIParticipants(bi.getParticipants()));
         if (bi.getFeeling() != null) {
             biDto.setFeelings(modelMapper.map(bi.getFeeling(), BIFeelingDto.class));
@@ -79,13 +87,13 @@ public class BIMapper {
         return biDto;
     }
 
-    public BIDtoV3 biToBIDtoV3(BI bi) {
-        BIDtoV3 biDto = modelMapper.map(bi, BIDtoV3.class);
+    public BIDto biToBIDto(BI bi) {
+        BIDto biDto = modelMapper.map(bi, BIDto.class);
         List<BiStep> biSteps = biStepRepository.findByBi(bi);
         if (biSteps.isEmpty()) {
             biDto.setBiSteps(new ArrayList<>());
         } else {
-            biDto.setBiSteps(createBiStepDtoV3(biSteps));
+            biDto.setBiSteps(createBiStep(biSteps));
         }
         biDto.setParticipants(mapBIParticipants(bi.getParticipants()));
         if (bi.getFeeling() != null) {
@@ -222,6 +230,7 @@ public class BIMapper {
                     .uniqueIdent(biStep.getUniqueIdent())
                     .type(biStep.getStepType().getName())
                     .relations(createRelations(biStep.getId()))
+                    .orderTree(biStep.getOrderTree())
                     .build();
             result.add(build);
         });

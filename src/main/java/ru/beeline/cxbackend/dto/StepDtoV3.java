@@ -17,12 +17,9 @@ public class StepDtoV3 {
     private List<BIDtoV3> bi = new ArrayList<>();
 
     private Long id;
-
     private Long cjId;
-
     private Integer order;
-
     private String name;
-
     private String description;
+    private String orderTree;
 }
