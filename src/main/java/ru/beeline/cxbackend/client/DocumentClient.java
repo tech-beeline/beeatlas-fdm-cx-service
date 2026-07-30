@@ -38,7 +38,9 @@ public class DocumentClient {
     public ResponseEntity<byte[]> getDocument(Long docId, Integer documentationTypeId, Long userId) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set(USER_ID_HEADER, userId.toString());
+            if (userId != null) {
+                headers.set(USER_ID_HEADER, userId.toString());
+            }
             HttpEntity<String> entity = new HttpEntity<>(headers);
             log.info("get document: /api/v1/documents/" + documentationTypeId + "/" + docId);
             return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/" + documentationTypeId + "/" + docId,
@@ -48,7 +50,7 @@ public class DocumentClient {
                     });
         } catch (HttpClientErrorException.NotFound e) {
             log.error("Запись с данным id не найдена: ", e);
-            throw new NotFoundException(e.getMessage());
+            throw new NotFoundException("Документ не найден");
         } catch (Exception e) {
             log.error("Exception occurred: ", e);
             throw e;
