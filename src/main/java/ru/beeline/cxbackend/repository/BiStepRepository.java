@@ -24,4 +24,6 @@ public interface BiStepRepository extends JpaRepository<BiStep, Integer> {
     List<BiStep> findByBiIn(List<BI> bi);
 
     List<BiStep> findAllByIdIn(Collection<Integer> biStepIds);
+
+    Optional<BiStep> findByUniqueIdent(String uniqueIdent);
 }

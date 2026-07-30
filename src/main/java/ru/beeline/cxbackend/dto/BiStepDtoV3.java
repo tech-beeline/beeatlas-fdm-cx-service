@@ -20,5 +20,6 @@ public class BiStepDtoV3 {
     private String type;
     private Float errorRate;
     private Float rps;
+    private String orderTree;
     private List<RelationDto> relations;
 }
