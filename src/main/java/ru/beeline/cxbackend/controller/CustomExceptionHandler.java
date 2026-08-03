@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.beeline.cxbackend.dto.owners.ErrorMessageDto;
 import ru.beeline.cxbackend.exception.AuthServiceException;
 import ru.beeline.cxbackend.exception.*;
@@ -17,6 +18,18 @@ import ru.beeline.cxbackend.exception.*;
 @ControllerAdvice
 @Slf4j
 public class CustomExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.error(e.getMessage());
+        String message = "doc-id".equals(e.getName())
+                ? "Неверный формат идентификатора документа"
+                : e.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .header("content-type", MediaType.APPLICATION_JSON_VALUE)
+                .body(ErrorMessageDto.builder().errorMessage(message).build());
+    }
 
     @ExceptionHandler(AuthServiceException.class)
     public ResponseEntity<Object> handleException(AuthServiceException e) {

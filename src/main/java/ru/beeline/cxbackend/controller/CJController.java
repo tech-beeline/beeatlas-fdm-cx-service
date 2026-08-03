@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -54,6 +55,18 @@ public class CJController {
 
     @Autowired
     private CjE2eService cjE2eService;
+
+    @GetMapping("/api/v1/cx/bpmn/cj/validate/{doc-id}")
+    @ApiStandardErrors
+    @Operation(
+            summary = "Валидация BPMN документа",
+            description = "Загружает BPMN из document-service по id файла и проверяет его по правилам парсинга CJ.")
+    @ApiErrorCodes({400, 500})
+    public ResponseEntity<Void> validateBpmn(@PathVariable("doc-id") Integer docId,
+                                             @RequestHeader(value = USER_ID_HEADER, required = false) Long userId) {
+        cJimportFromBpmnService.validateByDocId(docId.longValue(), userId);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/api/cx/v1/cj/alerts")
     @ApiStandardErrors
@@ -287,5 +300,3 @@ public class CJController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
-
-
