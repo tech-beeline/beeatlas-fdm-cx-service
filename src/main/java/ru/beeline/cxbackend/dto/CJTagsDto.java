@@ -20,6 +20,9 @@ public class CJTagsDto {
     @JsonProperty("user_portrait")
     private String userPortrait;
 
+    @JsonProperty("id_product")
+    private Long idProduct;
+
     @JsonIgnore
     private boolean userPortraitProvided = false;
     @JsonProperty("draft")
