@@ -57,6 +57,28 @@ public class DocumentClient {
         }
     }
 
+    public ResponseEntity<byte[]> getDocumentByFileId(Long fileId, Long userId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            if (userId != null) {
+                headers.set(USER_ID_HEADER, userId.toString());
+            }
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            log.info("get document by file id: /api/v1/documents/{}", fileId);
+            return restTemplate.exchange(documentServiceUrl + "/api/v1/documents/" + fileId,
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<byte[]>() {
+                    });
+        } catch (HttpClientErrorException.NotFound e) {
+            log.error("Документ с file id {} не найден: ", fileId, e);
+            throw new NotFoundException("Документ не найден");
+        } catch (Exception e) {
+            log.error("Exception occurred: ", e);
+            throw e;
+        }
+    }
+
     public List<DocumentationTypeDTO> getDocumentationType(String entityType) {
         try {
             HttpHeaders headers = new HttpHeaders();
