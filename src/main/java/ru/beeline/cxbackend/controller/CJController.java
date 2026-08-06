@@ -191,22 +191,21 @@ public class CJController {
     }
 
     @CustomHeaders
-    @PostMapping("/api/cx/v1/product/{productId}/cj")
+    @PostMapping("/api/cx/v1/product/cj")
     @ResponseBody
     @ApiStandardErrors
     @Operation(
             summary = "Создание CJ",
-            description = "Создаёт CJ для указанного продукта. Автор берётся из `user-id`. Требуется право `CREATE_ARTIFACT` и доступ к продукту."
+            description = "Создаёт CJ. Продукт (`id_product` в теле) необязателен. Автор берётся из `user-id`. Требуется право `CREATE_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
             description = "Созданный CJ",
             content = @Content(schema = @Schema(implementation = CjResponseDto.class))
     )
-    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId,
-                                                  @RequestHeader(value = USER_ID_HEADER) Long userId,
+    public ResponseEntity<CjResponseDto> createCJ(@RequestHeader(value = USER_ID_HEADER) Long userId,
                                                   @RequestBody CJTagsDto cj) {
-        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId, userId));
+        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, userId));
     }
 
     @CustomHeaders
@@ -215,7 +214,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Полная замена CJ (PUT)",
-            description = "Заменяет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT` и доступ к продукту."
+            description = "Заменяет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
@@ -245,7 +244,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Частичное обновление CJ (PATCH)",
-            description = "Частично обновляет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT` и доступ к продукту."
+            description = "Частично обновляет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
@@ -270,7 +269,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Удаление CJ",
-            description = "Удаляет CJ. Требуется право `DELETE_ARTIFACT`, доступ к продукту и CJ должен быть в черновике."
+            description = "Удаляет CJ. Требуется право `DELETE_ARTIFACT`, CJ должен быть в черновике."
     )
     @ApiResponse(responseCode = "200", description = "CJ удалён")
     public ResponseEntity<Void> deleteCJById(@PathVariable Long id) {
