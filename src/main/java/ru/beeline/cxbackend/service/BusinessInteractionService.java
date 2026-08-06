@@ -28,7 +28,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
 @Slf4j
 @Service
@@ -237,7 +236,6 @@ public class BusinessInteractionService {
 
     @Transactional
     public BIDto createBI(BIPostDto biPostDto, Long userId) {
-        validateProductId(biPostDto.getProductId());
         BI saveBI = buildBI(biPostDto, userId);
         List<BILink> docs = mapLinks(biPostDto.getDocument());
         List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
@@ -391,9 +389,10 @@ public class BusinessInteractionService {
             result.setEditability(false);
         }
 
+        Long biProductId = entityOptional.map(BI::getProductId).orElse(null);
         UserInfoDto userInfo = userClient.getUserInfo(userId);
-        if (userInfo != null && userInfo.getRoles() != null && userInfo.getRoles().contains("DEFAULT")
-                && (userInfo.getProductsIds() == null || !userInfo.getProductsIds().contains(entityOptional.get().getProductId()))) {
+        if (biProductId != null && userInfo != null && userInfo.getRoles() != null && userInfo.getRoles().contains("DEFAULT")
+                && (userInfo.getProductsIds() == null || !userInfo.getProductsIds().contains(biProductId))) {
             result.setEditability(false);
         }
 

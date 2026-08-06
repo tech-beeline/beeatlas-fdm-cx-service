@@ -27,7 +27,7 @@ public class InternalCheckController {
             @PathVariable Long id,
             @RequestParam List<Long> productIds) {
         return biRepository.findByIdAndDeletedDateIsNull(id)
-                .map(bi -> !bi.isDraft() || productIds.contains(bi.getProductId()))
+                .map(bi -> bi.getProductId() == null || !bi.isDraft() || productIds.contains(bi.getProductId()))
                 .map(hasAccess -> ResponseEntity.ok(Map.of("hasAccess", hasAccess)))
                 .orElseThrow(() -> new NotFoundException("BI not found: " + id));
     }
@@ -37,7 +37,7 @@ public class InternalCheckController {
             @PathVariable Long id,
             @RequestParam List<Long> productIds) {
         return biRepository.findByIdAndDeletedDateIsNull(id)
-                .map(bi -> productIds.contains(bi.getProductId()))
+                .map(bi -> bi.getProductId() == null || productIds.contains(bi.getProductId()))
                 .map(hasAccess -> ResponseEntity.ok(Map.of("hasAccess", hasAccess)))
                 .orElseThrow(() -> new NotFoundException("BI not found: " + id));
     }
