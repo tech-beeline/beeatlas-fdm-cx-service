@@ -125,11 +125,7 @@ public class CJimportFromBpmnService {
     }
 
     private byte[] downloadBpmnForValidate(Long docId, Long userId) {
-        List<DocumentationTypeDTO> documentationTypes = documentClient.getDocumentationType("CJ");
-        if (documentationTypes == null || documentationTypes.isEmpty()) {
-            throw new BadRequestException("Не найден тип документации CJ в document-service");
-        }
-        ResponseEntity<byte[]> document = documentClient.getDocument(docId, documentationTypes.get(0).getId(), userId);
+        ResponseEntity<byte[]> document = documentClient.getDocumentByFileId(docId, userId);
         checkFileExtension(document);
         byte[] body = document.getBody();
         if (body == null || body.length == 0) {
