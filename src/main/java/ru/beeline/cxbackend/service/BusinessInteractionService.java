@@ -17,6 +17,7 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
@@ -236,6 +237,7 @@ public class BusinessInteractionService {
 
     @Transactional
     public BIDto createBI(BIPostDto biPostDto, Long userId) {
+        validateCreateBody(biPostDto);
         BI saveBI = buildBI(biPostDto, userId);
         List<BILink> docs = mapLinks(biPostDto.getDocument());
         List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
@@ -256,6 +258,26 @@ public class BusinessInteractionService {
         businessInteractionRepository.save(saveBI);
         businessInteractionRepository.flush();
         return biMapper.biToBIDto(businessInteractionRepository.findById(saveBI.getId()).orElse(null));
+    }
+
+    private void validateCreateBody(BIPostDto dto) {
+        if (dto == null || dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new BadRequestException("Поле name не может быть пустым.");
+        }
+        if (dto.getClientScenario() == null || dto.getClientScenario().trim().isEmpty()) {
+            throw new BadRequestException("Поле clientScenario не может быть пустым.");
+        }
+        if (dto.getUcsReaction() == null || dto.getUcsReaction().trim().isEmpty()) {
+            throw new BadRequestException("Поле ucsReaction не может быть пустым.");
+        }
+        if (dto.getFeeling() == null || dto.getFeeling().getId() == null
+                || !biFeelingRepository.existsById(dto.getFeeling().getId())) {
+            throw new BadRequestException("Поле feeling обязательно и должно ссылаться на существующее значение справочника.");
+        }
+        if (dto.getStatus() == null || dto.getStatus().getId() == null
+                || !biStatusRepository.existsById(dto.getStatus().getId())) {
+            throw new BadRequestException("Поле status обязательно и должно ссылаться на существующее значение справочника.");
+        }
     }
 
     private BI buildBI(BIPostDto dto, Long userId) {
@@ -386,13 +408,6 @@ public class BusinessInteractionService {
         Optional<BI> entityOptional = businessInteractionRepository.findById(id);
         if (businessInteractionRepository.countByBiIdAndDraftFalse(id) > 0
                 || !entityOptional.isPresent()) {
-            result.setEditability(false);
-        }
-
-        Long biProductId = entityOptional.map(BI::getProductId).orElse(null);
-        UserInfoDto userInfo = userClient.getUserInfo(userId);
-        if (biProductId != null && userInfo != null && userInfo.getRoles() != null && userInfo.getRoles().contains("DEFAULT")
-                && (userInfo.getProductsIds() == null || !userInfo.getProductsIds().contains(biProductId))) {
             result.setEditability(false);
         }
 
