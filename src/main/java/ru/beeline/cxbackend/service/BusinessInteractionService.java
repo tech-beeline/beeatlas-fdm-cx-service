@@ -264,20 +264,6 @@ public class BusinessInteractionService {
         if (dto == null || dto.getName() == null || dto.getName().trim().isEmpty()) {
             throw new BadRequestException("Поле name не может быть пустым.");
         }
-        if (dto.getClientScenario() == null || dto.getClientScenario().trim().isEmpty()) {
-            throw new BadRequestException("Поле clientScenario не может быть пустым.");
-        }
-        if (dto.getUcsReaction() == null || dto.getUcsReaction().trim().isEmpty()) {
-            throw new BadRequestException("Поле ucsReaction не может быть пустым.");
-        }
-        if (dto.getFeeling() == null || dto.getFeeling().getId() == null
-                || !biFeelingRepository.existsById(dto.getFeeling().getId())) {
-            throw new BadRequestException("Поле feeling обязательно и должно ссылаться на существующее значение справочника.");
-        }
-        if (dto.getStatus() == null || dto.getStatus().getId() == null
-                || !biStatusRepository.existsById(dto.getStatus().getId())) {
-            throw new BadRequestException("Поле status обязательно и должно ссылаться на существующее значение справочника.");
-        }
     }
 
     private BI buildBI(BIPostDto dto, Long userId) {
