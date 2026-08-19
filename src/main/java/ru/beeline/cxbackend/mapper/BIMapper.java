@@ -172,6 +172,9 @@ public class BIMapper {
     }
 
     private List<BIParticipantsDto> mapBIParticipants(List<BIParticipants> participants) {
+        if (participants == null) {
+            return new ArrayList<>();
+        }
         return participants.stream().map(participant -> {
             BIParticipantsDto participantDto = modelMapper.map(participant, BIParticipantsDto.class);
             participantDto.setDescr(participant.getDescr());
