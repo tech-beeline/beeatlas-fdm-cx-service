@@ -28,8 +28,6 @@ import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-
 @Slf4j
 @Service
 public class BusinessInteractionService {
@@ -117,19 +115,8 @@ public class BusinessInteractionService {
                 product -> product));
         Map<String, List<ProductInterfaceDTO>> interfacesByAlias =  biMapper.loadInterfacesByAlias(allProducts);
         Map<Integer, TcDTO> tcDTOMap = biMapper.createTcDTOMap(biStepRelations);
-        List<BIDto> result = biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
-                productsIdsMap,interfacesByAlias, tcDTOMap)).toList();
-        UserInfoDto userInfo = userClient.getUserInfo(userId);
-        boolean isDesignArtifact = userInfo != null && userInfo.getPermissions() != null
-                && userInfo.getPermissions().contains(DESIGN_ARTIFACT.toString());
-        if (!isDesignArtifact) {
-            List<Long> productIds = userInfo != null && userInfo.getProductsIds() != null
-                    ? userInfo.getProductsIds() : Collections.emptyList();
-            result = result.stream()
-                    .filter(biDto -> productIds.contains(biDto.getProductId()) || !biDto.isDraft())
-                    .collect(Collectors.toList());
-        }
-        return result;
+        return biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
+                productsIdsMap, interfacesByAlias, tcDTOMap)).toList();
     }
 
     public BIDto getBIById(Long id) {
