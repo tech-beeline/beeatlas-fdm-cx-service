@@ -256,6 +256,13 @@ public class CJService {
             }
         }
 
+        if (cjDto.isIdProductProvided()) {
+            if (!Objects.equals(cjDto.getIdProduct(), cj.getIdProductExt())) {
+                cj.setIdProductExt(cjDto.getIdProduct());
+                changed = true;
+            }
+        }
+
         if (cjDto.getBDraft() != null && !cjDto.getBDraft().equals(cj.isBDraft())) {
             cj.setBDraft(cjDto.getBDraft());
             changed = true;

@@ -20,11 +20,13 @@ public class CJTagsDto {
     @JsonProperty("user_portrait")
     private String userPortrait;
 
-    @JsonProperty("id_product")
     private Long idProduct;
 
     @JsonIgnore
     private boolean userPortraitProvided = false;
+
+    @JsonIgnore
+    private boolean idProductProvided = false;
     @JsonProperty("draft")
     private Boolean bDraft;
     private List<String> tags;
@@ -45,6 +47,12 @@ public class CJTagsDto {
         this.userPortraitProvided = true;
     }
 
+    @JsonProperty("id_product")
+    public void setIdProduct(Long idProduct) {
+        this.idProduct = idProduct;
+        this.idProductProvided = true;
+    }
+
     @JsonProperty("businessOwner")
     public void setBusinessOwner(Long businessOwner) {
         this.businessOwner = businessOwner;
@@ -59,6 +67,10 @@ public class CJTagsDto {
 
     public boolean isUserPortraitProvided() {
         return userPortraitProvided;
+    }
+
+    public boolean isIdProductProvided() {
+        return idProductProvided;
     }
 
     public boolean isBusinessOwnerProvided() {
