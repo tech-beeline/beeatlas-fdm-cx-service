@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.beeline.cxbackend.annotation.ApiErrorCodes;
 import ru.beeline.cxbackend.annotation.ApiStandardErrors;
 import ru.beeline.cxbackend.annotation.CustomHeaders;
 import ru.beeline.cxbackend.domain.cj.CJ;
@@ -54,6 +55,18 @@ public class CJController {
 
     @Autowired
     private CjE2eService cjE2eService;
+
+    @GetMapping("/api/v1/cx/bpmn/cj/validate/{doc-id}")
+    @ApiStandardErrors
+    @Operation(
+            summary = "Валидация BPMN документа",
+            description = "Загружает BPMN из document-service по id файла и проверяет его по правилам парсинга CJ.")
+    @ApiErrorCodes({400, 500})
+    public ResponseEntity<Void> validateBpmn(@PathVariable("doc-id") Integer docId,
+                                             @RequestHeader(value = USER_ID_HEADER, required = false) Long userId) {
+        cJimportFromBpmnService.validateByDocId(docId.longValue(), userId);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/api/cx/v1/cj/alerts")
     @ApiStandardErrors
@@ -178,22 +191,21 @@ public class CJController {
     }
 
     @CustomHeaders
-    @PostMapping("/api/cx/v1/product/{productId}/cj")
+    @PostMapping("/api/cx/v1/product/cj")
     @ResponseBody
     @ApiStandardErrors
     @Operation(
             summary = "Создание CJ",
-            description = "Создаёт CJ для указанного продукта. Автор берётся из `user-id`. Требуется право `CREATE_ARTIFACT` и доступ к продукту."
+            description = "Создаёт CJ. Продукт (`id_product` в теле) необязателен. Автор берётся из `user-id`. Требуется право `CREATE_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
             description = "Созданный CJ",
             content = @Content(schema = @Schema(implementation = CjResponseDto.class))
     )
-    public ResponseEntity<CjResponseDto> createCJ(@PathVariable Long productId,
-                                                  @RequestHeader(value = USER_ID_HEADER) Long userId,
+    public ResponseEntity<CjResponseDto> createCJ(@RequestHeader(value = USER_ID_HEADER) Long userId,
                                                   @RequestBody CJTagsDto cj) {
-        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, productId, userId));
+        return ResponseEntity.status(HttpStatus.OK).body(cjService.createNewCJ(cj, userId));
     }
 
     @CustomHeaders
@@ -202,7 +214,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Полная замена CJ (PUT)",
-            description = "Заменяет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT` и доступ к продукту."
+            description = "Заменяет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
@@ -232,7 +244,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Частичное обновление CJ (PATCH)",
-            description = "Частично обновляет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT` и доступ к продукту."
+            description = "Частично обновляет атрибуты CJ. Если CJ опубликован — вернёт 409. Требуется право `EDIT_ARTIFACT`."
     )
     @ApiResponse(
             responseCode = "200",
@@ -257,7 +269,7 @@ public class CJController {
     @ApiStandardErrors
     @Operation(
             summary = "Удаление CJ",
-            description = "Удаляет CJ. Требуется право `DELETE_ARTIFACT`, доступ к продукту и CJ должен быть в черновике."
+            description = "Удаляет CJ. Требуется право `DELETE_ARTIFACT`, CJ должен быть в черновике."
     )
     @ApiResponse(responseCode = "200", description = "CJ удалён")
     public ResponseEntity<Void> deleteCJById(@PathVariable Long id) {
@@ -287,5 +299,3 @@ public class CJController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
-
-

@@ -17,6 +17,7 @@ import ru.beeline.cxbackend.domain.bi.ref.BIStatus;
 import ru.beeline.cxbackend.domain.cj.CJ;
 import ru.beeline.cxbackend.domain.cj.CJStep;
 import ru.beeline.cxbackend.dto.*;
+import ru.beeline.cxbackend.exception.BadRequestException;
 import ru.beeline.cxbackend.exception.NotFoundException;
 import ru.beeline.cxbackend.exception.UnprocessedEntityException;
 import ru.beeline.cxbackend.mapper.BIMapper;
@@ -26,9 +27,6 @@ import ru.beeline.cxbackend.utils.Utils;
 import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static ru.beeline.cxbackend.domain.Permission.PermissionType.DESIGN_ARTIFACT;
-import static ru.beeline.cxbackend.utils.AccessToProduct.validateProductId;
 
 @Slf4j
 @Service
@@ -117,19 +115,8 @@ public class BusinessInteractionService {
                 product -> product));
         Map<String, List<ProductInterfaceDTO>> interfacesByAlias =  biMapper.loadInterfacesByAlias(allProducts);
         Map<Integer, TcDTO> tcDTOMap = biMapper.createTcDTOMap(biStepRelations);
-        List<BIDto> result = biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
-                productsIdsMap,interfacesByAlias, tcDTOMap)).toList();
-        UserInfoDto userInfo = userClient.getUserInfo(userId);
-        boolean isDesignArtifact = userInfo != null && userInfo.getPermissions() != null
-                && userInfo.getPermissions().contains(DESIGN_ARTIFACT.toString());
-        if (!isDesignArtifact) {
-            List<Long> productIds = userInfo != null && userInfo.getProductsIds() != null
-                    ? userInfo.getProductsIds() : Collections.emptyList();
-            result = result.stream()
-                    .filter(biDto -> productIds.contains(biDto.getProductId()) || !biDto.isDraft())
-                    .collect(Collectors.toList());
-        }
-        return result;
+        return biList.stream().map(bi -> biMapper.biToBIDto(bi, biStepsMap.get(bi),
+                productsIdsMap, interfacesByAlias, tcDTOMap)).toList();
     }
 
     public BIDto getBIById(Long id) {
@@ -237,7 +224,7 @@ public class BusinessInteractionService {
 
     @Transactional
     public BIDto createBI(BIPostDto biPostDto, Long userId) {
-        validateProductId(biPostDto.getProductId());
+        validateCreateBody(biPostDto);
         BI saveBI = buildBI(biPostDto, userId);
         List<BILink> docs = mapLinks(biPostDto.getDocument());
         List<BILink> mockupLink = mapLinks(biPostDto.getMockupLink());
@@ -258,6 +245,12 @@ public class BusinessInteractionService {
         businessInteractionRepository.save(saveBI);
         businessInteractionRepository.flush();
         return biMapper.biToBIDto(businessInteractionRepository.findById(saveBI.getId()).orElse(null));
+    }
+
+    private void validateCreateBody(BIPostDto dto) {
+        if (dto == null || dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new BadRequestException("Поле name не может быть пустым.");
+        }
     }
 
     private BI buildBI(BIPostDto dto, Long userId) {
@@ -388,12 +381,6 @@ public class BusinessInteractionService {
         Optional<BI> entityOptional = businessInteractionRepository.findById(id);
         if (businessInteractionRepository.countByBiIdAndDraftFalse(id) > 0
                 || !entityOptional.isPresent()) {
-            result.setEditability(false);
-        }
-
-        UserInfoDto userInfo = userClient.getUserInfo(userId);
-        if (userInfo != null && userInfo.getRoles() != null && userInfo.getRoles().contains("DEFAULT")
-                && (userInfo.getProductsIds() == null || !userInfo.getProductsIds().contains(entityOptional.get().getProductId()))) {
             result.setEditability(false);
         }
 

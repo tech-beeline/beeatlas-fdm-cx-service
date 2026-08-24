@@ -10,7 +10,7 @@
     </parent>
     <groupId>ru.beeline</groupId>
     <artifactId>cx-backend</artifactId>
-    <version>1.4.6</version>
+    <version>1.4.7</version>
     <name>cx-backend</name>
     <description>cx-backend</description>
     <properties>

@@ -104,25 +104,136 @@ public class CJimportFromBpmnService {
         return document.getBody();
     }
 
-    private void checkFileExtension(ResponseEntity<byte[]> document) {
+    public void validateByDocId(Long docId, Long userId) {
+        log.info("BPMN validate: начало, docId={}, userId={}", docId, userId);
+        byte[] content = downloadBpmnForValidate(docId, userId);
+        validateDiagramStructure(content);
+        ProcessCJ processCJ;
+        try {
+            processCJ = extractModel(content);
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e.getMessage() == null ? "Некорректный XML BPMN" : e.getMessage());
+        } catch (Exception e) {
+            log.error("BPMN validate: ошибка парсинга: {}", e.getMessage(), e);
+            throw new BadRequestException("Ошибка разбора BPMN: "
+                    + (e.getMessage() == null ? "неизвестная ошибка" : e.getMessage()));
+        }
+        validateParsedModel(processCJ);
+        log.info("BPMN validate: успешно, docId={}", docId);
+    }
 
+    private byte[] downloadBpmnForValidate(Long docId, Long userId) {
+        ResponseEntity<byte[]> document = documentClient.getDocumentByFileId(docId, userId);
+        checkFileExtension(document);
+        byte[] body = document.getBody();
+        if (body == null || body.length == 0) {
+            throw new BadRequestException("Файл BPMN пуст");
+        }
+        return body;
+    }
+
+    private void validateDiagramStructure(byte[] content) {
+        Element processElement = prepareExtract(content);
+        for (int i = 0; i < processElement.getChildNodes().getLength(); i++) {
+            Node node = processElement.getChildNodes().item(i);
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+            Element el = (Element) node;
+            String localName = el.getLocalName();
+            String name = el.getAttribute("name");
+            if (isBiName(name)) {
+                throw new BadRequestException("BI '" + name
+                        + "' размещён на верхнем уровне process. BI должен быть вложен в этап CJ (subProcess)");
+            }
+            if ("subProcess".equals(localName)) {
+                validateStageDirectChildren(el);
+            }
+        }
+    }
+
+    private void validateStageDirectChildren(Element stageElement) {
+        String stageLabel = stageElement.getAttribute("name");
+        if (stageLabel == null || stageLabel.isBlank()) {
+            stageLabel = stageElement.getAttribute("id");
+        }
+        for (int i = 0; i < stageElement.getChildNodes().getLength(); i++) {
+            Node node = stageElement.getChildNodes().item(i);
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+            Element el = (Element) node;
+            String localName = el.getLocalName();
+            String name = el.getAttribute("name");
+            if (isBiName(name)) {
+                if (!"subProcess".equals(localName) && !"callActivity".equals(localName)) {
+                    throw new BadRequestException("Элемент BI '" + name + "' имеет недопустимый тип '"
+                            + localName + "'. BI может быть только subProcess (Collapsed subprocess) "
+                            + "или callActivity (Call activity)");
+                }
+                continue;
+            }
+            if ("task".equals(localName) || "serviceTask".equals(localName) || "userTask".equals(localName)) {
+                String taskLabel = (name != null && !name.isBlank()) ? name : el.getAttribute("id");
+                throw new BadRequestException("Элемент '" + taskLabel + "' типа " + localName
+                        + " привязан к этапу '" + stageLabel
+                        + "', а должен находиться внутри BI");
+            }
+        }
+    }
+
+    private static boolean isBiName(String name) {
+        return name != null && name.startsWith("BI");
+    }
+
+    private void validateParsedModel(ProcessCJ processCJ) {
+        if (processCJ.getCollapsedSubProcesses() == null || processCJ.getCollapsedSubProcesses().isEmpty()) {
+            throw new BadRequestException("В BPMN отсутствуют этапы CJ (subProcess верхнего уровня)");
+        }
+        for (CollapsedSubProcess stage : processCJ.getCollapsedSubProcesses()) {
+            if (stage.id == null || stage.id.isBlank()) {
+                throw new BadRequestException("У этапа CJ отсутствует атрибут id"
+                        + (stage.name != null && !stage.name.isBlank() ? " (name=" + stage.name + ")" : ""));
+            }
+            if (stage.getBiElements() == null || stage.getBiElements().isEmpty()) {
+                throw new BadRequestException("В этапе CJ '"
+                        + (stage.name != null && !stage.name.isBlank() ? stage.name : stage.id)
+                        + "' отсутствуют BI (subProcess/callActivity с именем, начинающимся на 'BI')");
+            }
+            for (BIElement bi : stage.getBiElements()) {
+                if (bi.id == null || bi.id.isBlank()) {
+                    throw new BadRequestException("У BI отсутствует атрибут id"
+                            + (bi.name != null ? " (name=" + bi.name + ")" : ""));
+                }
+                if (bi.getBiSteps() != null) {
+                    for (BiStep step : bi.getBiSteps()) {
+                        if (step.getId() == null || step.getId().isBlank()) {
+                            throw new BadRequestException("У шага BI отсутствует атрибут id"
+                                    + (step.getName() != null ? " (name=" + step.getName() + ")" : "")
+                                    + " в BI '" + bi.name + "'");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkFileExtension(ResponseEntity<byte[]> document) {
         String header = document.getHeaders()
                 .getFirst(HttpHeaders.CONTENT_DISPOSITION);
-
         if (header == null) {
-            throw new BadRequestException("Missing Content-Disposition");
+            throw new BadRequestException("Отсутствует заголовок Content-Disposition у документа");
         }
-
         ContentDisposition disposition = ContentDisposition.parse(header);
-
         String filename = disposition.getFilename();
-
         if (filename != null &&
                 filename.toLowerCase().endsWith(".bpmn")) {
             return;
         }
 
-        throw new BadRequestException("File extension is not .bpmn");
+        throw new BadRequestException("Расширение файла не .bpmn");
     }
 
     public ProcessCJ extractModel(byte[] content) {
@@ -382,14 +493,14 @@ public class CJimportFromBpmnService {
                 if (stepOptional.isEmpty()) {
                     log.info("add STEP name = " + step.getName());
                     ru.beeline.cxbackend.domain.bi.BiStep biStep =
-                            biStepRepository.saveAndFlush(                            ru.beeline.cxbackend.domain.bi.BiStep.builder()
-                            .name(step.getName())
-                            .bi(biOptional)
-                            .stepType(biStepTypeEnum.get())
-                            .uniqueIdent("temp")
-                            .bpmnId(step.getId())
-                            .orderTree(step.sortKey())
-                            .build());
+                            biStepRepository.saveAndFlush(ru.beeline.cxbackend.domain.bi.BiStep.builder()
+                                    .name(step.getName())
+                                    .bi(biOptional)
+                                    .stepType(biStepTypeEnum.get())
+                                    .uniqueIdent("temp")
+                                    .bpmnId(step.getId())
+                                    .orderTree(step.sortKey())
+                                    .build());
                     biStep.setUniqueIdent(Utils.createUniqueIdent("Step", biStep.getId().longValue()));
                     biStepRepository.saveAndFlush(biStep);
                 } else {
@@ -430,11 +541,13 @@ public class CJimportFromBpmnService {
                         if (extElements.getLength() > 0) {
                             Element calledElement = (Element) extElements.item(0);
                             bi.processId = calledElement.getAttribute("processId");
-                            BI biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
-                            if (biOptional == null) {
-                                throw new BadRequestException("unique_ident is " + bi.getProcessId() + " not found");
-                            }
-
+                        }
+                        if (bi.processId == null || bi.processId.isBlank()) {
+                            throw new BadRequestException("Для: " + name + "- не заполнено поле processID");
+                        }
+                        BI biOptional = biRepository.findByUniqueIdentAndDeletedDateIsNull(bi.getProcessId());
+                        if (biOptional == null) {
+                            throw new BadRequestException("BI с unique_ident '" + bi.getProcessId() + "' не найден");
                         }
                     }
                     findBiSteps(el, bi.biSteps);
@@ -535,18 +648,19 @@ public class CJimportFromBpmnService {
             Element definitions = builder.parse(new ByteArrayInputStream(content)).getDocumentElement();
             NodeList processList = definitions.getElementsByTagNameNS("*", "process");
             if (processList.getLength() == 0) {
-                throw new IllegalArgumentException("No bpmn:process element found in BPMN XML");
+                throw new BadRequestException("В BPMN XML не найден элемент bpmn:process");
             }
             if (processList.getLength() > 1) {
-                throw new BadRequestException("BPMN XML should contain exactly one process element");
+                throw new BadRequestException("BPMN XML должен содержать ровно один элемент process");
             }
-            Element processElement = (Element) processList.item(0);
-            return processElement;
+            return (Element) processList.item(0);
+        } catch (BadRequestException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            throw new BadRequestException("Некорректный XML BPMN: "
+                    + (e.getMessage() == null ? "ошибка разбора" : e.getMessage()));
         }
-
     }
 
 
