@@ -19,6 +19,9 @@ public class BiStepDto {
 
     private Integer id;
     private String name;
+    private String uniqueIdent;
+    private Integer idStepType;
+    private String nameStepType;
     private Float latency;
     private Float errorRate;
     private Float rps;
