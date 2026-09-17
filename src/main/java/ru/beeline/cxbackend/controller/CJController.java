@@ -151,10 +151,11 @@ public class CJController {
     @Operation(
             summary = "CJ, связанные с e2e",
             description = "Возвращает дерево CJ → BI → bi_steps для Customer Journey, "
-                    + "связанных с e2e из fdm-products через bi_step.uid = e2e.bi_step_code.")
+                    + "связанных с e2e из fdm-products через bi_step.uid = e2e.bi_step_code. "
+                    + "У каждого шага — e2eCodes: список уникальных кодов e2e (сортировка без учёта регистра).")
     @ApiResponse(
             responseCode = "200",
-            description = "Список CJ с BI и шагами, связанными с e2e",
+            description = "Список CJ с BI и шагами; у bi_step — непустой e2eCodes",
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = CjE2eDto.class))))
     public ResponseEntity<List<CjE2eDto>> getCjLinkedToE2e() {
         return ResponseEntity.ok(cjE2eService.getCjLinkedToE2e());

@@ -89,12 +89,12 @@ class CjE2eServiceTest {
         assertThat(cj.getBi().get(0).getId()).isEqualTo(10L);
         assertThat(cj.getBi().get(0).getBiSteps()).hasSize(1);
         assertThat(cj.getBi().get(0).getBiSteps().get(0).getUid()).isEqualTo("STEP_A");
-        assertThat(cj.getBi().get(0).getBiSteps().get(0).getE2eCode()).isEqualTo("E2E_1");
+        assertThat(cj.getBi().get(0).getBiSteps().get(0).getE2eCodes()).containsExactly("E2E_1");
 
         assertThat(cj.getBi().get(1).getId()).isEqualTo(20L);
         assertThat(cj.getBi().get(1).getBiSteps()).hasSize(1);
         assertThat(cj.getBi().get(1).getBiSteps().get(0).getUid()).isEqualTo("STEP_C");
-        assertThat(cj.getBi().get(1).getBiSteps().get(0).getE2eCode()).isEqualTo("E2E_2");
+        assertThat(cj.getBi().get(1).getBiSteps().get(0).getE2eCodes()).containsExactly("E2E_2");
     }
 
     @Test
@@ -115,10 +115,13 @@ class CjE2eServiceTest {
     }
 
     @Test
-    void getCjLinkedToE2e_keepsFirstE2eCodeForSameBiStep() {
+    void getCjLinkedToE2e_collectsUniqueSortedE2eCodesForSameBiStep() {
         when(productClient.getE2eWithBiStep()).thenReturn(List.of(
-                E2eCardDto.builder().code("E2E_FIRST").biStepCode("STEP_A").build(),
-                E2eCardDto.builder().code("E2E_SECOND").biStepCode("STEP_A").build()
+                E2eCardDto.builder().code("checkout-flow").biStepCode("STEP_A").build(),
+                E2eCardDto.builder().code("block-home-internet").biStepCode("STEP_A").build(),
+                E2eCardDto.builder().code("checkout-flow").biStepCode("STEP_A").build(),
+                E2eCardDto.builder().code("").biStepCode("STEP_A").build(),
+                E2eCardDto.builder().code("orphan").biStepCode(null).build()
         ));
         when(cjRepository.findCjAlertsFlat()).thenReturn(List.of(
                 row(1L, "CJ_UID", "Оплата", 10L, "BI_UID", "Оформить", "STEP_A", "Шаг A")
@@ -126,8 +129,8 @@ class CjE2eServiceTest {
 
         List<CjE2eDto> result = service.getCjLinkedToE2e();
 
-        assertThat(result.get(0).getBi().get(0).getBiSteps().get(0).getE2eCode())
-                .isEqualTo("E2E_FIRST");
+        assertThat(result.get(0).getBi().get(0).getBiSteps().get(0).getE2eCodes())
+                .containsExactly("block-home-internet", "checkout-flow");
     }
 
     private static CjAlertsFlatRow row(
