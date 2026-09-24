@@ -9,6 +9,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,5 +20,5 @@ public class BiStepE2eDto {
 
     private String uid;
     private String name;
-    private String e2eCode;
+    private List<String> e2eCodes = new ArrayList<>();
 }

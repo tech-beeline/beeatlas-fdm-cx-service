@@ -49,5 +49,6 @@ public class BIV2Dto {
     private List<BILink> flowLink;
     private List<BILink> document;
     private List<BILink> mockupLink;
+    private List<BiStepDto> biSteps;
     private AuthorDto author;
 }

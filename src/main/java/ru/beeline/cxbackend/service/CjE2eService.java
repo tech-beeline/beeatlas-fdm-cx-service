@@ -37,8 +37,8 @@ public class CjE2eService {
             log.info("CJ e2e: список e2e из product пуст");
             return List.of();
         }
-        Map<String, String> e2eCodeByBiStepUid = buildBiStepToE2eCodeMap(e2eList);
-        if (e2eCodeByBiStepUid.isEmpty()) {
+        Map<String, List<String>> e2eCodesByBiStepUid = buildBiStepToE2eCodesMap(e2eList);
+        if (e2eCodesByBiStepUid.isEmpty()) {
             log.info("CJ e2e: нет e2e с bi_step_code");
             return List.of();
         }
@@ -47,24 +47,32 @@ public class CjE2eService {
             log.info("CJ e2e: локальные CJ отсутствуют");
             return List.of();
         }
-        List<CjE2eDto> result = buildTree(rows, e2eCodeByBiStepUid);
+        List<CjE2eDto> result = buildTree(rows, e2eCodesByBiStepUid);
         log.info("CJ e2e: завершён, cjCount={}, matchedBiStepCodes={}",
-                result.size(), e2eCodeByBiStepUid.size());
+                result.size(), e2eCodesByBiStepUid.size());
         return result;
     }
 
-    private Map<String, String> buildBiStepToE2eCodeMap(List<E2eCardDto> e2eList) {
-        Map<String, String> map = new LinkedHashMap<>();
+    private Map<String, List<String>> buildBiStepToE2eCodesMap(List<E2eCardDto> e2eList) {
+        Map<String, Set<String>> codesByBiStep = new LinkedHashMap<>();
         for (E2eCardDto e2e : e2eList) {
             if (e2e == null || !StringUtils.hasText(e2e.getBiStepCode()) || !StringUtils.hasText(e2e.getCode())) {
                 continue;
             }
-            map.putIfAbsent(e2e.getBiStepCode().trim(), e2e.getCode());
+            codesByBiStep
+                    .computeIfAbsent(e2e.getBiStepCode().trim(), k -> new LinkedHashSet<>())
+                    .add(e2e.getCode());
         }
-        return map;
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Set<String>> entry : codesByBiStep.entrySet()) {
+            List<String> sortedCodes = new ArrayList<>(entry.getValue());
+            sortedCodes.sort(String.CASE_INSENSITIVE_ORDER);
+            result.put(entry.getKey(), sortedCodes);
+        }
+        return result;
     }
 
-    private List<CjE2eDto> buildTree(List<CjAlertsFlatRow> rows, Map<String, String> e2eCodeByBiStepUid) {
+    private List<CjE2eDto> buildTree(List<CjAlertsFlatRow> rows, Map<String, List<String>> e2eCodesByBiStepUid) {
         Map<Long, CjE2eAcc> cjAcc = new LinkedHashMap<>();
         for (CjAlertsFlatRow row : rows) {
             Long cjId = row.getCjId();
@@ -73,8 +81,8 @@ public class CjE2eService {
             if (cjId == null || biId == null || !StringUtils.hasText(biStepUid)) {
                 continue;
             }
-            String e2eCode = e2eCodeByBiStepUid.get(biStepUid);
-            if (e2eCode == null) {
+            List<String> e2eCodes = e2eCodesByBiStepUid.get(biStepUid);
+            if (e2eCodes == null || e2eCodes.isEmpty()) {
                 continue;
             }
             CjE2eAcc cj = cjAcc.computeIfAbsent(cjId, id -> new CjE2eAcc(id, row.getCjUniqueIdent(), row.getCjName()));
@@ -84,11 +92,10 @@ public class CjE2eService {
                 bi.steps.add(BiStepE2eDto.builder()
                         .uid(biStepUid)
                         .name(row.getBsName())
-                        .e2eCode(e2eCode)
+                        .e2eCodes(new ArrayList<>(e2eCodes))
                         .build());
             }
         }
         return cjAcc.values().stream().map(CjE2eAcc::toDto).collect(Collectors.toList());
     }
 }
-

@@ -160,6 +160,12 @@ public class BIMapper {
 
     public BIV2Dto biToBIV2Dto(BI bi, AuthorDto authorDto) {
         BIV2Dto biV2Dto = modelMapper.map(bi, BIV2Dto.class);
+        List<BiStep> biSteps = biStepRepository.findByBi(bi);
+        if (biSteps.isEmpty()) {
+            biV2Dto.setBiSteps(new ArrayList<>());
+        } else {
+            biV2Dto.setBiSteps(createBiStep(biSteps));
+        }
         biV2Dto.setParticipants(mapBIParticipants(bi.getParticipants()));
         if (bi.getFeeling() != null) {
             biV2Dto.setFeelings(modelMapper.map(bi.getFeeling(), BIFeelingDto.class));
@@ -195,6 +201,9 @@ public class BIMapper {
             BiStepDto build = BiStepDto.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
+                    .uniqueIdent(biStep.getUniqueIdent())
+                    .idStepType(biStep.getStepTypeId())
+                    .nameStepType(biStep.getStepType() != null ? biStep.getStepType().getName() : null)
                     .latency(biStep.getLatency())
                     .errorRate(biStep.getErrorRate())
                     .rps(biStep.getRps())
@@ -211,6 +220,9 @@ public class BIMapper {
             BiStepDto build = BiStepDto.builder()
                     .id(biStep.getId())
                     .name(biStep.getName())
+                    .uniqueIdent(biStep.getUniqueIdent())
+                    .idStepType(biStep.getStepTypeId())
+                    .nameStepType(biStep.getStepType() != null ? biStep.getStepType().getName() : null)
                     .latency(biStep.getLatency())
                     .errorRate(biStep.getErrorRate())
                     .rps(biStep.getRps())
