@@ -104,6 +104,27 @@ class BpmnOrderCalculatorTest {
     }
 
     @Test
+    void calculateOrder_gatewayOnlyCycle_ordersReachableStages() {
+        List<SequenceFlow> flows = List.of(
+                flow("Flow_Start_To_Choose", "StartEvt_Process", "Gw_MainChoice"),
+                flow("Flow_Choose_To_LoopBack", "Gw_MainChoice", "Gw_LoopBack"),
+                flow("Flow_LoopBack_To_Choose", "Gw_LoopBack", "Gw_MainChoice"),
+                flow("Flow_LoopBack_To_Finish", "Gw_LoopBack", "UT_FinishSetup"),
+                flow("Flow_Choose_S01", "Gw_MainChoice", "Stage_01_SetupInsurance"),
+                flow("Flow_S01_Loop", "Stage_01_SetupInsurance", "Gw_LoopBack"),
+                flow("Flow_Choose_S02", "Gw_MainChoice", "Stage_02_SetupCallRecording"),
+                flow("Flow_S02_Loop", "Stage_02_SetupCallRecording", "Gw_LoopBack")
+        );
+
+        Map<String, BpmnOrderAssignment> orders = BpmnOrderCalculator.calculateOrder(
+                List.of("Stage_01_SetupInsurance", "Stage_02_SetupCallRecording"), flows);
+
+        assertThat(orders).containsKeys("Stage_01_SetupInsurance", "Stage_02_SetupCallRecording");
+        assertThat(orders.get("Stage_01_SetupInsurance").getOrder()).isNotNull();
+        assertThat(orders.get("Stage_02_SetupCallRecording").getOrder()).isNotNull();
+    }
+
+    @Test
     void formatOrder_supportsNestedBranchSuffix() {
         assertThat(BpmnOrderCalculator.formatOrder(3, "1")).isEqualTo("3.1");
         assertThat(BpmnOrderCalculator.formatOrder(3, "2")).isEqualTo("3.2");
