@@ -97,13 +97,14 @@ public final class BpmnOrderCalculator {
     }
 
     private static int traverse(String nodeId, int position, String branchPath, TraversalContext ctx) {
+        if (ctx.visitedNodes.contains(nodeId)) {
+            return position;
+        }
+        ctx.visitedNodes.add(nodeId);
+
         boolean continueWithEmptyBranch = false;
 
         if (ctx.elementIds.contains(nodeId)) {
-            if (ctx.visitedElements.contains(nodeId)) {
-                return position;
-            }
-            ctx.visitedElements.add(nodeId);
             boolean isJoin = ctx.joinNodes.contains(nodeId);
             String effectiveBranchPath = isJoin ? "" : branchPath;
             ctx.orders.put(nodeId, BpmnOrderAssignment.fromFormatted(formatOrder(position, effectiveBranchPath)));
@@ -145,7 +146,7 @@ public final class BpmnOrderCalculator {
         private final Map<String, List<SequenceFlow>> outgoing;
         private final Set<String> joinNodes;
         private final Map<String, BpmnOrderAssignment> orders = new LinkedHashMap<>();
-        private final Set<String> visitedElements = new HashSet<>();
+        private final Set<String> visitedNodes = new HashSet<>();
 
         private TraversalContext(Set<String> elementIds,
                                  Map<String, List<SequenceFlow>> outgoing,
